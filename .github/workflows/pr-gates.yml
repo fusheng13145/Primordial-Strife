@@ -25,6 +25,12 @@ jobs:
         working-directory: mod
         run: ./gradlew spotlessCheck --no-daemon
 
+      # `buildSrc` is a separate build: the main build compiles it but never runs its
+      # `test` task, so ModuleDependencyRulesTest only executes when invoked explicitly.
+      - name: buildSrc unit tests (dependency-rule assertions)
+        working-directory: mod
+        run: ./gradlew -p buildSrc test --no-daemon
+
       # `build` runs `check`, which `strife.conventions` wires to include `checkImports`
       # (docs/03 §2 module dependency chain) and the unit tests.
       - name: Build + unit tests + module dependency assertions
