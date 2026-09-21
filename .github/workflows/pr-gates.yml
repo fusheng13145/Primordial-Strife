@@ -42,9 +42,28 @@ jobs:
         working-directory: mod
         run: ./gradlew validator --no-daemon
 
+      # Unit tests cannot run on the Windows dev box (docs/02 §4), so CI is their only
+      # execution venue. A green `build` would still be compatible with "tests were
+      # silently skipped", hence this explicit count + gate.
+      - name: Assert unit tests actually executed
+        if: always()
+        working-directory: mod
+        run: |
+          {
+            echo "## 单测执行证据（本机不可运行，CI 为唯一执行处）"
+            echo ""
+            echo '```'
+            for xml in $(find . -path '*/build/test-results/test/*.xml' | sort); do
+              printf '%-46s %s\n' "$xml" "$(grep -c '<testcase' "$xml")"
+            done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          count=$(find . -path '*/build/test-results/test/*.xml' -exec grep -h -o '<testcase' {} + | wc -l)
+          echo "total testcases: $count"
+          test "$count" -ge 1 || { echo "::error::zero unit tests executed — they are silently skipped"; exit 1; }
+
       # Gates not yet lit — each lights up with its own ticket, never with a stub that
       # reports success without checking anything (docs/06 §4: an unverified pass is a fail).
-      # - Attachment memory snapshot <=2KB (docs/03 §3)      -> A0-3
       # - runServer headless smoke, clean jar 60s (docs/07)  -> A0-8
       # - zh_cn key full coverage (docs/04 §4)               -> C1-1
       # Nightly (docs/04 §8): tick 采样 / 灵气场 chunk 生成耗时 / 丹方蒙特卡洛 10 万 / 2h 长跑 -> M2+

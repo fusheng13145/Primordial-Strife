@@ -1,10 +1,5 @@
 package com.strife.core;
 
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.Component;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -14,9 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Platform entry point (A0-1 skeleton). Registration pipelines and the StrifeData attachment
- * framework land in A0-3/A0-5; this class only proves the MOD loads and the {@code /strife} command
- * root exists.
+ * Platform entry point (A0-1 骨架).
+ *
+ * <p>本类只做注册编排：附件类型经注册表进 {@link StrifeAttachmentTypes}，命令树进 {@link StrifeCommands}（03 分册
+ * §9）。业务逻辑一律不写在这里。
  */
 @Mod(StrifeMod.MOD_ID)
 public final class StrifeMod {
@@ -29,25 +25,12 @@ public final class StrifeMod {
         LOGGER.info(
                 "strife platform entry constructed (version {})",
                 container.getModInfo().getVersion());
+        StrifeAttachmentTypes.ATTACHMENT_TYPES.register(modEventBus);
         // RegisterCommandsEvent is fired on the game bus whenever Commands is rebuilt.
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
-        registerStrifeCommand(event.getDispatcher());
-    }
-
-    static void registerStrifeCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
-        // A0-5 replaces this placeholder with the fallback-command registry (docs/03 §9).
-        dispatcher.register(
-                Commands.literal(MOD_ID).then(Commands.literal("info").executes(StrifeMod::info)));
-    }
-
-    private static int info(CommandContext<CommandSourceStack> context) {
-        context.getSource()
-                .sendSuccess(
-                        () -> Component.literal("strife skeleton — data layer pending A0-3/A0-5"),
-                        false);
-        return 1;
+        StrifeCommands.register(event.getDispatcher());
     }
 }
