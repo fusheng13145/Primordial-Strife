@@ -46,7 +46,12 @@ public record StrifeData(
 
     public static final int CURRENT_DATA_VERSION = 1;
 
-    /** 一年 = 24000 游戏刻（20 分钟现实时间，与 NUMBERS.md §4 的流速一致）。 */
+    /**
+     * 一年 = 24000 游戏刻（20 分钟现实时间）。
+     *
+     * <p><b>待接入</b>：该换算率是 NUMBERS.md §4 {@code years_per_realtime_sec} 的派生值，属 05 分册 §1 收录范围；DataGen
+     * 产物可用后必须改由表读取，此处字面量仅为 A0-3 占位（07 分册 M1 前清零）。
+     */
     public static final long TICKS_PER_YEAR = 24000L;
 
     public static final Codec<StrifeData> CODEC =

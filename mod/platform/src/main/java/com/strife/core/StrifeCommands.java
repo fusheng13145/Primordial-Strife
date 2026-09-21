@@ -44,7 +44,7 @@ public final class StrifeCommands {
                         () ->
                                 Component.literal(
                                         String.format(
-                                                "境界 ordinal=%d 段=%d 修为=%d 灵根: 品阶%d/五行%05d 突破失败次数=%d",
+                                                "境界 ordinal=%d 段=%d 修为=%d 灵根: 品阶=%d 五行位掩码=%d（bit0 金…bit4 土） 突破失败次数=%d",
                                                 data.realmOrdinal(),
                                                 data.stage(),
                                                 data.qi(),
