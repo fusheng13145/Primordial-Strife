@@ -43,8 +43,9 @@ jobs:
         run: ./gradlew validator --no-daemon
 
       # Unit tests cannot run on the Windows dev box (docs/02 §4), so CI is their only
-      # execution venue. A green `build` would still be compatible with "tests were
-      # silently skipped", hence this explicit count + gate.
+      # execution venue. A green `build` would still be compatible with "a module's tests
+      # were silently skipped (NO-SOURCE / missing engine)", hence the per-module gate:
+      # a global count alone could be satisfied by one module while another runs zero.
       - name: Assert unit tests actually executed
         if: always()
         working-directory: mod
@@ -53,14 +54,21 @@ jobs:
             echo "## 单测执行证据（本机不可运行，CI 为唯一执行处）"
             echo ""
             echo '```'
-            for xml in $(find . -path '*/build/test-results/test/*.xml' | sort); do
-              printf '%-46s %s\n' "$xml" "$(grep -c '<testcase' "$xml")"
+            find . -path '*/build/test-results/test/*.xml' -printf '%P\n' | sort | while read -r f; do
+              printf '%-58s %s\n' "$f" "$(grep -c '<testcase' "$f")"
             done
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          count=$(find . -path '*/build/test-results/test/*.xml' -exec grep -h -o '<testcase' {} + | wc -l)
-          echo "total testcases: $count"
-          test "$count" -ge 1 || { echo "::error::zero unit tests executed — they are silently skipped"; exit 1; }
+          failed=0
+          for dir in buildSrc platform tools/validator tools/datagen; do
+            n=$(grep -h -o '<testcase' "./$dir/build/test-results/test"/*.xml 2>/dev/null | wc -l)
+            echo "$dir: $n testcases"
+            if [ "$n" -lt 1 ]; then
+              echo "::error::$dir ran 0 unit tests (skipped? missing junit engine?)"
+              failed=1
+            fi
+          done
+          exit $failed
 
       # Gates not yet lit — each lights up with its own ticket, never with a stub that
       # reports success without checking anything (docs/06 §4: an unverified pass is a fail).
