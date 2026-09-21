@@ -27,7 +27,7 @@ Minecraft 1.21.1 / NeoForge 修仙 MOD。**唯一参照是 [`docs/`](docs/README
 | Java 包根 | `com.strife.*`（platform 用 `com.strife.<模块>`，工具用 `com.strife.tools.*`，buildSrc 用 `com.strife.conventions`） |
 | 内容 ID | `<域>_<章>_<语义>` 全小写下划线（docs/04 §4） |
 | 发布物 | `strife-X.Y.Z.jar`；展示名「玄黄劫争 / Primordial Strife」 |
-| 分支 / 提交 | `agent/<任务号>-<slug>`；Conventional Commits |
+| 分支 / 提交 | Conventional Commits。日常集成推 `leyon`；`leyon` → `main` 仅在负责人批准后合入（docs/02 §5） |
 
 ## 上手
 

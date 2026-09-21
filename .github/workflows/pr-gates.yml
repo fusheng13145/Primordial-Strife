@@ -3,7 +3,9 @@ name: PR gates (docs/04 §8)
 on:
   pull_request:
   push:
-    branches: [main]
+    # `leyon` 是日常集成分支：单测只能在此与 main 上执行（docs/02 §4），
+    # 不列入触发分支就等于让合入 main 前的代码从没被测过。
+    branches: [main, leyon]
 
 permissions:
   contents: read
