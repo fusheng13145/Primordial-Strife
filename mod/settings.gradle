@@ -1,0 +1,28 @@
+pluginManagement {
+    plugins {
+        // Plugin versions live here (dependency versions live in gradle.properties, docs/02 §2).
+        id 'com.diffplug.spotless' version '8.10.2'
+        id 'net.neoforged.moddev' version '2.0.147'
+    }
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'strife'
+
+include 'platform'
+include 'content-base'
+include 'tools:datagen'
+include 'tools:validator'

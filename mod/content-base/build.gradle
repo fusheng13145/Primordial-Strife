@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+    id 'strife.conventions'
+}
+
+// content-base is a pure resources module: docs/02 §3 forbids src/main/java here.
+// The buildSrc checkImports task asserts that on every CI run.
+sourceSets {
+    main {
+        java.srcDirs = []
+    }
+}
+
+jar {
+    archiveBaseName = 'content-base'
+}

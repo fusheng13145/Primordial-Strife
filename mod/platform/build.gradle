@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+    id 'strife.conventions'
+    id 'net.neoforged.moddev'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+neoForge {
+    version = providers.gradleProperty('neoforge_version').get()
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+        }
+        data {
+            data()
+        }
+    }
+
+    mods {
+        strife {
+            sourceSet sourceSets.main
+        }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods.strife
+    }
+}
+
+dependencies {
+    testImplementation "org.junit.jupiter:junit-jupiter:${providers.gradleProperty('junit_version').get()}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    archiveBaseName = providers.gradleProperty('mod_id')
+}
+
+processResources {
+    inputs.properties(
+            mod_version: providers.gradleProperty('mod_version').get(),
+            mod_id: providers.gradleProperty('mod_id').get(),
+            mod_display_name: providers.gradleProperty('mod_display_name').get(),
+            mod_description: providers.gradleProperty('mod_description').get(),
+            minecraft_version: providers.gradleProperty('minecraft_version').get(),
+            neoforge_loader_range: providers.gradleProperty('neoforge_loader_range').get(),
+            neoforge_version: providers.gradleProperty('neoforge_version').get(),
+            java_version: providers.gradleProperty('java_version').get())
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand(inputs.properties)
+    }
+}

@@ -1,0 +1,26 @@
+plugins {
+    id 'java-gradle-plugin'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.diffplug.spotless:spotless-plugin-gradle:8.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+gradlePlugin {
+    plugins {
+        conventions {
+            id = 'strife.conventions'
+            implementationClass = 'strife.build.ConventionsPlugin'
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

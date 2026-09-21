@@ -1,0 +1,16 @@
+# Line endings: the repository stores LF (matches .editorconfig end_of_line=lf),
+# so `mod/gradlew` keeps a working shebang after checkout on any OS.
+* text=auto
+*.gradle text eol=lf
+*.java text eol=lf
+*.properties text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.png binary

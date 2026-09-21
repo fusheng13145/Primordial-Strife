@@ -1,0 +1,50 @@
+name: PR gates (docs/04 §8)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Spotless check (docs/02 §5)
+        working-directory: mod
+        run: ./gradlew spotlessCheck --no-daemon
+
+      # `build` runs `check`, which `strife.conventions` wires to include `checkImports`
+      # (docs/03 §2 module dependency chain) and the unit tests.
+      - name: Build + unit tests + module dependency assertions
+        working-directory: mod
+        run: ./gradlew build --no-daemon
+
+      - name: DataGen freshness (docs/04 §5 / §6 "产物新鲜")
+        working-directory: mod
+        run: |
+          ./gradlew :tools:datagen:run --no-daemon
+          git -C .. diff --exit-code -- mod/content-base \
+            || { echo "::error::generated content is stale — run ./gradlew :tools:datagen:run and commit the output"; exit 1; }
+
+      - name: Content validator (docs/04 §6)
+        working-directory: mod
+        run: ./gradlew validator --no-daemon
+
+      # Gates not yet lit — each lights up with its own ticket, never with a stub that
+      # reports success without checking anything (docs/06 §4: an unverified pass is a fail).
+      # - Attachment memory snapshot <=2KB (docs/03 §3)      -> A0-3
+      # - runServer headless smoke, clean jar 60s (docs/07)  -> A0-8
+      # - zh_cn key full coverage (docs/04 §4)               -> C1-1
+      # Nightly (docs/04 §8): tick 采样 / 灵气场 chunk 生成耗时 / 丹方蒙特卡洛 10 万 / 2h 长跑 -> M2+

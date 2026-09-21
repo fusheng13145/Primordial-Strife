@@ -1,0 +1,25 @@
+# CODEOWNERS — 投影自 docs/07 §1 分工与 docs/06 §1 权限分区。
+# 占位 GitHub handle 待填（未验证项：成员实际账号），填错会导致 Review 漏人。
+
+# 禁区：core / realm 逻辑唯一写权与合并权 = A（TL）
+/mod/platform/src/main/java/com/strife/core/   @strife/OWNER-A
+/mod/platform/src/main/java/com/strife/realm/  @strife/OWNER-A
+/mod/buildSrc/                                  @strife/OWNER-A
+
+# 灰区：combat / production / quest / world = B（DEV）逐行 Review
+/mod/platform/src/main/java/com/strife/combat/      @strife/OWNER-B
+/mod/platform/src/main/java/com/strife/production/  @strife/OWNER-B
+/mod/platform/src/main/java/com/strife/quest/       @strife/OWNER-B
+/mod/platform/src/main/java/com/strife/world/       @strife/OWNER-B
+/mod/platform/src/main/java/com/strife/client_fx/   @strife/OWNER-B
+
+# 真相源：数值/字段/剧情只能经 C（DES）确认；破档级需 A 双确认
+/content/               @strife/OWNER-C
+/docs/08-*.md           @strife/OWNER-A
+/docs/                  @strife/OWNER-C
+
+# 开区：内容管线与工具
+/content-base/          @strife/OWNER-C
+/tables/                @strife/OWNER-C
+/mod/tools/             @strife/OWNER-B
+/.github/               @strife/OWNER-A

@@ -1,0 +1,10 @@
+plugins {
+    id 'base'
+}
+
+// Aggregate alias so the 06-fen-ce hand-off command `./gradlew validator` works from mod/.
+tasks.register('validator') {
+    group = 'verification'
+    description = 'Runs the content validator (:tools:validator:run).'
+    dependsOn ':tools:validator:run'
+}

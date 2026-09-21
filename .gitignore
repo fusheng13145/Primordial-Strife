@@ -1,0 +1,24 @@
+# Gradle outputs (anchored: `strife/build` is a Java package dir, must stay tracked)
+.gradle/
+/mod/build/
+/mod/*/build/
+/mod/*/*/build/
+out/
+/mod/*/run/
+/mod/*/run*/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# local scratch
+*.log
