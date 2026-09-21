@@ -1,0 +1,34 @@
+plugins {
+    id 'application'
+    id 'strife.conventions'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    mainClass = 'strife.tools.validator.ValidatorMain'
+}
+
+dependencies {
+    implementation 'com.google.code.gson:gson:2.11.0'
+    testImplementation "org.junit.jupiter:junit-jupiter:${providers.gradleProperty('junit_version').get()}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+def repoRoot = rootProject.projectDir.parentFile
+
+run {
+    workingDir = repoRoot
+    args = ['--data-root', project(':content-base').file('src/main/resources/data').toString()]
+    // CI reports must show the validator summary without --info.
+    logging.captureStandardOutput(LogLevel.LIFECYCLE)
+    logging.captureStandardError(LogLevel.LIFECYCLE)
+}
