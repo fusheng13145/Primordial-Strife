@@ -36,7 +36,7 @@ Minecraft 1.21.1 / NeoForge 修仙 MOD。**唯一参照是 [`docs/`](docs/README
 ```bash
 cd mod
 ./gradlew spotlessCheck        # 格式
-./gradlew build                # 编译 + 单测 + 包依赖断言
+./gradlew build                # 编译 + 单测 + 包依赖断言（单测能否本地运行见下）
 ./gradlew validator            # 内容校验（= :tools:validator:run）
 ./gradlew :tools:datagen:run   # 表 → content-base JSON
 ./gradlew :platform:runServer  # 需自备 run/server/eula.txt，见 docs/02 §4
