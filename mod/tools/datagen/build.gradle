@@ -10,7 +10,7 @@ java {
 }
 
 application {
-    mainClass = 'strife.tools.datagen.DataGenMain'
+    mainClass = 'com.strife.tools.datagen.DataGenMain'
 }
 
 dependencies {
@@ -29,6 +29,6 @@ run {
     args = [
             '--tables-root',
             file("${repoRoot}/tables").toString(),
-            '--module-root',
+            '--resources-root',
             project(':content-base').file('src/main/resources').toString()]
 }

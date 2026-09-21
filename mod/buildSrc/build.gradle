@@ -16,7 +16,7 @@ gradlePlugin {
     plugins {
         conventions {
             id = 'strife.conventions'
-            implementationClass = 'strife.build.ConventionsPlugin'
+            implementationClass = 'com.strife.conventions.ConventionsPlugin'
         }
     }
 }

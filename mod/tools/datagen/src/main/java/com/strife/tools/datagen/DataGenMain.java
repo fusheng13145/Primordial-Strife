@@ -1,4 +1,4 @@
-package strife.tools.datagen;
+package com.strife.tools.datagen;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,31 +15,31 @@ import java.util.List;
  */
 public final class DataGenMain {
 
-    public record Options(Path tablesRoot, Path moduleRoot) {}
+    public record Options(Path tablesRoot, Path resourcesRoot) {}
 
     public static void main(String[] args) {
         Options options = parse(args);
         List<Path> tables = listCsv(options.tablesRoot());
         System.out.printf(
-                "datagen: tables-root=%s module-root=%s csv-found=%d generators=0%n",
-                options.tablesRoot(), options.moduleRoot(), tables.size());
+                "datagen: tables-root=%s resources-root=%s csv-found=%d generators=0%n",
+                options.tablesRoot(), options.resourcesRoot(), tables.size());
     }
 
     static Options parse(String[] args) {
         String tables = null;
-        String module = null;
+        String resources = null;
         for (int i = 0; i < args.length - 1; i++) {
             switch (args[i]) {
                 case "--tables-root" -> tables = args[++i];
-                case "--module-root" -> module = args[++i];
+                case "--resources-root" -> resources = args[++i];
                 default -> {}
             }
         }
-        if (tables == null || module == null) {
+        if (tables == null || resources == null) {
             throw new IllegalArgumentException(
-                    "usage: datagen --tables-root <dir> --module-root <dir>");
+                    "usage: datagen --tables-root <dir> --resources-root <dir>");
         }
-        return new Options(Path.of(tables), Path.of(module));
+        return new Options(Path.of(tables), Path.of(resources));
     }
 
     static List<Path> listCsv(Path tablesRoot) {

@@ -1,8 +1,7 @@
-package strife.build;
+package com.strife.conventions;
 
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.gradle.api.DefaultTask;
@@ -43,10 +42,9 @@ public class ConventionsPlugin implements Plugin<Project> {
                     task.setGroup("verification");
                     task.setDescription("Enforces docs/03 §2 package dependency rules on com.strife.* sources.");
                     task.doLast((Task t) -> {
+                        // No short-circuit on a missing src/main/java: checkSourceTree distinguishes
+                        // "module has no code" from "code-free module grew code" (docs/02 §3).
                         Path srcRoot = project.getProjectDir().toPath().resolve("src/main/java");
-                        if (!Files.isDirectory(srcRoot)) {
-                            return;
-                        }
                         List<String> violations =
                                 ModuleDependencyRules.checkSourceTree(project.getName(), srcRoot);
                         violations.forEach(v -> t.getLogger().error("dependency rule violation: {}", v));

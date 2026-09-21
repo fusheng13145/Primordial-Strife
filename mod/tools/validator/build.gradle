@@ -10,7 +10,7 @@ java {
 }
 
 application {
-    mainClass = 'strife.tools.validator.ValidatorMain'
+    mainClass = 'com.strife.tools.validator.ValidatorMain'
 }
 
 dependencies {

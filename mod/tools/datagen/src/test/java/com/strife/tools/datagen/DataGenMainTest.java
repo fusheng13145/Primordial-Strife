@@ -1,4 +1,4 @@
-package strife.tools.datagen;
+package com.strife.tools.datagen;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,12 +20,12 @@ class DataGenMainTest {
                         new String[] {
                             "--tables-root",
                             "tables",
-                            "--module-root",
+                            "--resources-root",
                             "content-base/src/main/resources"
                         });
 
         assertEquals(Path.of("tables"), options.tablesRoot());
-        assertEquals(Path.of("content-base/src/main/resources"), options.moduleRoot());
+        assertEquals(Path.of("content-base/src/main/resources"), options.resourcesRoot());
     }
 
     @Test

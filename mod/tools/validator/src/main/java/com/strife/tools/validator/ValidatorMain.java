@@ -1,4 +1,4 @@
-package strife.tools.validator;
+package com.strife.tools.validator;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

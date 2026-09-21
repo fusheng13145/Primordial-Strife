@@ -1,4 +1,5 @@
-# Gradle outputs (anchored: `strife/build` is a Java package dir, must stay tracked)
+# Gradle outputs — anchored patterns so no source path can match
+# (java package roots are com/strife/..., see ADR-017; never a bare "build" dir under src/)
 .gradle/
 /mod/build/
 /mod/*/build/

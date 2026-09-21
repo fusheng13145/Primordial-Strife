@@ -1,4 +1,4 @@
-package strife.tools.validator;
+package com.strife.tools.validator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

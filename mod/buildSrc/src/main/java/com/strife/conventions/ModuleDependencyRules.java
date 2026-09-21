@@ -1,4 +1,4 @@
-package strife.build;
+package com.strife.conventions;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,22 +43,27 @@ public final class ModuleDependencyRules {
     /** Returns one violation string per illegal import ("file:line import -> module (allowed: ...)"). */
     public static List<String> checkSourceTree(String moduleName, Path javaSourceRoot) {
         List<String> violations = new ArrayList<>();
+        // Runs before the directory-exists short-circuit: in content-base the absence of compiled
+        // sources is a build config (java.srcDirs = []), not proof that no .java file was added.
+        if ("content-base".equals(moduleName) && Files.exists(javaSourceRoot)) {
+            violations.add("content-base must stay code-free (docs/02 §3): found " + javaSourceRoot);
+        }
+        if (!Files.isDirectory(javaSourceRoot)) {
+            return violations;
+        }
         try (Stream<Path> files = Files.walk(javaSourceRoot)) {
             files.filter(p -> p.toString().endsWith(".java")).forEach(p -> checkFile(javaSourceRoot, p, violations));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-        if ("content-base".equals(moduleName)) {
-            Path javaDir = javaSourceRoot.resolve("com");
-            if (Files.exists(javaDir)) {
-                violations.add("content-base must stay code-free (docs/02 §3): found " + javaDir);
-            }
         }
         return violations;
     }
 
     private static void checkFile(Path root, Path file, List<String> violations) {
         String sourcePackage = packageNameOf(root, file);
+        // PACKAGES is the platform module set (docs/03 §2). Tools and buildSrc live under
+        // com.strife.tools / com.strife.conventions and are out of scope by design — a module
+        // without rules passes quietly, it does not get a free pass on a package it belongs to.
         if (sourcePackage == null || !PACKAGES.contains(sourcePackage)) {
             return;
         }

@@ -1,4 +1,4 @@
-package strife.build;
+package com.strife.conventions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -62,13 +62,24 @@ class ModuleDependencyRulesTest {
     }
 
     @Test
-    void forbidsJavaCodeInContentBase(@TempDir Path srcRoot) throws IOException {
-        writeJava(srcRoot.resolve("com/strife/content/Leak.java"), "package com.strife.content;", "public class Leak {}");
+    void forbidsJavaCodeInContentBase(@TempDir Path projectDir) throws IOException {
+        Path srcRoot = projectDir.resolve("src/main/java");
+        Files.createDirectories(srcRoot);
+        Files.writeString(srcRoot.resolve("Leak.java"), "package com.strife.content;\n");
 
         List<String> violations = ModuleDependencyRules.checkSourceTree("content-base", srcRoot);
 
         assertEquals(1, violations.size(), violations.toString());
         assertTrue(violations.get(0).contains("content-base must stay code-free"), violations.get(0));
+    }
+
+    @Test
+    void contentBaseWithoutAnyJavaSourceRootIsQuiet(@TempDir Path projectDir) {
+        // The gate must not turn into a false positive for the legitimate empty module.
+        List<String> violations = ModuleDependencyRules.checkSourceTree(
+                "content-base", projectDir.resolve("src/main/java"));
+
+        assertEquals(List.of(), violations);
     }
 
     @Test
