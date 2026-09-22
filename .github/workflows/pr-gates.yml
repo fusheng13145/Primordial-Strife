@@ -89,6 +89,51 @@ jobs:
 
       # Gates not yet lit — each lights up with its own ticket, never with a stub that
       # reports success without checking anything (docs/06 §4: an unverified pass is a fail).
-      # - runServer headless smoke, clean jar 60s (docs/07)  -> A0-8
       # - zh_cn key full coverage (docs/04 §4)               -> C1-1
+      # - content-base-X.Y.Z.zip 导出（docs/04 §9 热更通道）  -> 待立工单
       # Nightly (docs/04 §8): tick 采样 / 灵气场 chunk 生成耗时 / 丹方蒙特卡洛 10 万 / 2h 长跑 -> M2+
+
+  # docs/03 §7: "M0 起每个里程碑 CI 必须执行'纯净 jar 独立启动冒烟'（headless 开服 60s 无异常）".
+  # All assertions live in .github/scripts/server-smoke.sh — the same file the Windows box runs,
+  # so the gate is never "a shell block CI ran once and nobody read".
+  server-smoke:
+    name: 纯净服务端 jar headless 冒烟 (docs/03 §7, A0-8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Build the dedicated-server artifact
+        working-directory: mod
+        run: ./gradlew :platform:serverJar --no-daemon
+
+      - name: Install a clean NeoForge dedicated server
+        run: |
+          set -euo pipefail
+          nv=$(grep '^neoforge_version=' mod/gradle.properties | cut -d= -f2)
+          work="$RUNNER_TEMP/strife-server-smoke"
+          rm -rf "$work"
+          mkdir -p "$work"
+          curl -fsSLo "$work/installer.jar" \
+            "https://maven.neoforged.net/releases/net/neoforged/neoforge/$nv/neoforge-$nv-installer.jar"
+          (cd "$work" && java -jar installer.jar --installServer > install.log 2>&1)
+          test -f "$work/run.sh"
+
+      - name: Boot it headless with only the strife server jar, 60s
+        run: |
+          set -euo pipefail
+          SMOKE_JAR="$(realpath mod/platform/build/libs/strife-server-*.jar)" \
+            bash .github/scripts/server-smoke.sh "$RUNNER_TEMP/strife-server-smoke" ./run.sh
+
+      - name: Upload the server log (evidence, not just a red/green badge)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-smoke-log
+          path: ${{ runner.temp }}/strife-server-smoke/server.log

@@ -68,6 +68,22 @@ jar {
     archiveBaseName = providers.gradleProperty('mod_id')
 }
 
+// docs/03 §7 纯净服务端 jar (A0-8). The exclusion patterns are deliberately in place before the
+// first client-only class exists, so client_fx gets stripped by default rather than by someone
+// remembering to add a filter later. They match nothing today: the platform module only has
+// com.strife.core, and the 分侧 ModEntrypoint half of 03 §7 is core work (docs/06 禁区) that
+// needs no build-side change until client_fx lands — verified by the CI headless smoke, which
+// boots this artifact on a dedicated server (log line: "Service=ModLauncher Env=SERVER").
+tasks.register('serverJar', Jar) {
+    group = 'build'
+    description = 'Dedicated-server artifact: platform output with client-only packages excluded (docs/03 §7).'
+    archiveBaseName = "${providers.gradleProperty('mod_id').get()}-server"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from sourceSets.main.output
+    exclude 'com/strife/client_fx/**'
+    exclude 'assets/strife/client_fx/**'
+}
+
 processResources {
     inputs.properties(
             mod_version: providers.gradleProperty('mod_version').get(),
@@ -89,9 +105,12 @@ processResources {
 // has no content in it. This asserts the last mile instead of assuming it.
 tasks.register('checkContentBundled') {
     group = 'verification'
-    description = 'Fails if a content-base resource is absent from the platform jar (docs/04 §1, §8).'
-    def jarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
-    dependsOn jarFile
+    description = 'Fails if a content-base resource is absent from a shipped platform jar (docs/04 §1, §8).'
+    def artifacts = [
+            jar      : tasks.named('jar', Jar).flatMap { it.archiveFile },
+            serverJar: tasks.named('serverJar', Jar).flatMap { it.archiveFile }
+    ]
+    dependsOn artifacts.values()
     doLast {
         def onDisk = new TreeSet<String>()
         if (contentResources.exists()) {
@@ -101,18 +120,20 @@ tasks.register('checkContentBundled') {
                 }
             }
         }
-        def inJar = new HashSet<String>()
-        new ZipFile(jarFile.get().asFile).withCloseable { zip ->
-            zip.entries().each { inJar << it.name }
+        artifacts.each { name, provider ->
+            def inJar = new HashSet<String>()
+            new ZipFile(provider.get().asFile).withCloseable { zip ->
+                zip.entries().each { inJar << it.name }
+            }
+            def missing = onDisk.findAll { !inJar.contains(it) }
+            if (!missing.isEmpty()) {
+                throw new GradleException(
+                        ":platform:${name} does not ship generated content: " + missing +
+                        " — content-base is not wired into sourceSets.main.resources (docs/04 §1) " +
+                        "or the jar task filters it out")
+            }
         }
-        def missing = onDisk.findAll { !inJar.contains(it) }
-        if (!missing.isEmpty()) {
-            throw new GradleException(
-                    "platform jar does not ship generated content: " + missing +
-                    " — content-base is not wired into sourceSets.main.resources (docs/04 §1) " +
-                    "or the jar task filters it out")
-        }
-        logger.lifecycle("checkContentBundled: ${onDisk.size()} content file(s) present in the platform jar")
+        logger.lifecycle("checkContentBundled: ${onDisk.size()} content file(s) present in jar and serverJar")
     }
 }
 

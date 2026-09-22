@@ -43,7 +43,7 @@ cd mod
 ./gradlew :platform:runClient  # 载入判据三行见 docs/02 §4
 ```
 
-**只想进游戏看看（不改代码）**：不必用 Gradle。`./gradlew :platform:build` 产出 `mod/platform/build/libs/strife-0.0.1.jar`，把它丢进一个 **NeoForge 1.21.1** 实例的 `mods/`，用官方启动器 / PCL2 / HMCL 启动即可（注意选 NeoForge，不是 Forge）。开发与正式启动两条路径的差别见 docs/02 §4.1。目前 content-base 还没有生成物、`:platform:serverJar` 未实现，进去只有 `/strife info` 一条命令。
+**只想进游戏看看（不改代码）**：不必用 Gradle。`./gradlew :platform:build` 产出 `mod/platform/build/libs/strife-0.0.1.jar`，把它丢进一个 **NeoForge 1.21.1** 实例的 `mods/`，用官方启动器 / PCL2 / HMCL 启动即可（注意选 NeoForge，不是 Forge）。开发与正式启动两条路径的差别见 docs/02 §4.1。目前 content-base 还没有生成物（只有 `factions.csv` 接了生成器、表内 0 行），进去只有 `/strife info` 一条命令。服务端专用制品走 `./gradlew :platform:serverJar`（见 docs/02 §4）。
 
 **Windows 本机 `test` 不可运行**（GBK + 非 ASCII 路径的 Gradle 已知缺陷，机制与禁令见 docs/02 §4）：单测由 CI（ubuntu）执行，本地验证以 `build -x test` + headless 冒烟为准，**不得用 `jvmArgs`/`systemProperty`/跳过测试掩盖**。
 
