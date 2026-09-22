@@ -30,6 +30,7 @@ class FactionGeneratorTest {
             lines.add(String.join(",", cells));
         }
         Path csv = dir.resolve("factions.csv");
+        Files.createDirectories(dir);
         Files.write(csv, lines);
         return TableSource.read(csv);
     }
