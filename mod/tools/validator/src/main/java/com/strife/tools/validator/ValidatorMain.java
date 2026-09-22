@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,9 +20,10 @@ import java.util.Map;
  * Build-time content validator (docs/04 §6). Runs on plain JVM, never launches Minecraft.
  *
  * <p>Implemented so far: V-DUP (global ID uniqueness, checked on both generated content and the
- * source tables) and V-FRESH (the {@code @generated} header must name a table that still exists).
- * Reference existence, DAG connectivity, probability normalisation, NUMBERS range checks and DSL
- * legality are tracked by later tickets and register here as {@link Check} implementations.
+ * source tables) and V-FRESH (the {@code @generated} header must name an existing table whose
+ * current hash it carries). Reference existence, DAG connectivity, probability normalisation,
+ * NUMBERS range checks and DSL legality are tracked by later tickets and register here as {@link
+ * Check} implementations.
  */
 public final class ValidatorMain {
 
@@ -38,12 +42,26 @@ public final class ValidatorMain {
     record Options(Path dataRoot, Path tablesRoot) {}
 
     /**
+     * Where an ID was declared: the table it came from plus a human-addressable location.
+     *
+     * @param origin the source table for generated content, or the file itself when a product has
+     *     no {@code @generated} header (i.e. it was hand-edited, which 04 §1 forbids)
+     * @param row true for a source table row, false for a generated product
+     */
+    private record Declaration(String origin, String location, boolean row) {}
+
+    /**
      * Content IDs are unique across every domain (docs/04 §6 "重复 ID｜全域唯一"), because lang keys map
      * one-to-one onto them (04 §4) and a second meaning for the same key would silently win by load
      * order.
+     *
+     * <p>Rows and the products generated from them describe one declaration each, so duplicates are
+     * counted per origin rather than per raw occurrence — otherwise a successful DataGen run would
+     * make every generated file collide with its own source row, and the gate could never go green
+     * once real content lands.
      */
     public static List<String> duplicateIds(Options options) {
-        Map<String, List<String>> seen = new LinkedHashMap<>();
+        Map<String, List<Declaration>> seen = new LinkedHashMap<>();
         for (Path file : jsonFiles(options.dataRoot())) {
             JsonElement root = parse(file);
             if (!root.isJsonObject()) {
@@ -54,29 +72,104 @@ public final class ValidatorMain {
                 continue;
             }
             seen.computeIfAbsent(object.get("id").getAsString(), k -> new ArrayList<>())
-                    .add(file.toString());
+                    .add(new Declaration(originOf(object, file), file.toString(), false));
         }
         List<String> problems = new ArrayList<>(tableIds(options.tablesRoot(), seen));
         seen.forEach(
-                (id, files) -> {
-                    if (files.size() > 1) {
+                (id, declarations) -> {
+                    problems.addAll(crossOriginClashes(id, declarations));
+                    problems.addAll(withinOneOrigin(id, declarations));
+                });
+        return problems;
+    }
+
+    private static List<String> crossOriginClashes(String id, List<Declaration> declarations) {
+        Map<String, List<String>> byOrigin = new LinkedHashMap<>();
+        declarations.forEach(
+                d ->
+                        byOrigin.computeIfAbsent(d.origin(), k -> new ArrayList<>())
+                                .add(d.location()));
+        if (byOrigin.size() < 2) {
+            return List.of();
+        }
+        StringBuilder where = new StringBuilder();
+        byOrigin.forEach(
+                (origin, locations) ->
+                        where.append(where.isEmpty() ? "" : " vs ")
+                                .append(origin)
+                                .append(" ")
+                                .append(locations));
+        return List.of(
+                "duplicate id '"
+                        + id
+                        + "' declared by "
+                        + byOrigin.size()
+                        + " independent sources: "
+                        + where);
+    }
+
+    /** One row may generate exactly one product; anything beyond that is a second declaration. */
+    private static List<String> withinOneOrigin(String id, List<Declaration> declarations) {
+        Map<String, List<Declaration>> byOrigin = new LinkedHashMap<>();
+        declarations.forEach(
+                d -> byOrigin.computeIfAbsent(d.origin(), k -> new ArrayList<>()).add(d));
+        List<String> problems = new ArrayList<>();
+        byOrigin.forEach(
+                (origin, group) -> {
+                    List<String> rows =
+                            group.stream()
+                                    .filter(Declaration::row)
+                                    .map(Declaration::location)
+                                    .toList();
+                    List<String> products =
+                            group.stream()
+                                    .filter(d -> !d.row())
+                                    .map(Declaration::location)
+                                    .toList();
+                    if (rows.size() > 1) {
                         problems.add(
                                 "duplicate id '"
                                         + id
                                         + "' declared "
-                                        + files.size()
-                                        + " times at "
-                                        + files);
+                                        + rows.size()
+                                        + " times within "
+                                        + origin
+                                        + " at "
+                                        + rows);
+                    }
+                    if (products.size() > Math.max(rows.size(), 1)) {
+                        problems.add(
+                                "duplicate id '"
+                                        + id
+                                        + "' has "
+                                        + products.size()
+                                        + " generated files for "
+                                        + rows.size()
+                                        + " source row(s) in "
+                                        + origin
+                                        + " at "
+                                        + products
+                                        + " — a product was hand-copied, or the table row is gone"
+                                        + " (04 §1: 产物永远不被手工编辑)");
                     }
                 });
         return problems;
+    }
+
+    private static String originOf(JsonObject object, Path file) {
+        if (!object.has("@generated") || !object.get("@generated").isJsonPrimitive()) {
+            return file.toString();
+        }
+        String header = object.get("@generated").getAsString();
+        int from = header.indexOf("tables/");
+        return from < 0 ? file.toString() : header.substring(from).split(" ")[0];
     }
 
     /**
      * Source tables are read here because DataGen products may be absent (a missing generated file
      * must never turn V-DUP green while the table it comes from already collides).
      */
-    private static List<String> tableIds(Path tablesRoot, Map<String, List<String>> seen) {
+    private static List<String> tableIds(Path tablesRoot, Map<String, List<Declaration>> seen) {
         List<String> problems = new ArrayList<>();
         if (tablesRoot == null) {
             return problems;
@@ -113,12 +206,17 @@ public final class ValidatorMain {
                     continue;
                 }
                 seen.computeIfAbsent(cells.get(0), k -> new ArrayList<>())
-                        .add(table + ":" + (row + 1));
+                        .add(new Declaration("tables/" + fileName, table + ":" + (row + 1), true));
             }
         }
         return problems;
     }
 
+    /**
+     * V-FRESH (docs/04 §6 "产物新鲜"): every product must name a source table that still exists and
+     * carry that table's current hash, so an edited table with an uncommitted regeneration cannot
+     * pass.
+     */
     public static List<String> staleGeneratedHeaders(Options options) {
         if (options.tablesRoot() == null) {
             return List.of();
@@ -140,12 +238,40 @@ public final class ValidatorMain {
                 continue;
             }
             String source = header.substring(from + "tables/".length()).split(" ")[0];
-            if (!Files.isRegularFile(options.tablesRoot().resolve(source))) {
+            Path table = options.tablesRoot().resolve(source);
+            if (!Files.isRegularFile(table)) {
                 problems.add(
                         file
                                 + ": @generated names tables/"
                                 + source
                                 + ", which no longer exists — rerun DataGen (docs/04 §6 产物新鲜)");
+                continue;
+            }
+            int marker = header.indexOf("sha256:");
+            if (marker < 0) {
+                problems.add(
+                        file
+                                + ": @generated names tables/"
+                                + source
+                                + " but carries no source hash, so freshness cannot be checked"
+                                + " (docs/04 §5 requires it): '"
+                                + header
+                                + "'");
+                continue;
+            }
+            String claimed = header.substring(marker + "sha256:".length()).trim();
+            String actual = hashOf(table);
+            if (!claimed.equals(actual)) {
+                problems.add(
+                        file
+                                + ": @generated claims sha256:"
+                                + claimed
+                                + " but tables/"
+                                + source
+                                + " is now sha256:"
+                                + actual
+                                + " — the table changed without regenerating (docs/04 §1:"
+                                + " 产物永远不被手工编辑)");
             }
         }
         return problems;
@@ -209,6 +335,22 @@ public final class ValidatorMain {
             cells.add(cell.trim());
         }
         return cells;
+    }
+
+    /**
+     * Recomputed here rather than imported from :tools:datagen, because the validator has to be
+     * able to audit a content zip on its own — trusting the generator's own digest code would make
+     * the check circular. Same algorithm, one field, deliberately duplicated.
+     */
+    private static String hashOf(Path file) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(Files.readAllBytes(file)));
+        } catch (IOException e) {
+            throw new UncheckedIOException("cannot hash table " + file, e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 missing from this JVM", e);
+        }
     }
 
     private static List<String> readLines(Path file) {

@@ -97,6 +97,58 @@ class ValidatorMainTest {
                 1, ValidatorMain.duplicateIds(withTables(root.resolve("data"), tables)).size());
     }
 
+    /**
+     * DataGen writes a product for every row, so the ID legitimately appears in both places.
+     * Counting raw occurrences would make a successful generation fail its own gate.
+     */
+    @Test
+    void aProductAndTheRowItWasGeneratedFromAreOneDeclaration(@TempDir Path root)
+            throws IOException {
+        Path tables = root.resolve("tables");
+        write(tables.resolve("factions.csv"), "id,_note\nfac_qingshi,\n");
+        write(
+                root.resolve("data/strife/strife_factions/fac_qingshi.json"),
+                "{\"@generated\":\"from tables/factions.csv @ sha256:aa\",\"id\":\"fac_qingshi\"}");
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.duplicateIds(withTables(root.resolve("data"), tables)),
+                "generated content must not collide with its own source row");
+    }
+
+    @Test
+    void flagsGeneratedProductClaimingADifferentSourceTable(@TempDir Path root) throws IOException {
+        Path tables = root.resolve("tables");
+        write(tables.resolve("spells.csv"), "id,_note\nspell_linghua,\n");
+        write(
+                root.resolve("data/strife/strife_techniques/x.json"),
+                "{\"@generated\":\"from tables/techniques.csv @ sha256:aa\",\"id\":\"spell_linghua\"}");
+
+        List<String> problems =
+                ValidatorMain.duplicateIds(withTables(root.resolve("data"), tables));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("independent sources"), problems.get(0));
+    }
+
+    @Test
+    void flagsTwoGeneratedProductsForASingleRow(@TempDir Path root) throws IOException {
+        Path tables = root.resolve("tables");
+        write(tables.resolve("factions.csv"), "id,_note\nfac_qingshi,\n");
+        write(
+                root.resolve("data/strife/strife_factions/fac_qingshi.json"),
+                "{\"@generated\":\"from tables/factions.csv @ sha256:aa\",\"id\":\"fac_qingshi\"}");
+        write(
+                root.resolve("data/strife/strife_factions/fac_qingshi_copy.json"),
+                "{\"@generated\":\"from tables/factions.csv @ sha256:aa\",\"id\":\"fac_qingshi\"}");
+
+        List<String> problems =
+                ValidatorMain.duplicateIds(withTables(root.resolve("data"), tables));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("generated files for 1 source row"), problems.get(0));
+    }
+
     @Test
     void emptyTablesAreLegalButTheirHeaderIsNot(@TempDir Path root) throws IOException {
         Path tables = root.resolve("tables");
@@ -140,16 +192,64 @@ class ValidatorMainTest {
     }
 
     @Test
-    void acceptsHeaderNamingAnExistingTable(@TempDir Path root) throws IOException {
-        Path tables = root.resolve("tables");
-        write(tables.resolve("pills.csv"), "id,_note\n");
+    void acceptsAHeaderWhoseHashMatchesTheTable(@TempDir Path root) throws IOException {
+        Path table = root.resolve("tables/pills.csv");
+        write(table, "id,_note\n");
         write(
                 root.resolve("data/strife/strife_pills/pill_juqi.json"),
-                "{\"@generated\":\"from tables/pills.csv @ sha256:1f3a\",\"id\":\"pill_juqi\"}");
+                product("from tables/pills.csv @ sha256:" + sha256(table)));
 
         assertEquals(
                 List.of(),
-                ValidatorMain.staleGeneratedHeaders(withTables(root.resolve("data"), tables)));
+                ValidatorMain.staleGeneratedHeaders(
+                        withTables(root.resolve("data"), root.resolve("tables"))));
+    }
+
+    /** The half of V-FRESH that catches an edited table with a stale, already-committed product. */
+    @Test
+    void flagsAProductWhoseSourceTableWasEdited(@TempDir Path root) throws IOException {
+        Path table = root.resolve("tables/pills.csv");
+        write(table, "id,price\npill_juqi,\n");
+        write(
+                root.resolve("data/strife/strife_pills/pill_juqi.json"),
+                product("from tables/pills.csv @ sha256:" + "0".repeat(64)));
+
+        List<String> problems =
+                ValidatorMain.staleGeneratedHeaders(
+                        withTables(root.resolve("data"), root.resolve("tables")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("without regenerating"), problems.get(0));
+        assertTrue(problems.get(0).contains("pills.csv"), problems.get(0));
+    }
+
+    @Test
+    void flagsAHeaderThatCarriesNoSourceHash(@TempDir Path root) throws IOException {
+        Path table = root.resolve("tables/pills.csv");
+        write(table, "id,_note\n");
+        write(
+                root.resolve("data/strife/strife_pills/pill_juqi.json"),
+                product("from tables/pills.csv"));
+
+        List<String> problems =
+                ValidatorMain.staleGeneratedHeaders(
+                        withTables(root.resolve("data"), root.resolve("tables")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("no source hash"), problems.get(0));
+    }
+
+    private static String product(String generated) {
+        return "{\"@generated\":\"" + generated + "\",\"id\":\"pill_juqi\"}";
+    }
+
+    private static String sha256(Path file) throws IOException {
+        try {
+            var digest = java.security.MessageDigest.getInstance("SHA-256");
+            return java.util.HexFormat.of().formatHex(digest.digest(Files.readAllBytes(file)));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Test

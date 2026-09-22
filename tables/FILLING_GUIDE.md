@@ -13,14 +13,21 @@
 
 | 环节 | 契约里应该有 | 现在实际有 | 证据 |
 |---|---|---|---|
-| DataGen | 把 CSV 读成 JSON 产物 | **一个生成器都没有**。它只解析命令行参数、数一下 `tables/` 里有几个 csv 文件，然后打印一行报告（输出里的 `generators=0` 就是"生成器 0 个"） | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/DataGenMain.java` |
-| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项**：`V-DUP`（ID 全域唯一，**产物与 `tables/*.csv` 的 `id` 列一起扫**，源表撞车当场红）与 `@generated` 头所指源表的存在性。其余六项（引用/DAG/概率/越界/文本/DSL）与产物哈希比对仍未实现；现在产物目录仍是空的 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
-| 产物 | `data/strife/**.json` + `lang` | 目录还没建立（`mod/content-base/src/main` 目前是空的） | 仓库现状 |
+| DataGen | 把 CSV 读成 JSON 产物 | **读表器与产物写入器已建好，生成器只接了 1 张表**：`factions.csv` → `data/strife/strife_factions/<id>.json`。其余 16 张表仍无生成器 —— 但**只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + `FactionGenerator`） |
+| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项**：`V-DUP`（ID 全域唯一，源表与产物一起扫，**按来源归并**：一行数据与它生成的产物算同一次声明）与 `V-FRESH`（`@generated` 指名的源表必须还在，且哈希必须等于这张表当前的哈希）。其余六项（引用/DAG/概率/越界/文本/DSL）仍未实现 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
+| 产物 | `data/strife/**.json` + `lang` | 目录还没建立：`factions.csv` 现在没有数据行，所以生成 0 个文件。填一行进去、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
 
 所以本期（M0）这些模板的用途是**定契约**：
 
-- 你现在填的每一行，**不会**立刻变成游戏里的功法、丹药或任务。
-- 现在**会**被拦住的只有三样：同一个 `id` 出现两次（跨表也算，包括源表与产物之间）、表头第一列不是 `id`、`--tables-root` 指错目录。填错别的（引用不存在的 ID、概率不为 1、必填列留空）**还不会**报错 —— 检查器还没建起来，契约里那些"留空即构建失败并指出行号"目前仍是**已定未实现**。
+- 你现在填的每一行，**只有 `factions.csv` 会真的生成产物**；别的表填了行，DataGen 会红着告诉你"这张表还没有生成器"，需要开工单接上（`docs/04` §5）。
+- 现在**会**被拦住的：
+  1. 同一个 `id` 出现两次（跨表也算，源表与产物之间按来源归并后再判重）；
+  2. 表头第一列不是 `id`、某一行少了格子（多打/少打逗号）、格子带英文双引号；
+  3. 有数据行但那张表没有生成器；
+  4. 改了源表没重新生成（`V-FRESH` 哈希对不上）；
+  5. `--tables-root` 指错目录；
+  6. 格子里用了**尚未批准的嵌套语法**（`|` 或以 `(` 开头）—— DataGen 明确拒绝猜。
+- 填错别的（引用不存在的 ID、概率不为 1、必填列留空）**还不会**报错 —— 那六项检查器还没建起来，契约里那些"留空即构建失败并指出行号"目前仍是**已定未实现**。
 - 表头（列名、列的多少）就是契约本身。改表头 = 改契约 = 破档风险（`JSON_SCHEMA.md` §1.2 规则 5），**必须先改 `content/JSON_SCHEMA.md` 并在同一个提交里对齐 DataGen 与 Validator**（`docs/04` §2 末）。
 - 因此：**不要自己加列、删列、改列名、调整列的语义**。有想法写进本指南末尾的"待确认清单"，由 C 拍板。
 
@@ -381,17 +388,20 @@ block_demo_ore,shui,biomes=<原版生物群系ID>;y_min=<整数>;y_max=<整数>;
 
 容易错：`drop_table` 指向不存在的掉落表（`V-REF`）；矿石品质权重（NUMBERS §9 `ore_drop_weights`）**不写在这**，它是掉落表里的事。
 
-### 3.11 `factions.csv` —— 势力（6 列）
+### 3.11 `factions.csv` —— 势力（6 列，**本表已接生成器**）
 
-契约 §5.2。M0 只要求 2–3 行占位。
+契约 §5.2。M0 只要求 2–3 行占位。**这是 17 张表里目前唯一接了生成器的一张**：填一行、跑一次
+`./gradlew :tools:datagen:run`，就会在
+`mod/content-base/src/main/resources/data/strife/strife_factions/<id>.json` 落一个产物，
+**产物必须与源表同一个提交**（否则 CI 的 datagen 漂移检查红）。
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
 | `id` | 必 | `fac_<语义>`。目前契约示例里出现过的合法 ID 只有 `fac_qingshi`、`fac_yuelai` |
-| `display_name_key` | 必 | lang key，写 `faction.strife.<id>`（§4.10 已登记该前缀，`[拟]` 待确认）。**前缀只能来自契约登记**，不要自造 |
+| `display_name_key` | 必 | lang key，写 `faction.strife.<id>`（§4.10 已登记该前缀，`[拟]` 待确认）。**前缀只能来自契约登记**，不要自造。**留空不会替你派生**：DataGen 拒绝猜未批准的 `[拟]` 规则，会报错到行号让你自己写 |
 | `alignment` | 必 | 阵营：`orthodox`/`demonic`/`neutral`/`yao`。该枚举是 `[占位]`，要等 STORY 定稿（契约 §8 未决项 5） |
 | `home_region` | 可（可 null） | 本土灵气区域 ID（`qi_` 开头），留空 = 无固定山门 |
-| `relations` | 可 | H7 态度矩阵 `{fac_id: attitude}`，值域 `-100..100`，写法 `fac_yuelai=-5` |
+| `relations` | 可 | H7 态度矩阵，写法 `fac_yuelai=-5;fac_x=40`（`;` 分隔，`=` 给值）。**值必须是整数**，写"敌对"这类汉字 DataGen 当场报错；无关系写 `()` |
 | `_note` | 可 | 备注 |
 
 **没有** `rep_range` 列（声望区间固定 `[-100,100]`，契约明写不入表），**也没有** `price` 列（势力本身不可交易）。
@@ -399,8 +409,25 @@ block_demo_ore,shui,biomes=<原版生物群系ID>;y_min=<整数>;y_max=<整数>;
 格式示例：
 
 ```csv
-fac_qingshi,<lang key 前缀待定>,orthodox,qi_demo,fac_yuelai=-5,示例行 势力关系矩阵属 H7 本期只登记结构
+fac_qingshi,faction.strife.fac_qingshi,orthodox,qi_demo,fac_yuelai=-5,示例行 势力关系矩阵属 H7 本期只登记结构
 ```
+
+生成出来的产物长这样（本机实测，删掉 `_note` 列、带上源表哈希）：
+
+```json
+{
+  "@generated": "from tables/factions.csv @ sha256:938259b3…",
+  "id": "fac_probe",
+  "display_name_key": "faction.strife.fac_probe",
+  "alignment": "neutral",
+  "home_region": "qi_zhongyuan",
+  "relations": {
+    "yuelai": -80
+  }
+}
+```
+
+注意 `rep_range` 不在产物里：契约 §5.2 明写它固定 `[-100,100]` 且不入表，而把这个数写进 DataGen 代码就成了"代码里的受管数值字面量"（`AGENTS.md` 硬规则），所以由平台侧提供。
 
 ### 3.12 `periods.csv` —— 周期事件（H5，7 列，**本期不填**）
 
@@ -498,10 +525,15 @@ cd mod
 ./gradlew spotlessCheck build test validator
 ```
 
-预期输出（**这就是 §0 说的现状**）：
+预期输出（本机实测，**这就是 §0 说的现状**）：
 
-- datagen 打印 `datagen: tables-root=… resources-root=… csv-found=<你看到的 csv 数> generators=0`。`generators=0` = 没有任何生成器，你的行不会被读。
-- validator 打印 `validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 problems=0`（本机实测输出）。`csv-files=17` = 你的源表**已经被扫**；`json-files=0` = 还没有产物可查；`checks=2` = 八项里装了 `V-DUP` 与产物新鲜的一半。
+- `datagen: tables-root=… resources-root=… tables=17 rows=5 generators=1 products=0 problems=0`
+  - `tables=17` = 17 张表**全部被读进来了**（表头不合规当场报错）；`rows=5` 全来自 `known-placeholders.csv`（台账表，本来就不生成产物）；`generators=1` = 只接了 `factions.csv`；`products=0` = 势力表还没行。
+- `validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 problems=0`
+  - `json-files=0` = 还没有产物可查；`checks=2` = 八项里装了 `V-DUP` 与 `V-FRESH`。
+
+往 `factions.csv` 填一行后，这两行会变成 `products=1 json-files=1`，产物落在
+`mod/content-base/src/main/resources/data/strife/strife_factions/<id>.json`，**必须连产物一起提交**（CI 的"生成器漂移"检查就是比对它）。
 
 ### 5.2 CI 会跑什么（`docs/04` §8）
 
@@ -519,18 +551,41 @@ spotlessCheck → build → unitTest（realm/quest 单测 100% DAG 用例）
 
 契约要求（`docs/04` §6 末）：Validator 报错必须给出**文件路径 + JSON pointer + 人话说明**，因为这是能否自助修复的关键。
 
-现在**已实现**的那一项，输出形如：
+现在**已实现**的两项（`V-DUP`、`V-FRESH`），输出形如：
 
-ID 撞车（本机实测过的输出，第二个位置是源表行号）：
+ID 撞车（本机实测过的输出，位置要么是 `文件:行号`，要么是产物路径）：
 
 ```
-validator: duplicate id 'pill_juqi' declared 2 times at [tables/pills.csv:2, tables/techniques.csv:2]
-validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 problems=1
+validator: duplicate id 'fac_probe' declared by 2 independent sources: tables/factions.csv […/strife_factions/fac_probe.json, …/tables/factions.csv:2] vs tables/periods.csv […/tables/periods.csv:2]
 ```
 
-读法：`declared 2 times at [...]` 里每个位置是 `文件:行号`（产物则只给文件路径）。**同一个 ID 跨域撞也算**（`docs/04` §6 写的是"全域唯一"，lang key 与内容 ID 一一映射，04 §4）。解决办法是改其中一行的 `id`，别删测试、别改 CI 门禁让它变绿。
+三种形态，读法不同：
+
+| 报错片段 | 意思 |
+|---|---|
+| `declared by N independent sources: A […] vs B […]` | 同一个 ID 被**两张不同的表**声明（或一张表 + 一份没有 `@generated` 头的手改产物） |
+| `declared N times within tables/x.csv at [x.csv:2, x.csv:7]` | 同一张表里两行用了同一个 `id` |
+| `N generated files for M source row(s) in tables/x.csv` | 产物被手抄过，或源表行删了没重新生成 |
+
+> **一行数据和它生成的产物算同一次声明**，不会自己跟自己撞 —— 这是刻意的：否则 DataGen 一跑，每个产物都会和自己的源行撞红，这道门禁永远不可能绿。
+
+**同一个 ID 跨域撞也算**（`docs/04 §6` 写的是“全域唯一”，lang key 与内容 ID 一一映射，04 §4）。解决办法是改其中一行的 `id`，别删测试、别改 CI 门禁让它变绿。
+
+改表没重新生成（`V-FRESH`，本机实测）：
+
+```
+validator: …/fac_probe.json: @generated claims sha256:938259… but tables/factions.csv is now sha256:fcf809… — the table changed without regenerating (docs/04 §1: 产物永远不被手工编辑)
+```
+
+往没有生成器的表里填了行（DataGen 自己拦，本机实测）：
+
+```
+datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMain.generators() — this content would silently not exist in game
+```
 
 表头写错：`validator: <文件>: first header column is 'name', must be 'id' (content/JSON_SCHEMA.md §2)`。
+格子数对不上（多半是多打/少打了一个逗号）：`datagen: <文件>:3: has 5 cells but the header has 6 columns — commas inside a cell are forbidden (tables/FILLING_GUIDE.md §1.1), use ';' or '、' instead`。
+用了没批准的嵌套写法：`datagen: <文件>:2: column 'relations' uses nested grammar ('|' / '(' ) that is still [拟] in content/JSON_SCHEMA.md §2 — DataGen does not guess it.`
 参数指错目录：`--tables-root <路径> is not a directory (typo? CI must not skip the source tables)` —— 这是刻意的：目录不存在**不算通过**，否则这道门禁会假绿。
 
 规则 ID 与含义对照（契约 §7），报错时按这个自查：
@@ -542,9 +597,9 @@ validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 prob
 | `V-PROB` | 概率和 = 1（容差 1e-6） | `outputs` / `quality_probs` 加起来不是 1 |
 | `V-RANGE` | 数值越界 | 成长比不在 1.8–2.5、成功率不在 0–1、寿元不单调、`price` 为负、`ambient_qi_ratio` 为 0 |
 | `V-TEXT` | zh_cn 全覆盖、en_us 非空串 | 有内容 ID 没有对应 lang key |
-| `V-DUP` | 全域 ID 唯一（**已实现**，源表与产物一起扫，跨域也算） | 同一个 ID 出现两次 |
+| `V-DUP` | 全域 ID 唯一（**已实现**：源表与产物一起扫，跨域也算，一行数据与其产物按同一来源归并） | 同一个 ID 出现两次 |
 | `V-DSL` | 条件表达式可解析、谓词合法 | 条件里写了未知 flag / 未知 ID / 未知谓词 |
-| `V-FRESH` | 产物哈希与源表一致（**只做了一半**：只查 `@generated` 指名的源表还在不在，哈希还没比） | 删了源表却没重新生成产物 |
+| `V-FRESH` | 产物哈希与源表一致（**已实现全**：`@generated` 指名的源表必须还在，且其当前哈希必须等于头里写的那一个） | 改了源表没重新跑 datagen，或手改了产物 |
 | `V-FMT`（拟稿） | `content_format` 落在支持区间、未知字段报错 | 列名拼错、多加了契约没有的列 |
 | `V-DRIFT`（拟稿） | `*_key` 与展开值一致 | 正常填表不会碰到，DataGen 内部一致性 |
 
@@ -567,7 +622,10 @@ validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 prob
 - 嵌套值字面量语法（`;`、`|`、`( )`）写进契约并标 `[拟]`（§2）。
 - 取消基表 `tables/quests.csv`，任务只有一章一表（§4.6）。
 - `breakthrough_success_key` 写键名原值，不加 `bs:` 前缀（§4.1）。
-- DataGen 按列名读取，**列顺序无语义**，重排不破档（§2）。
+- DataGen 按列名读取，**列顺序无语义**，重排不破档（§2）。已实测确认，不再是"未验证"。
+- **空格子 = null、`()` = 空数组**已落进实现：DataGen 就是这么读的（§2）。
+- **嵌套语法 `|` 与 `( … )` 现在会被 DataGen 直接拒绝**并指到行号，不是"静默生成错产物"。要真用这语法，先让 C 拍板 §2 的 `[拟]`，再实现读取器。
+- **多余的列不报错、也不进产物**（DataGen 只按列名取自己要的）。**已接生成器的表**（现在只有 `factions.csv`）改错列名 = 当场红；**没接生成器的表**改错列名暂时不会被 DataGen 发现（V-DUP 只认第一列）。"多加一列是否要报错"见 §6.2 第 5 条。
 
 ### 6.2 仍悬空，别按暂定口径大批量填
 
@@ -575,8 +633,12 @@ validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 prob
 2. **`id_migration.csv` 的 7 列结构**属模板起草，契约 §6 只说"要有这张表、保留一个主版本"。真发生破档前不定稿。
 3. **`quests.chapter` 与文件名重复**：本轮**保留**必填列（产物路径与 DAG 校验都靠它，隐式推导不利于排错），C 若判冗余再删。
 4. **`alignment` / `chapter` / `objective_type` 三个枚举**待 `STORY.md` 定稿（契约 §8 未决项 5）；符箓/阵法/灵植三表（`tal_`/`form_`/`plant_`）按 §4.11 只占位不填，本批未建空表头。
-5. **§1.2 规则 2「严格未知字段」是否采纳**（契约 §8 未决项 1）—— 它直接决定"列名拼错 = 内容凭空消失还是报错"，也就是本指南多处"填错会怎样"的答案。未拍板前按"会报错"对待。
+5. **§1.2 规则 2「严格未知字段」是否采纳**（契约 §8 未决项 1）。实现后的口径是这样，别再按"未定"猜：
+   - 已接生成器的表（现在只有 `factions.csv`）：**列名拼错 = DataGen 报错到文件名**（`header has no 'x' column, contract drift?`），多余的列被读进来但没人消费，**既不报错也不进产物**。
+   - 还没接生成器的表：DataGen 只看首列（V-DUP 用它），其余列**根本不读**。
+   也就是说"改表头 = 改契约"这件事，现在只有 factions 一张表有代码兜底。规则 2 若判"多余列也算错"，需要给每张表加声明式列白名单，那是另一个工单。
 6. **`known-placeholders.csv` 的 `issue` 列写的是 `A0-7`**（取自 NUMBERS §11 待审标题），**是否为可跳转的真实 issue 号未验证**，合入前补真号。
+7. **剩下 16 张表各自需要一张"接生成器"的工单**（`docs/04` §5 说是 A1/C1 的活）。在那之前往这些表填行，DataGen 会红着拒绝 —— 这是**特性不是故障**：它宁可不让你填，也不让内容静默消失。谁要开填，先把这张表的生成器工单立起来。
 
 ---
 
@@ -596,7 +658,7 @@ validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 prob
 | `dialog_ch1_text.csv` | 5 | 无 | §4.10 |
 | `spirit_field.csv` | 4 | 无 | §4.8（拆分见待确认 3） |
 | `ores.csv` | 7 | 无 | §4.8 |
-| `factions.csv` | 6 | 无 | §5.2（M0 允许 2–3 行占位） |
+| `factions.csv` | 6 | 无 | §5.2（M0 允许 2–3 行占位）**已接生成器，填了就会出产物** |
 | `periods.csv` | 7 | 无 | §5.1，`[占位]` 本期不填 |
 | `wars.csv` | 8 | 无 | §5.3，`[占位]` 本期不填 |
 | `id_migration.csv` | 7 | 无 | §6，本期无迁移项 |
