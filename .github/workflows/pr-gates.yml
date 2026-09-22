@@ -39,12 +39,21 @@ jobs:
         working-directory: mod
         run: ./gradlew build --no-daemon
 
+      # `git diff` only ever compares tracked paths, so a product that was never committed
+      # (new table row, or a whole new domain directory) leaves the diff empty and this gate
+      # stays green while the content is absent from the jar. Untracked paths must be scanned
+      # separately — this is the "CI 绿但没真跑" shape docs/04 §8 warns about.
       - name: DataGen freshness (docs/04 §5 / §6 "产物新鲜")
         working-directory: mod
         run: |
           ./gradlew :tools:datagen:run --no-daemon
+          untracked=$(git -C .. ls-files --others --exclude-standard -- mod/content-base)
           git -C .. diff --exit-code -- mod/content-base \
             || { echo "::error::generated content is stale — run ./gradlew :tools:datagen:run and commit the output"; exit 1; }
+          if [ -n "$untracked" ]; then
+            printf '::error::DataGen wrote files that are not committed:\n%s\n' "$untracked"
+            exit 1
+          fi
 
       - name: Content validator (docs/04 §6)
         working-directory: mod
