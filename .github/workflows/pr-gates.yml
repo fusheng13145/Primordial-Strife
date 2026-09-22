@@ -124,6 +124,9 @@ jobs:
             "https://maven.neoforged.net/releases/net/neoforged/neoforge/$nv/neoforge-$nv-installer.jar"
           (cd "$work" && java -jar installer.jar --installServer > install.log 2>&1)
           test -f "$work/run.sh"
+          # 生成物的可执行位不在本仓库手里，安装器给什么权限不确定；这里补上，避免"权限不足"
+          # 被读成"纯净 jar 起不来"。断言一条都没放松。
+          chmod +x "$work/run.sh"
 
       - name: Boot it headless with only the strife server jar, 60s
         run: |
