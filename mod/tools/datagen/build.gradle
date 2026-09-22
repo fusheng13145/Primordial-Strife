@@ -14,6 +14,8 @@ application {
 }
 
 dependencies {
+    // Product bytes are hand-written, so the tests parse them with a real JSON reader.
+    testImplementation 'com.google.code.gson:gson:2.11.0'
     testImplementation "org.junit.jupiter:junit-jupiter:${providers.gradleProperty('junit_version').get()}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -31,4 +33,7 @@ run {
             file("${repoRoot}/tables").toString(),
             '--resources-root',
             project(':content-base').file('src/main/resources').toString()]
+    // The CI freshness step must show the summary without --info.
+    logging.captureStandardOutput(LogLevel.LIFECYCLE)
+    logging.captureStandardError(LogLevel.LIFECYCLE)
 }
