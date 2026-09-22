@@ -7,7 +7,7 @@
 
 ---
 
-## 0. 先说清楚：现在填表还不会进游戏（诚实状态）
+## 0. 先说清楚：现在填表能走多远（诚实状态）
 
 这一点必须先看，不要跳过。
 
@@ -16,10 +16,12 @@
 | DataGen | 把 CSV 读成 JSON 产物 | **读表器与产物写入器已建好，生成器只接了 1 张表**：`factions.csv` → `data/strife/strife_factions/<id>.json`。其余 16 张表仍无生成器 —— 但**只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + `FactionGenerator`） |
 | Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项**：`V-DUP`（ID 全域唯一，源表与产物一起扫，**按来源归并**：一行数据与它生成的产物算同一次声明）与 `V-FRESH`（`@generated` 指名的源表必须还在，且哈希必须等于这张表当前的哈希）。其余六项（引用/DAG/概率/越界/文本/DSL）仍未实现 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
 | 产物 | `data/strife/**.json` + `lang` | 目录还没建立：`factions.csv` 现在没有数据行，所以生成 0 个文件。填一行进去、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
+| 打进 jar | 生成的 JSON 必须随 MOD 一起进游戏（`docs/04` §1「构建进 jar」/ §9「内置内容」） | **已接通**：`platform` 把 `content-base/src/main/resources` 挂成自己的 resources 目录，所以 `:platform:jar` 里就有 `data/strife/**`，开发期 `runClient`/`runServer`/`runData` 也看见同一批文件。并有 `:platform:checkContentBundled`（挂在 `check` 上，CI 必跑）逐个比对磁盘产物与 jar 条目 | 本机实测：磁盘放一个探针文件时报 `checkContentBundled: 1 content file(s) present in the platform jar`；把那行 `srcDir` 注释掉后报 `platform jar does not ship generated content: [data/strife/strife_factions/fac_probe.json]` |
+| 内容热更 | `content-base-X.Y.Z.zip` 独立内容包（`docs/04` §9、`docs/07` §5 交付物） | **还没有**：内置内容这条路已通，"整合包作者换 zip 覆盖"这条导出任务还没建工单 | 仓库现状（无任何 `contentZip` 任务） |
 
 所以本期（M0）这些模板的用途是**定契约**：
 
-- 你现在填的每一行，**只有 `factions.csv` 会真的生成产物**；别的表填了行，DataGen 会红着告诉你"这张表还没有生成器"，需要开工单接上（`docs/04` §5）。
+- 你现在填的每一行，**只有 `factions.csv` 会真的生成产物**（而产物一旦生成就会随 MOD 的 jar 进游戏，见上表"打进 jar"那一行）；别的表填了行，DataGen 会红着告诉你"这张表还没有生成器"，需要开工单接上（`docs/04` §5）。
 - 现在**会**被拦住的：
   1. 同一个 `id` 出现两次（跨表也算，源表与产物之间按来源归并后再判重）；
   2. 表头第一列不是 `id`、某一行少了格子（多打/少打逗号）、格子带英文双引号；

@@ -53,7 +53,7 @@
 3. 领任务前看 06 分册，确认目标目录属于哪个权限分区。
 4. 提交前跑 `./gradlew spotlessCheck build test validator`（06 §4 交单命令），红了不许提。
 
-**不写代码的成员（数值 / 剧情 / 文案）**：读完 01 后直接看 [tables/FILLING_GUIDE.md](../tables/FILLING_GUIDE.md)——它把字段契约翻译成人话，§0 说明了"现在填表还不会进游戏"的真实状态；要改数值去 `content/NUMBERS.md`，要改设定去 `content/LORE.md`。逐系统的玩法施工说明在 [附录 EP0 功能设计草案](appendix/EP0功能设计草案.md)。
+**不写代码的成员（数值 / 剧情 / 文案）**：读完 01 后直接看 [tables/FILLING_GUIDE.md](../tables/FILLING_GUIDE.md)——它把字段契约翻译成人话，§0 说明了"现在填表能走多远"的真实状态（只有 factions 接了生成器，产物→jar 的通道已接通）；要改数值去 `content/NUMBERS.md`，要改设定去 `content/LORE.md`。逐系统的玩法施工说明在 [附录 EP0 功能设计草案](appendix/EP0功能设计草案.md)。
 
 ## 术语表
 

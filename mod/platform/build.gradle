@@ -1,3 +1,5 @@
+import java.util.zip.ZipFile
+
 plugins {
     id 'java'
     id 'strife.conventions'
@@ -7,6 +9,22 @@ plugins {
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+// docs/04 §1 "构建进 jar" / §9 内置内容: content-base is where DataGen writes and this jar is
+// what ships. Nothing else bridges the two — without this srcDir the generated JSON sits in a
+// module no one depends on, so "填表 → 进游戏" is false while datagen, the drift gate and the
+// validator all stay green (docs/04 §8: 看起来绿其实没跑).
+// It also fixes the dev runs: `mods { strife { sourceSet sourceSets.main } }` below publishes
+// this source set's resources to runClient/runServer/runData.
+def contentResources = project(':content-base').file('src/main/resources')
+
+sourceSets {
+    main {
+        resources {
+            srcDir contentResources
+        }
     }
 }
 
@@ -63,4 +81,41 @@ processResources {
     filesMatching('META-INF/neoforge.mods.toml') {
         expand(inputs.properties)
     }
+}
+
+// The srcDir above is the only thing that makes generated content ship, and dropping it changes
+// no other outcome: DataGen still writes, the drift gate still compares tracked files, the
+// validator still reads the resources directory. So the pipeline would stay green while the jar
+// has no content in it. This asserts the last mile instead of assuming it.
+tasks.register('checkContentBundled') {
+    group = 'verification'
+    description = 'Fails if a content-base resource is absent from the platform jar (docs/04 §1, §8).'
+    def jarFile = tasks.named('jar', Jar).flatMap { it.archiveFile }
+    dependsOn jarFile
+    doLast {
+        def onDisk = new TreeSet<String>()
+        if (contentResources.exists()) {
+            contentResources.eachFileRecurse { f ->
+                if (f.isFile()) {
+                    onDisk << contentResources.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+                }
+            }
+        }
+        def inJar = new HashSet<String>()
+        new ZipFile(jarFile.get().asFile).withCloseable { zip ->
+            zip.entries().each { inJar << it.name }
+        }
+        def missing = onDisk.findAll { !inJar.contains(it) }
+        if (!missing.isEmpty()) {
+            throw new GradleException(
+                    "platform jar does not ship generated content: " + missing +
+                    " — content-base is not wired into sourceSets.main.resources (docs/04 §1) " +
+                    "or the jar task filters it out")
+        }
+        logger.lifecycle("checkContentBundled: ${onDisk.size()} content file(s) present in the platform jar")
+    }
+}
+
+tasks.named('check') {
+    dependsOn 'checkContentBundled'
 }
