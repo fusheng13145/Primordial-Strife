@@ -14,13 +14,13 @@
 | 环节 | 契约里应该有 | 现在实际有 | 证据 |
 |---|---|---|---|
 | DataGen | 把 CSV 读成 JSON 产物 | **一个生成器都没有**。它只解析命令行参数、数一下 `tables/` 里有几个 csv 文件，然后打印一行报告（输出里的 `generators=0` 就是"生成器 0 个"） | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/DataGenMain.java` |
-| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **只实现了"跨文件 ID 唯一"一项**，而且它扫描的是**生成产物目录**（`content-base/src/main/resources/data`），不是你的 CSV。现在那个目录里一个 JSON 都没有，所以校验必然显示 `json-files=0 problems=0` 并通过 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
+| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项**：`V-DUP`（ID 全域唯一，**产物与 `tables/*.csv` 的 `id` 列一起扫**，源表撞车当场红）与 `@generated` 头所指源表的存在性。其余六项（引用/DAG/概率/越界/文本/DSL）与产物哈希比对仍未实现；现在产物目录仍是空的 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
 | 产物 | `data/strife/**.json` + `lang` | 目录还没建立（`mod/content-base/src/main` 目前是空的） | 仓库现状 |
 
 所以本期（M0）这些模板的用途是**定契约**：
 
 - 你现在填的每一行，**不会**立刻变成游戏里的功法、丹药或任务。
-- 你现在填错，**也不会**有报错弹窗拦住你 —— 因为检查器还没建起来。契约里写的"必填列留空即构建失败并指出行号"目前只是**已定未实现**。
+- 现在**会**被拦住的只有三样：同一个 `id` 出现两次（跨表也算，包括源表与产物之间）、表头第一列不是 `id`、`--tables-root` 指错目录。填错别的（引用不存在的 ID、概率不为 1、必填列留空）**还不会**报错 —— 检查器还没建起来，契约里那些"留空即构建失败并指出行号"目前仍是**已定未实现**。
 - 表头（列名、列的多少）就是契约本身。改表头 = 改契约 = 破档风险（`JSON_SCHEMA.md` §1.2 规则 5），**必须先改 `content/JSON_SCHEMA.md` 并在同一个提交里对齐 DataGen 与 Validator**（`docs/04` §2 末）。
 - 因此：**不要自己加列、删列、改列名、调整列的语义**。有想法写进本指南末尾的"待确认清单"，由 C 拍板。
 
@@ -455,7 +455,7 @@ DataGen 在保留期内会同时写新旧两个键并标 `@deprecated_key`（契
 - 加一行前，先确认这个键在 `content/NUMBERS.md` 里**确实存在并标了 `[占位]`**。白名单是放行，不是造键。
 - `issue` 必须是**真实工单/issue 号**。本批初值写的 `A0-7` 取自 NUMBERS §11 的待审标题，它是否等于可跳转的 issue 号**未验证**，请 C 补成真实号。
 - 占位键一旦定稿（例如后三段境界改名为正式名），要**同时**删掉 NUMBERS 里的 `[占位]` 标注和本表白名单行，否则等于留了根永远不放行的拐杖。
-- 位置已定：契约 §2 认这张 `tables/known-placeholders.csv`（与源表同一编辑入口）。代价是 Validator 目前只接 `--data-root`，读白名单要新增 `--tables-root` 参数 —— 属 M0 待办，`V-REF` 上线前必须补上。
+- 位置已定：契约 §2 认这张 `tables/known-placeholders.csv`（与源表同一编辑入口）。Validator 已经接 `--tables-root`（现在用它扫源表 ID），但**还没读这张白名单** —— 因为放行逻辑属于 `V-REF`，那条检查本身尚未实现。等 `V-REF` 上线时必须一并读它，否则后三段境界的占位键会让构建红。
 
 ---
 
@@ -501,7 +501,7 @@ cd mod
 预期输出（**这就是 §0 说的现状**）：
 
 - datagen 打印 `datagen: tables-root=… resources-root=… csv-found=<你看到的 csv 数> generators=0`。`generators=0` = 没有任何生成器，你的行不会被读。
-- validator 打印 `validator: data-root=… json-files=0 checks=1 problems=0`。`checks=1` = 八项里只装了"重复 ID"一项；`json-files=0` = 没产物可查。
+- validator 打印 `validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 problems=0`（本机实测输出）。`csv-files=17` = 你的源表**已经被扫**；`json-files=0` = 还没有产物可查；`checks=2` = 八项里装了 `V-DUP` 与产物新鲜的一半。
 
 ### 5.2 CI 会跑什么（`docs/04` §8）
 
@@ -521,11 +521,17 @@ spotlessCheck → build → unitTest（realm/quest 单测 100% DAG 用例）
 
 现在**已实现**的那一项，输出形如：
 
+ID 撞车（本机实测过的输出，第二个位置是源表行号）：
+
 ```
-validator: duplicate id '[strife_techniques]#tech_qingxin_jue' in [路径A, 路径B]
+validator: duplicate id 'pill_juqi' declared 2 times at [tables/pills.csv:2, tables/techniques.csv:2]
+validator: data-root=… tables-root=… json-files=0 csv-files=17 checks=2 problems=1
 ```
 
-读法：方括号里是产物所在域目录（命名空间），`#` 后面是撞车的 `id`，`in [...]` 是撞车的两个文件路径。解决办法就是改其中一行的 `id`，别删测试、别改 CI 门禁让它变绿。
+读法：`declared 2 times at [...]` 里每个位置是 `文件:行号`（产物则只给文件路径）。**同一个 ID 跨域撞也算**（`docs/04` §6 写的是"全域唯一"，lang key 与内容 ID 一一映射，04 §4）。解决办法是改其中一行的 `id`，别删测试、别改 CI 门禁让它变绿。
+
+表头写错：`validator: <文件>: first header column is 'name', must be 'id' (content/JSON_SCHEMA.md §2)`。
+参数指错目录：`--tables-root <路径> is not a directory (typo? CI must not skip the source tables)` —— 这是刻意的：目录不存在**不算通过**，否则这道门禁会假绿。
 
 规则 ID 与含义对照（契约 §7），报错时按这个自查：
 
@@ -536,9 +542,9 @@ validator: duplicate id '[strife_techniques]#tech_qingxin_jue' in [路径A, 路�
 | `V-PROB` | 概率和 = 1（容差 1e-6） | `outputs` / `quality_probs` 加起来不是 1 |
 | `V-RANGE` | 数值越界 | 成长比不在 1.8–2.5、成功率不在 0–1、寿元不单调、`price` 为负、`ambient_qi_ratio` 为 0 |
 | `V-TEXT` | zh_cn 全覆盖、en_us 非空串 | 有内容 ID 没有对应 lang key |
-| `V-DUP` | 全域 ID 唯一 | 同一个 ID 出现两次 |
+| `V-DUP` | 全域 ID 唯一（**已实现**，源表与产物一起扫，跨域也算） | 同一个 ID 出现两次 |
 | `V-DSL` | 条件表达式可解析、谓词合法 | 条件里写了未知 flag / 未知 ID / 未知谓词 |
-| `V-FRESH` | 产物哈希与源表一致 | 改了表没重跑 datagen，或手改了产物 |
+| `V-FRESH` | 产物哈希与源表一致（**只做了一半**：只查 `@generated` 指名的源表还在不在，哈希还没比） | 删了源表却没重新生成产物 |
 | `V-FMT`（拟稿） | `content_format` 落在支持区间、未知字段报错 | 列名拼错、多加了契约没有的列 |
 | `V-DRIFT`（拟稿） | `*_key` 与展开值一致 | 正常填表不会碰到，DataGen 内部一致性 |
 

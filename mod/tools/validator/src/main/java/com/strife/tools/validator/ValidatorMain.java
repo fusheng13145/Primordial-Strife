@@ -16,24 +16,35 @@ import java.util.Map;
 /**
  * Build-time content validator (docs/04 §6). Runs on plain JVM, never launches Minecraft.
  *
- * <p>A0-1 scope: ID uniqueness across generated content files. Reference existence, DAG
- * connectivity, probability normalisation, NUMBERS range checks and DSL legality are tracked by
- * later tickets and register here as {@link Check} implementations.
+ * <p>Implemented so far: V-DUP (global ID uniqueness, checked on both generated content and the
+ * source tables) and V-FRESH (the {@code @generated} header must name a table that still exists).
+ * Reference existence, DAG connectivity, probability normalisation, NUMBERS range checks and DSL
+ * legality are tracked by later tickets and register here as {@link Check} implementations.
  */
 public final class ValidatorMain {
 
+    /**
+     * Ledger tables whose first column is a record key, not a content ID (docs/04 §6 V-DUP scope):
+     * placeholder whitelists and rename migrations intentionally reuse names that exist elsewhere.
+     */
+    private static final List<String> NON_CONTENT_TABLES =
+            List.of("known-placeholders.csv", "id_migration.csv");
+
     @FunctionalInterface
     public interface Check {
-        List<String> run(Path dataRoot);
+        List<String> run(Options options);
     }
 
+    record Options(Path dataRoot, Path tablesRoot) {}
+
     /**
-     * Namespace is the parent directory path under the data root, so IDs stay comparable per
-     * domain.
+     * Content IDs are unique across every domain (docs/04 §6 "重复 ID｜全域唯一"), because lang keys map
+     * one-to-one onto them (04 §4) and a second meaning for the same key would silently win by load
+     * order.
      */
-    public static List<String> duplicateIds(Path dataRoot) {
-        Map<String, List<Path>> seen = new LinkedHashMap<>();
-        for (Path file : jsonFiles(dataRoot)) {
+    public static List<String> duplicateIds(Options options) {
+        Map<String, List<String>> seen = new LinkedHashMap<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
             JsonElement root = parse(file);
             if (!root.isJsonObject()) {
                 continue;
@@ -42,63 +53,193 @@ public final class ValidatorMain {
             if (!object.has("id") || !object.get("id").isJsonPrimitive()) {
                 continue;
             }
-            String id =
-                    dataRoot.relativize(file).getParent() + "#" + object.get("id").getAsString();
-            seen.computeIfAbsent(id, k -> new ArrayList<>()).add(file);
+            seen.computeIfAbsent(object.get("id").getAsString(), k -> new ArrayList<>())
+                    .add(file.toString());
         }
-        List<String> problems = new ArrayList<>();
+        List<String> problems = new ArrayList<>(tableIds(options.tablesRoot(), seen));
         seen.forEach(
                 (id, files) -> {
                     if (files.size() > 1) {
                         problems.add(
                                 "duplicate id '"
                                         + id
-                                        + "' in "
-                                        + files.stream().map(Path::toString).toList());
+                                        + "' declared "
+                                        + files.size()
+                                        + " times at "
+                                        + files);
                     }
                 });
         return problems;
     }
 
+    /**
+     * Source tables are read here because DataGen products may be absent (a missing generated file
+     * must never turn V-DUP green while the table it comes from already collides).
+     */
+    private static List<String> tableIds(Path tablesRoot, Map<String, List<String>> seen) {
+        List<String> problems = new ArrayList<>();
+        if (tablesRoot == null) {
+            return problems;
+        }
+        for (Path table : csvFiles(tablesRoot)) {
+            String fileName = table.getFileName().toString();
+            if (NON_CONTENT_TABLES.contains(fileName)) {
+                continue;
+            }
+            List<String> lines = readLines(table);
+            if (lines.isEmpty()) {
+                problems.add(
+                        table + ": empty file, expected a header row whose first column is 'id'");
+                continue;
+            }
+            List<String> header = splitRow(lines.get(0));
+            if (header.isEmpty() || !"id".equals(header.get(0))) {
+                problems.add(
+                        table
+                                + ":"
+                                + "first header column is "
+                                + (header.isEmpty() ? "<none>" : "'" + header.get(0) + "'")
+                                + ", must be 'id' (content/JSON_SCHEMA.md §2)");
+                continue;
+            }
+            for (int row = 1; row < lines.size(); row++) {
+                String line = lines.get(row);
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                List<String> cells = splitRow(line);
+                if (cells.isEmpty() || cells.get(0).isBlank()) {
+                    problems.add(table + ":" + (row + 1) + ": row has no id");
+                    continue;
+                }
+                seen.computeIfAbsent(cells.get(0), k -> new ArrayList<>())
+                        .add(table + ":" + (row + 1));
+            }
+        }
+        return problems;
+    }
+
+    public static List<String> staleGeneratedHeaders(Options options) {
+        if (options.tablesRoot() == null) {
+            return List.of();
+        }
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("@generated") || !object.get("@generated").isJsonPrimitive()) {
+                continue;
+            }
+            String header = object.get("@generated").getAsString();
+            int from = header.indexOf("tables/");
+            if (from < 0) {
+                problems.add(file + ": @generated header names no source table: '" + header + "'");
+                continue;
+            }
+            String source = header.substring(from + "tables/".length()).split(" ")[0];
+            if (!Files.isRegularFile(options.tablesRoot().resolve(source))) {
+                problems.add(
+                        file
+                                + ": @generated names tables/"
+                                + source
+                                + ", which no longer exists — rerun DataGen (docs/04 §6 产物新鲜)");
+            }
+        }
+        return problems;
+    }
+
     public static List<Check> checks() {
-        return List.of(ValidatorMain::duplicateIds);
+        return List.of(ValidatorMain::duplicateIds, ValidatorMain::staleGeneratedHeaders);
     }
 
     public static void main(String[] args) {
-        Path dataRoot = parseDataRoot(args);
+        Options options = parseArgs(args);
         List<String> problems = new ArrayList<>();
         int executed = 0;
         for (Check check : checks()) {
-            problems.addAll(check.run(dataRoot));
+            problems.addAll(check.run(options));
             executed++;
         }
         problems.forEach(p -> System.err.println("validator: " + p));
         System.out.printf(
-                "validator: data-root=%s json-files=%d checks=%d problems=%d%n",
-                dataRoot, countJson(dataRoot), executed, problems.size());
+                "validator: data-root=%s tables-root=%s json-files=%d csv-files=%d checks=%d problems=%d%n",
+                options.dataRoot(),
+                options.tablesRoot(),
+                countJson(options.dataRoot()),
+                options.tablesRoot() == null ? 0 : csvFiles(options.tablesRoot()).size(),
+                executed,
+                problems.size());
         if (!problems.isEmpty()) {
             System.exit(1);
         }
     }
 
-    static Path parseDataRoot(String[] args) {
+    static Options parseArgs(String[] args) {
+        Path dataRoot = null;
+        Path tablesRoot = null;
         for (int i = 0; i < args.length - 1; i++) {
-            if ("--data-root".equals(args[i])) {
-                return Path.of(args[++i]);
+            switch (args[i]) {
+                case "--data-root" -> dataRoot = Path.of(args[++i]);
+                case "--tables-root" -> tablesRoot = Path.of(args[++i]);
+                default -> {}
             }
         }
-        throw new IllegalArgumentException("usage: validator --data-root <dir>");
+        if (dataRoot == null) {
+            throw new IllegalArgumentException(
+                    "usage: validator --data-root <dir> [--tables-root <dir>]");
+        }
+        if (tablesRoot != null && !Files.isDirectory(tablesRoot)) {
+            throw new IllegalArgumentException(
+                    "--tables-root "
+                            + tablesRoot
+                            + " is not a directory (typo? CI must not skip the source tables)");
+        }
+        return new Options(dataRoot, tablesRoot);
+    }
+
+    /**
+     * CSV cells carry no commas (tables/FILLING_GUIDE.md §1.1), so a plain split is the contract.
+     */
+    private static List<String> splitRow(String line) {
+        List<String> cells = new ArrayList<>();
+        for (String cell : line.split(",", -1)) {
+            cells.add(cell.trim());
+        }
+        return cells;
+    }
+
+    private static List<String> readLines(Path file) {
+        try {
+            return Files.readAllLines(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException("cannot read table " + file, e);
+        }
+    }
+
+    private static List<Path> csvFiles(Path root) {
+        if (!Files.isDirectory(root)) {
+            return List.of();
+        }
+        return walk(root).filter(p -> p.getFileName().toString().endsWith(".csv")).toList();
     }
 
     private static List<Path> jsonFiles(Path root) {
         if (!Files.isDirectory(root)) {
             return List.of();
         }
+        return walk(root).filter(p -> p.getFileName().toString().endsWith(".json")).toList();
+    }
+
+    private static java.util.stream.Stream<Path> walk(Path root) {
         try (var stream = Files.walk(root)) {
-            return stream.filter(Files::isRegularFile)
-                    .filter(p -> p.getFileName().toString().endsWith(".json"))
+            return stream
+                    .filter(Files::isRegularFile)
                     .sorted(Comparator.comparing(Path::toString))
-                    .toList();
+                    .toList()
+                    .stream();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

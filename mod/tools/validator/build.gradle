@@ -27,7 +27,11 @@ def repoRoot = rootProject.projectDir.parentFile
 
 run {
     workingDir = repoRoot
-    args = ['--data-root', project(':content-base').file('src/main/resources/data').toString()]
+    args = [
+            '--data-root',
+            project(':content-base').file('src/main/resources/data').toString(),
+            '--tables-root',
+            file("${repoRoot}/tables").toString()]
     // CI reports must show the validator summary without --info.
     logging.captureStandardOutput(LogLevel.LIFECYCLE)
     logging.captureStandardError(LogLevel.LIFECYCLE)
