@@ -7,8 +7,8 @@ Minecraft 1.21.1 / NeoForge 修仙 MOD。**唯一参照是 [`docs/`](docs/README
 | 路径 | 是什么 | 谁能改 |
 |---|---|---|
 | `docs/` | 开发手册 9 分册 + 附录（唯一参照） | 开区 |
-| `content/` | 真相源：`NUMBERS.md` / `STORY.md` / `JSON_SCHEMA.md` / `LORE.md` | 可起草，合入须人确认 |
-| `tables/` | 策划 CSV（DataGen 输入） | 开区 |
+| `content/` | 真相源：`NUMBERS.md` / `STORY.md` / `JSON_SCHEMA.md` / `LORE.md`（**均为 Agent 初稿，未经人名义确认不得当既成事实引用**） | 可起草，合入须人确认 |
+| `tables/` | 策划 CSV（DataGen 输入）+ `FILLING_GUIDE.md` 填表说明书 | 开区 |
 | `mod/` | Gradle 根工程（命令都在此目录执行） | — |
 | `mod/platform/` | 平台层单一 MOD 制品，包级模块化 | core/realm = 禁区 |
 | `mod/content-base/` | 内容层纯资源（禁止 `src/main/java`，CI 检查） | 开区 |
@@ -42,6 +42,8 @@ cd mod
 ./gradlew :platform:runServer  # 需自备 run/server/eula.txt，见 docs/02 §4
 ./gradlew :platform:runClient  # 载入判据三行见 docs/02 §4
 ```
+
+**只想进游戏看看（不改代码）**：不必用 Gradle。`./gradlew :platform:build` 产出 `mod/platform/build/libs/strife-0.0.1.jar`，把它丢进一个 **NeoForge 1.21.1** 实例的 `mods/`，用官方启动器 / PCL2 / HMCL 启动即可（注意选 NeoForge，不是 Forge）。开发与正式启动两条路径的差别见 docs/02 §4.1。目前 content-base 还没有生成物、`:platform:serverJar` 未实现，进去只有 `/strife info` 一条命令。
 
 **Windows 本机 `test` 不可运行**（GBK + 非 ASCII 路径的 Gradle 已知缺陷，机制与禁令见 docs/02 §4）：单测由 CI（ubuntu）执行，本地验证以 `build -x test` + headless 冒烟为准，**不得用 `jvmArgs`/`systemProperty`/跳过测试掩盖**。
 

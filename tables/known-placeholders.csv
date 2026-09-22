@@ -1,0 +1,6 @@
+id,kind,used_by_field,issue,remove_when,_note
+bs_placeholder_high_1,突破成功率键占位,strife_realms:lianxu.breakthrough_success_key,A0-7（NUMBERS §11 待审项 未验证是否等于真实 issue 号）,STORY.md 定稿后三段境界名 且 NUMBERS §3 删除该键的 [占位] 标注,炼虚的突破成功率键 base=0.45 属 [拟] 待 A+C 审定 挂 M0 里程碑 A0-7 交审清单
+bs_placeholder_high_2,突破成功率键占位,strife_realms:heti.breakthrough_success_key,A0-7（NUMBERS §11 待审项 未验证是否等于真实 issue 号）,STORY.md 定稿后三段境界名 且 NUMBERS §3 删除该键的 [占位] 标注,合体的突破成功率键 base=0.35 属 [拟] 待 A+C 审定 挂 M0 里程碑 A0-7 交审清单
+unlock_placeholder_1,解锁清单键占位,strife_realms:lianxu.unlocks,A0-7（NUMBERS §11 待审项 未验证是否等于真实 issue 号）,STORY.md 定稿后三段境界名 且该境界 unlocks 换成 §1.4 unlock_key 枚举值,炼虚解锁清单占位 不是 JSON_SCHEMA §1.4 unlock_key 枚举成员 挂 M0 里程碑
+unlock_placeholder_2,解锁清单键占位,strife_realms:heti.unlocks,A0-7（NUMBERS §11 待审项 未验证是否等于真实 issue 号）,STORY.md 定稿后三段境界名 且该境界 unlocks 换成 §1.4 unlock_key 枚举值,合体解锁清单占位 不是 JSON_SCHEMA §1.4 unlock_key 枚举成员 挂 M0 里程碑
+bs_huashen_placeholder,突破成功率键占位,strife_realms:huashen.breakthrough_success_key,A0-7（NUMBERS §11 待审项 未验证是否等于真实 issue 号）,化神的下一境界名随 STORY.md 定稿 键名改为 bs_huashen_<新境名>,化神本身命名已定 base=0.55 属 [拟] 待 A+C 审定 占位原因是突破目标境界未定名
