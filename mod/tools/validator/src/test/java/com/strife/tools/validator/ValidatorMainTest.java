@@ -51,8 +51,7 @@ class ValidatorMainTest {
 
     @Test
     void growthRatioInsideBoundsPasses(@TempDir Path root) throws IOException {
-        Options options =
-                new Options(root.resolve("data"), null, withNumbers(root, TWO_REALMS));
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, TWO_REALMS));
 
         assertEquals(List.of(), ValidatorMain.growthRatio(options));
     }
@@ -146,7 +145,8 @@ class ValidatorMainTest {
     void aPresentNumbersFileWithoutTheContractedBlockIsAProblem(@TempDir Path root)
             throws IOException {
         Options options =
-                new Options(root.resolve("data"), null, withNumbers(root, "@@realms\n```yaml\n```"));
+                new Options(
+                        root.resolve("data"), null, withNumbers(root, "@@realms\n```yaml\n```"));
 
         List<String> problems = ValidatorMain.growthRatio(options);
 

@@ -427,8 +427,8 @@ public final class ValidatorMain {
 
     /** Reads one {@code k: v} pair out of a one-level flow mapping like {@code { qi_max: 100 }}. */
     private static String flowValue(String flowMapping, String key) {
-        for (String part : flowMapping.replaceFirst("^\\{", "").replaceFirst("\\}\\s*$", "")
-                .split(",")) {
+        for (String part :
+                flowMapping.replaceFirst("^\\{", "").replaceFirst("\\}\\s*$", "").split(",")) {
             int colon = part.indexOf(':');
             if (colon > 0 && part.substring(0, colon).trim().equals(key)) {
                 return part.substring(colon + 1).trim();

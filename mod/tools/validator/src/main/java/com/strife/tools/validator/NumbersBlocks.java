@@ -66,8 +66,12 @@ final class NumbersBlocks {
             }
             if (!lines.get(i).isBlank()) {
                 throw new IllegalStateException(
-                        "@@" + blockId + " must be immediately followed by a ```yaml fence"
-                                + " (NUMBERS §0), found '" + lines.get(i).trim() + "'");
+                        "@@"
+                                + blockId
+                                + " must be immediately followed by a ```yaml fence"
+                                + " (NUMBERS §0), found '"
+                                + lines.get(i).trim()
+                                + "'");
             }
         }
         if (fence < 0) {

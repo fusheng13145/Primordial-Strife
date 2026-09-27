@@ -183,9 +183,9 @@ public record TableSource(String fileName, List<String> columns, List<Record> ro
 
     /**
      * Parses an object array ({@code k=v;k=v|k=v;k=v}, JSON_SCHEMA §2), one map per object in cell
-     * order. Unlike {@link #list}, absence is preserved: a blank cell yields {@code null} (契约：
-     * 空格子 = 缺省) while {@code ()} yields an empty list — generators write the difference into
-     * the product, because "field absent" and "explicitly empty" are distinct states there.
+     * order. Unlike {@link #list}, absence is preserved: a blank cell yields {@code null} (契约： 空格子
+     * = 缺省) while {@code ()} yields an empty list — generators write the difference into the
+     * product, because "field absent" and "explicitly empty" are distinct states there.
      */
     public List<Map<String, String>> objectList(String column, Record record) {
         String value = get(column, record);
