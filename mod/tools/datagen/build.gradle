@@ -32,7 +32,11 @@ run {
             '--tables-root',
             file("${repoRoot}/tables").toString(),
             '--resources-root',
-            project(':content-base').file('src/main/resources').toString()]
+            project(':content-base').file('src/main/resources').toString(),
+            // NUMBERS.md is read lazily: generators only demand it when a *_key cell needs
+            // a value, so CI runs over empty tables work while content/ (A0-7) is unmerged.
+            '--content-root',
+            file("${repoRoot}/content").toString()]
     // The CI freshness step must show the summary without --info.
     logging.captureStandardOutput(LogLevel.LIFECYCLE)
     logging.captureStandardError(LogLevel.LIFECYCLE)

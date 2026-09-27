@@ -16,8 +16,9 @@ import java.util.Map;
  * <p>Every table under {@code tables/} is read, even ones with no generator, because that is the
  * only way to tell "nothing to do" apart from "someone filled this in and it was dropped".
  *
- * <p>NUMBERS.md is not consumed yet: the {@code @@blocks} conventions in 05 §1 need A's sign-off
- * (content/JSON_SCHEMA.md §8 待审项) before a parser can lock the key format.
+ * <p>NUMBERS.md is consumed lazily through {@link NumbersSource}: generators only touch it when a
+ * {@code *_key} cell actually needs a value, so a run over empty tables never demands the file —
+ * relevant while {@code content/} (A0-7) is still unmerged.
  */
 public final class DataGenMain {
 
@@ -28,7 +29,7 @@ public final class DataGenMain {
     private static final List<String> LEDGER_TABLES =
             List.of("known-placeholders.csv", "id_migration.csv");
 
-    public record Options(Path tablesRoot, Path resourcesRoot) {}
+    public record Options(Path tablesRoot, Path resourcesRoot, Path contentRoot) {}
 
     /**
      * @param problems unfixable-by-rerunning issues; a non-empty list means DataGen cannot produce
@@ -38,18 +39,24 @@ public final class DataGenMain {
             int tables, int rows, int generators, int products, List<String> problems) {}
 
     /** Registered generators, one per contracted table domain. */
-    public static List<TableGenerator> generators() {
-        return List.of(new FactionGenerator());
+    public static List<TableGenerator> generators(NumbersSource numbers) {
+        return List.of(
+                new FactionGenerator(),
+                new TechniqueGenerator(),
+                new SpellGenerator(numbers),
+                new PillGenerator(numbers),
+                new ArtifactGenerator(numbers));
     }
 
     public static void main(String[] args) {
         Options options = parse(args);
-        Summary summary = run(options, generators());
+        Summary summary = run(options, generators(NumbersSource.at(options.contentRoot())));
         summary.problems().forEach(p -> System.err.println("datagen: " + p));
         System.out.printf(
-                "datagen: tables-root=%s resources-root=%s tables=%d rows=%d generators=%d products=%d problems=%d%n",
+                "datagen: tables-root=%s resources-root=%s content-root=%s tables=%d rows=%d generators=%d products=%d problems=%d%n",
                 options.tablesRoot(),
                 options.resourcesRoot(),
+                options.contentRoot(),
                 summary.tables(),
                 summary.rows(),
                 summary.generators(),
@@ -108,18 +115,21 @@ public final class DataGenMain {
     static Options parse(String[] args) {
         String tables = null;
         String resources = null;
+        String content = null;
         for (int i = 0; i < args.length - 1; i++) {
             switch (args[i]) {
                 case "--tables-root" -> tables = args[++i];
                 case "--resources-root" -> resources = args[++i];
+                case "--content-root" -> content = args[++i];
                 default -> {}
             }
         }
         if (tables == null || resources == null) {
             throw new IllegalArgumentException(
-                    "usage: datagen --tables-root <dir> --resources-root <dir>");
+                    "usage: datagen --tables-root <dir> --resources-root <dir> [--content-root <dir>]");
         }
-        return new Options(Path.of(tables), Path.of(resources));
+        return new Options(
+                Path.of(tables), Path.of(resources), content == null ? null : Path.of(content));
     }
 
     static List<Path> listCsv(Path tablesRoot) {

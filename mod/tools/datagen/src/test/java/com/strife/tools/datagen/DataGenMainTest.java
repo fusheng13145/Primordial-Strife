@@ -136,7 +136,7 @@ class DataGenMainTest {
     }
 
     private static DataGenMain.Options options(Path root) {
-        return new DataGenMain.Options(tableDir(root), resourcesDir(root));
+        return new DataGenMain.Options(tableDir(root), resourcesDir(root), null);
     }
 
     private static Path tableDir(Path root) {
