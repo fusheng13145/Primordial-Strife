@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -20,10 +22,12 @@ import java.util.Map;
  * Build-time content validator (docs/04 §6). Runs on plain JVM, never launches Minecraft.
  *
  * <p>Implemented so far: V-DUP (global ID uniqueness, checked on both generated content and the
- * source tables) and V-FRESH (the {@code @generated} header must name an existing table whose
- * current hash it carries). Reference existence, DAG connectivity, probability normalisation,
- * NUMBERS range checks and DSL legality are tracked by later tickets and register here as {@link
- * Check} implementations.
+ * source tables), V-FRESH (the {@code @generated} header must name an existing table whose current
+ * hash it carries) and the growth-ratio sub-item of V-RANGE (adjacent-realm {@code qi_max} ratios,
+ * with bounds read from NUMBERS §2 @@limits — see {@link #growthRatio(Options)}). Reference
+ * existence, DAG connectivity, probability normalisation, the remaining V-RANGE sub-items, text
+ * coverage and DSL legality are tracked by later tickets and register here as {@link Check}
+ * implementations.
  */
 public final class ValidatorMain {
 
@@ -39,7 +43,7 @@ public final class ValidatorMain {
         List<String> run(Options options);
     }
 
-    record Options(Path dataRoot, Path tablesRoot) {}
+    record Options(Path dataRoot, Path tablesRoot, Path contentRoot) {}
 
     /**
      * Where an ID was declared: the table it came from plus a human-addressable location.
@@ -277,6 +281,178 @@ public final class ValidatorMain {
         return problems;
     }
 
+    /**
+     * V-RANGE growth-ratio sub-item (docs/04 §6; the A0-7 acceptance check): the {@code qi_max} of
+     * adjacent realms in the NUMBERS §1 chain must stay inside the bounds NUMBERS itself declares
+     * in §2 @@limits.
+     *
+     * <p>The bounds are managed numbers, so they are read from the truth source at run time and
+     * never written here — a hardcoded 1.8/2.5 in this class would be exactly the "second copy of a
+     * managed number" AGENTS.md forbids. When {@code content/NUMBERS.md} is not merged yet the
+     * check has nothing to audit: {@link #main} prints a skip notice instead of failing, and the
+     * gate arms itself the moment the file lands.
+     */
+    public static List<String> growthRatio(Options options) {
+        Path numbers = NumbersBlocks.numbersFile(options.contentRoot());
+        if (numbers == null) {
+            return List.of();
+        }
+        List<String> problems = new ArrayList<>();
+        List<NumbersBlocks.Line> limits;
+        List<NumbersBlocks.Line> realms;
+        try {
+            limits = NumbersBlocks.yamlBlock(numbers, "limits");
+            realms = NumbersBlocks.yamlBlock(numbers, "realms");
+        } catch (IllegalStateException e) {
+            return List.of(numbers + ": " + e.getMessage());
+        }
+        BigDecimal min = null;
+        BigDecimal max = null;
+        for (NumbersBlocks.Line line : limits) {
+            String content = NumbersBlocks.stripComment(line.text()).trim();
+            if (content.isEmpty() || content.startsWith("#")) {
+                continue;
+            }
+            int colon = content.indexOf(':');
+            String key = colon < 0 ? content : content.substring(0, colon).trim();
+            String value = colon < 0 ? null : content.substring(colon + 1).trim();
+            if ("growth_ratio_min".equals(key)) {
+                min = parseBound(numbers, line, value, problems);
+            } else if ("growth_ratio_max".equals(key)) {
+                max = parseBound(numbers, line, value, problems);
+            }
+        }
+        if (min == null) {
+            problems.add(
+                    numbers
+                            + ": @@limits declares no growth_ratio_min, so the growth-ratio gate"
+                            + " has no lower bound to enforce (NUMBERS §2)");
+        }
+        if (max == null) {
+            problems.add(
+                    numbers
+                            + ": @@limits declares no growth_ratio_max, so the growth-ratio gate"
+                            + " has no upper bound to enforce (NUMBERS §2)");
+        }
+        record Realm(String id, long qiMax) {}
+        List<Realm> chain = new ArrayList<>();
+        for (NumbersBlocks.Line line : realms) {
+            String content = NumbersBlocks.stripComment(line.text()).trim();
+            if (content.isEmpty() || content.startsWith("#")) {
+                continue;
+            }
+            int colon = content.indexOf(':');
+            if (colon <= 0 || !content.substring(colon + 1).trim().startsWith("{")) {
+                problems.add(
+                        numbers
+                                + ":"
+                                + line.number()
+                                + ": cannot parse @@realms entry '"
+                                + content
+                                + "' — expected 'id: { qi_max: <int>, ... }' (NUMBERS §1)");
+                continue;
+            }
+            String id = content.substring(0, colon).trim();
+            String qiMax = flowValue(content.substring(colon + 1).trim(), "qi_max");
+            if (qiMax == null) {
+                problems.add(
+                        numbers
+                                + ":"
+                                + line.number()
+                                + ": @@realms entry '"
+                                + id
+                                + "' has no qi_max, so its growth ratio cannot be audited"
+                                + " (NUMBERS §1)");
+                continue;
+            }
+            try {
+                chain.add(new Realm(id, Long.parseLong(qiMax)));
+            } catch (NumberFormatException e) {
+                problems.add(
+                        numbers
+                                + ":"
+                                + line.number()
+                                + ": @@realms entry '"
+                                + id
+                                + "' has a non-integer qi_max '"
+                                + qiMax
+                                + "' (NUMBERS §1)");
+            }
+        }
+        for (int i = 1; i < chain.size(); i++) {
+            Realm previous = chain.get(i - 1);
+            Realm current = chain.get(i);
+            if (previous.qiMax <= 0) {
+                problems.add(
+                        numbers
+                                + ": @@realms '"
+                                + previous.id
+                                + "' has qi_max "
+                                + previous.qiMax
+                                + ", which cannot form a growth ratio (NUMBERS §1)");
+                continue;
+            }
+            BigDecimal ratio =
+                    BigDecimal.valueOf(current.qiMax)
+                            .divide(BigDecimal.valueOf(previous.qiMax), 4, RoundingMode.HALF_UP);
+            if (min != null && ratio.compareTo(min) < 0) {
+                problems.add(
+                        numbers
+                                + ": growth ratio "
+                                + current.id
+                                + "/"
+                                + previous.id
+                                + " = "
+                                + ratio
+                                + " is below growth_ratio_min "
+                                + min
+                                + " (bounds from NUMBERS §2 @@limits; docs/05 §3)");
+            }
+            if (max != null && ratio.compareTo(max) > 0) {
+                problems.add(
+                        numbers
+                                + ": growth ratio "
+                                + current.id
+                                + "/"
+                                + previous.id
+                                + " = "
+                                + ratio
+                                + " exceeds growth_ratio_max "
+                                + max
+                                + " (bounds from NUMBERS §2 @@limits; docs/05 §3)");
+            }
+        }
+        return problems;
+    }
+
+    /** Reads one {@code k: v} pair out of a one-level flow mapping like {@code { qi_max: 100 }}. */
+    private static String flowValue(String flowMapping, String key) {
+        for (String part : flowMapping.replaceFirst("^\\{", "").replaceFirst("\\}\\s*$", "")
+                .split(",")) {
+            int colon = part.indexOf(':');
+            if (colon > 0 && part.substring(0, colon).trim().equals(key)) {
+                return part.substring(colon + 1).trim();
+            }
+        }
+        return null;
+    }
+
+    private static BigDecimal parseBound(
+            Path numbers, NumbersBlocks.Line line, String value, List<String> problems) {
+        try {
+            return new BigDecimal(value);
+        } catch (NumberFormatException | NullPointerException e) {
+            problems.add(
+                    numbers
+                            + ":"
+                            + line.number()
+                            + ": @@limits bound is not a number: '"
+                            + value
+                            + "' (NUMBERS §2)");
+            return null;
+        }
+    }
+
     public static List<Check> checks() {
         return List.of(ValidatorMain::duplicateIds, ValidatorMain::staleGeneratedHeaders);
     }
@@ -288,6 +464,14 @@ public final class ValidatorMain {
         for (Check check : checks()) {
             problems.addAll(check.run(options));
             executed++;
+        }
+        if (NumbersBlocks.numbersFile(options.contentRoot()) != null) {
+            problems.addAll(growthRatio(options));
+            executed++;
+        } else {
+            System.out.println(
+                    "validator: V-GROWTH skipped — content/NUMBERS.md is not present yet"
+                            + " (A0-7 truth source unmerged); the check arms itself when it lands");
         }
         problems.forEach(p -> System.err.println("validator: " + p));
         System.out.printf(
@@ -306,16 +490,18 @@ public final class ValidatorMain {
     static Options parseArgs(String[] args) {
         Path dataRoot = null;
         Path tablesRoot = null;
+        Path contentRoot = null;
         for (int i = 0; i < args.length - 1; i++) {
             switch (args[i]) {
                 case "--data-root" -> dataRoot = Path.of(args[++i]);
                 case "--tables-root" -> tablesRoot = Path.of(args[++i]);
+                case "--content-root" -> contentRoot = Path.of(args[++i]);
                 default -> {}
             }
         }
         if (dataRoot == null) {
             throw new IllegalArgumentException(
-                    "usage: validator --data-root <dir> [--tables-root <dir>]");
+                    "usage: validator --data-root <dir> [--tables-root <dir>] [--content-root <dir>]");
         }
         if (tablesRoot != null && !Files.isDirectory(tablesRoot)) {
             throw new IllegalArgumentException(
@@ -323,7 +509,7 @@ public final class ValidatorMain {
                             + tablesRoot
                             + " is not a directory (typo? CI must not skip the source tables)");
         }
-        return new Options(dataRoot, tablesRoot);
+        return new Options(dataRoot, tablesRoot, contentRoot);
     }
 
     /**

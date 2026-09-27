@@ -20,11 +20,138 @@ class ValidatorMainTest {
     }
 
     private static Options productsOnly(Path dataRoot) {
-        return new Options(dataRoot, null);
+        return new Options(dataRoot, null, null);
     }
 
     private static Options withTables(Path dataRoot, Path tablesRoot) {
-        return new Options(dataRoot, tablesRoot);
+        return new Options(dataRoot, tablesRoot, null);
+    }
+
+    /** Writes a content/NUMBERS.md carrying the given @@blocks and returns the content root. */
+    private static Path withNumbers(Path root, String blocks) throws IOException {
+        Path content = root.resolve("content");
+        write(content.resolve("NUMBERS.md"), blocks);
+        return content;
+    }
+
+    private static final String TWO_REALMS =
+            """
+            @@limits
+            ```yaml
+            growth_ratio_min: 1.8        # [锚] 下限
+            growth_ratio_max: 2.5        # [锚] 上限
+            ```
+
+            @@realms
+            ```yaml
+            fanren: { qi_max: 100, stage_count: 1 } # [拟]
+            qili: { qi_max: 230, stage_count: 9 } # [拟]
+            ```
+            """;
+
+    @Test
+    void growthRatioInsideBoundsPasses(@TempDir Path root) throws IOException {
+        Options options =
+                new Options(root.resolve("data"), null, withNumbers(root, TWO_REALMS));
+
+        assertEquals(List.of(), ValidatorMain.growthRatio(options));
+    }
+
+    @Test
+    void growthRatioAboveTheDeclaredMaxFails(@TempDir Path root) throws IOException {
+        Options options =
+                new Options(
+                        root.resolve("data"),
+                        null,
+                        withNumbers(root, TWO_REALMS.replace("qi_max: 230", "qi_max: 320")));
+
+        List<String> problems = ValidatorMain.growthRatio(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("qili/fanren"), problems.get(0));
+        assertTrue(problems.get(0).contains("exceeds growth_ratio_max 2.5"), problems.get(0));
+        assertTrue(problems.get(0).contains("NUMBERS §2"), problems.get(0));
+    }
+
+    @Test
+    void growthRatioBelowTheDeclaredMinFails(@TempDir Path root) throws IOException {
+        Options options =
+                new Options(
+                        root.resolve("data"),
+                        null,
+                        withNumbers(root, TWO_REALMS.replace("qi_max: 230", "qi_max: 150")));
+
+        List<String> problems = ValidatorMain.growthRatio(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("below growth_ratio_min 1.8"), problems.get(0));
+    }
+
+    /** The bounds live in the truth source (AGENTS.md: no managed numbers in code). */
+    @Test
+    void growthBoundsAreReadFromLimitsNotHardcoded(@TempDir Path root) throws IOException {
+        String widened = TWO_REALMS.replace("growth_ratio_max: 2.5", "growth_ratio_max: 3.3");
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, widened));
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.growthRatio(options),
+                "a bound the truth source widened must not be flagged against a baked-in 2.5");
+    }
+
+    @Test
+    void missingLimitsBoundIsAProblem(@TempDir Path root) throws IOException {
+        String noMin = TWO_REALMS.replace("growth_ratio_min: 1.8        # [锚] 下限\n", "");
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, noMin));
+
+        List<String> problems = ValidatorMain.growthRatio(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("growth_ratio_min"), problems.get(0));
+    }
+
+    @Test
+    void unparseableRealmEntryIsAProblemNotASilentSkip(@TempDir Path root) throws IOException {
+        String broken = TWO_REALMS.replace("qili: { qi_max: 230, stage_count: 9 }", "qili ??? 230");
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, broken));
+
+        List<String> problems = ValidatorMain.growthRatio(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("cannot parse @@realms entry"), problems.get(0));
+    }
+
+    @Test
+    void zeroQiMaxCannotFormARatio(@TempDir Path root) throws IOException {
+        String zeroed = TWO_REALMS.replace("qi_max: 100", "qi_max: 0");
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, zeroed));
+
+        List<String> problems = ValidatorMain.growthRatio(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("cannot form a growth ratio"), problems.get(0));
+    }
+
+    @Test
+    void aMissingNumbersFileSkipsInsteadOfFailing(@TempDir Path root) throws IOException {
+        Options options = new Options(root.resolve("data"), null, root.resolve("content"));
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.growthRatio(options),
+                "an unmerged truth source is a skip (with a printed notice), not a red build");
+    }
+
+    @Test
+    void aPresentNumbersFileWithoutTheContractedBlockIsAProblem(@TempDir Path root)
+            throws IOException {
+        Options options =
+                new Options(root.resolve("data"), null, withNumbers(root, "@@realms\n```yaml\n```"));
+
+        List<String> problems = ValidatorMain.growthRatio(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("@@limits"), problems.get(0));
     }
 
     @Test

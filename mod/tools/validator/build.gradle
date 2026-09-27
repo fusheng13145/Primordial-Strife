@@ -31,7 +31,11 @@ run {
             '--data-root',
             project(':content-base').file('src/main/resources/data').toString(),
             '--tables-root',
-            file("${repoRoot}/tables").toString()]
+            file("${repoRoot}/tables").toString(),
+            // Optional on purpose: while content/ (A0-7) is unmerged the growth-ratio gate
+            // prints a skip notice in CI and arms itself the moment the file lands.
+            '--content-root',
+            file("${repoRoot}/content").toString()]
     // CI reports must show the validator summary without --info.
     logging.captureStandardOutput(LogLevel.LIFECYCLE)
     logging.captureStandardError(LogLevel.LIFECYCLE)

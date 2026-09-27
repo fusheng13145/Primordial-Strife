@@ -89,10 +89,12 @@ jobs:
 
       # Gates not yet lit — each lights up with its own ticket, never with a stub that
       # reports success without checking anything (docs/06 §4: an unverified pass is a fail).
-      # - validator 只跑了 docs/04 §6 八项中的 2 项（重复 ID / 产物新鲜）。其余 6 项不是漏写：
-      #   引用存在性 / DAG 连通 / 概率归一 / 数值越界 / DSL 合法要等内容表有行，
-      #   文本缺项即下面那条 zh_cn 全覆盖。step 摘要里的 checks=2 就是这条差距的读数，
-      #   别把它读成"全项已过"。
+      # - validator 覆盖 docs/04 §6 八项中的 2 项（重复 ID / 产物新鲜）+ V-RANGE 的成长比子项
+      #   （V-GROWTH：区间上下限从 NUMBERS §2 @@limits 读取，受管数值不写进代码）。content/
+      #   未合入（A0-7）时该检查在 CI 打印 "V-GROWTH skipped" 并跳过，真相源合入后自动生效；
+      #   其余 5 项不是漏写：引用存在性 / DAG 连通 / 概率归一 / 数值越界其余子项 / DSL 合法
+      #   要等内容表有行，文本缺项即下面那条 zh_cn 全覆盖。step 摘要里的 checks=2（content/
+      #   未合入）或 checks=3（已合入）就是这个差距的读数，别把它读成"全项已过"。
       # - zh_cn key full coverage (docs/04 §4)               -> C1-1
       # - content-base-X.Y.Z.zip 导出（docs/04 §9 热更通道）  -> 待立工单
       # Nightly (docs/04 §8): tick 采样 / 灵气场 chunk 生成耗时 / 丹方蒙特卡洛 10 万 / 2h 长跑 -> M2+
