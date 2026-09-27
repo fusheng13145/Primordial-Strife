@@ -15,10 +15,12 @@ import java.util.Map;
 /**
  * One source table read per docs/04 §5 and content/JSON_SCHEMA.md §2.
  *
- * <p>Deliberately narrow: the cell grammar for nested objects ({@code |} and {@code ( )}) is still
- * marked {@code [拟]} in the contract, so this reader only understands scalars, {@code ;} lists and
- * {@code k=v;} mappings. Anything else fails loudly instead of guessing — a silently wrong product
- * is worse than a build that stops.
+ * <p>The cell grammar is the one §2 freezes ({@code [拟]}, changes are 破档): scalars, {@code ;}
+ * lists, {@code k=v;} mappings, object arrays separated by {@code |}, inner nesting wrapped in
+ * {@code ( )}, and {@code ()} as the explicit empty container — a blank cell always means "absent"
+ * and never "empty". Parsing is paren-aware, so a {@code ;} or {@code |} inside {@code ( )} does
+ * not split the cell. Scalars reject the nested grammar outright: if a scalar column carries it,
+ * the row was written against the wrong column type and must fail loudly, not mis-parse.
  *
  * @param fileName table file name, as it appears in {@code @generated}
  * @param columns header columns with {@code _}-prefixed comment columns removed (04 §5)
@@ -107,9 +109,9 @@ public record TableSource(String fileName, List<String> columns, List<Record> ro
                             + record.line()
                             + ": column '"
                             + column
-                            + "' uses nested grammar ('|' / '(' ) that is still [拟] in"
-                            + " content/JSON_SCHEMA.md §2 — DataGen does not guess it."
-                            + " Get the syntax ratified, then implement it here.");
+                            + "' is a scalar column but the cell carries nested grammar"
+                            + " ('|' / '(' ) — content/JSON_SCHEMA.md §2 allows that only in"
+                            + " list/mapping/object columns; scalars must be plain values.");
         }
         return value;
     }
@@ -123,21 +125,46 @@ public record TableSource(String fileName, List<String> columns, List<Record> ro
         if (value == null || value.equals("()")) {
             return List.of();
         }
-        value = requireScalar(column, record);
         List<String> parts = new ArrayList<>();
-        for (String part : value.split(";")) {
-            if (!part.isBlank()) {
-                parts.add(part.trim());
+        for (String part : splitTopLevel(value, ';')) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
             }
+            if (trimmed.indexOf('|') >= 0 || trimmed.startsWith("(")) {
+                throw new IllegalStateException(
+                        fileName
+                                + ":"
+                                + record.line()
+                                + ": column '"
+                                + column
+                                + "' is a ';' list but the item '"
+                                + trimmed
+                                + "' carries object grammar ('|' / '(' ) — object arrays belong"
+                                + " in object columns (content/JSON_SCHEMA.md §2)");
+            }
+            parts.add(trimmed);
         }
         return parts;
     }
 
-    /** Parses a {@code k=v;k=v} mapping (JSON_SCHEMA §2); insertion order is preserved. */
+    /**
+     * Parses a {@code k=v;k=v} mapping (JSON_SCHEMA §2); insertion order is preserved. Values are
+     * kept verbatim — a {@code ( … )}-wrapped value still carries its parens, because unwrapping
+     * semantics belong to the field contract, not to this reader.
+     */
     public Map<String, String> mapping(String column, Record record) {
+        String value = get(column, record);
+        if (value == null || value.equals("()")) {
+            return new LinkedHashMap<>();
+        }
         Map<String, String> result = new LinkedHashMap<>();
-        for (String part : list(column, record)) {
-            int eq = part.indexOf('=');
+        for (String part : splitTopLevel(value, ';')) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            int eq = trimmed.indexOf('=');
             if (eq <= 0) {
                 throw new IllegalStateException(
                         fileName
@@ -146,12 +173,105 @@ public record TableSource(String fileName, List<String> columns, List<Record> ro
                                 + ": column '"
                                 + column
                                 + "' expects k=v entries, got '"
-                                + part
+                                + trimmed
                                 + "'");
             }
-            result.put(part.substring(0, eq).trim(), part.substring(eq + 1).trim());
+            result.put(trimmed.substring(0, eq).trim(), trimmed.substring(eq + 1).trim());
         }
         return result;
+    }
+
+    /**
+     * Parses an object array ({@code k=v;k=v|k=v;k=v}, JSON_SCHEMA §2), one map per object in cell
+     * order. Unlike {@link #list}, absence is preserved: a blank cell yields {@code null} (契约：
+     * 空格子 = 缺省) while {@code ()} yields an empty list — generators write the difference into
+     * the product, because "field absent" and "explicitly empty" are distinct states there.
+     */
+    public List<Map<String, String>> objectList(String column, Record record) {
+        String value = get(column, record);
+        if (value == null) {
+            return null;
+        }
+        if (value.equals("()")) {
+            return List.of();
+        }
+        List<Map<String, String>> objects = new ArrayList<>();
+        for (String part : splitTopLevel(value, '|')) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                throw new IllegalStateException(
+                        fileName
+                                + ":"
+                                + record.line()
+                                + ": column '"
+                                + column
+                                + "' has an empty object between '|' separators"
+                                + " (content/JSON_SCHEMA.md §2)");
+            }
+            objects.add(parseObject(column, record, trimmed));
+        }
+        return objects;
+    }
+
+    /** One object: optional surrounding parens, then {@code k=v} entries split on top-level ';'. */
+    private Map<String, String> parseObject(String column, Record record, String text) {
+        String body = text;
+        if (body.startsWith("(") && body.endsWith(")")) {
+            body = body.substring(1, body.length() - 1).trim();
+        }
+        Map<String, String> object = new LinkedHashMap<>();
+        for (String part : splitTopLevel(body, ';')) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            int eq = trimmed.indexOf('=');
+            if (eq <= 0) {
+                throw new IllegalStateException(
+                        fileName
+                                + ":"
+                                + record.line()
+                                + ": column '"
+                                + column
+                                + "' expects k=v entries inside each object, got '"
+                                + trimmed
+                                + "'");
+            }
+            object.put(trimmed.substring(0, eq).trim(), trimmed.substring(eq + 1).trim());
+        }
+        if (object.isEmpty()) {
+            throw new IllegalStateException(
+                    fileName
+                            + ":"
+                            + record.line()
+                            + ": column '"
+                            + column
+                            + "' has an object with no k=v entries (content/JSON_SCHEMA.md §2)");
+        }
+        return object;
+    }
+
+    /**
+     * Splits at every unescaped {@code separator} that sits at parenthesis depth zero, so a
+     * separator inside {@code ( … )} never cuts the cell.
+     */
+    private static List<String> splitTopLevel(String value, char separator) {
+        List<String> parts = new ArrayList<>();
+        int depth = 0;
+        int start = 0;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')' && depth > 0) {
+                depth--;
+            } else if (c == separator && depth == 0) {
+                parts.add(value.substring(start, i));
+                start = i + 1;
+            }
+        }
+        parts.add(value.substring(start));
+        return parts;
     }
 
     /** Raw cell value, {@code null} when blank; fails if the header has no such column. */

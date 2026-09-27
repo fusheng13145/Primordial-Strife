@@ -143,8 +143,12 @@ class TableSourceTest {
         assertTrue(error.getMessage().contains("expects k=v entries"), error.getMessage());
     }
 
+    /**
+     * The nested grammar is implemented for list/mapping/object columns (JSON_SCHEMA §2), but a
+     * scalar column carrying it is a row written against the wrong column type — still a hard fail.
+     */
     @Test
-    void refusesToGuessTheUnratifiedNestedGrammar(@TempDir Path dir) throws IOException {
+    void rejectsNestedGrammarInScalarColumns(@TempDir Path dir) throws IOException {
         TableSource table = read(dir, "factions.csv", "id,relations", "fac_x,{a:1}|{b:2}");
         TableSource.Record row = table.rows().get(0);
 
@@ -153,9 +157,78 @@ class TableSourceTest {
                         IllegalStateException.class, () -> table.requireScalar("relations", row));
 
         assertTrue(
-                error.getMessage().contains("still [拟]")
-                        && error.getMessage().contains("does not guess"),
+                error.getMessage().contains("scalar column")
+                        && error.getMessage().contains("JSON_SCHEMA.md §2"),
                 error.getMessage());
+    }
+
+    @Test
+    void readsObjectArraysSeparatedByPipes(@TempDir Path dir) throws IOException {
+        TableSource table =
+                read(
+                        dir,
+                        "pills.csv",
+                        "id,outputs",
+                        "pill_x,item_id=a;count=1;prob=0.7;quality=fan|item_id=b;count=2;prob=0.3;quality=di");
+
+        List<Map<String, String>> objects = table.objectList("outputs", table.rows().get(0));
+
+        assertEquals(2, objects.size());
+        assertEquals("a", objects.get(0).get("item_id"));
+        assertEquals("0.7", objects.get(0).get("prob"));
+        assertEquals("b", objects.get(1).get("item_id"));
+        assertEquals("di", objects.get(1).get("quality"));
+    }
+
+    @Test
+    void readsParenWrappedObjects(@TempDir Path dir) throws IOException {
+        TableSource table =
+                read(
+                        dir,
+                        "dialog_trees_prologue.csv",
+                        "id,nodes",
+                        "dlg_x,(id=d1;text_key=dialog.strife.d1;options=(text_key=a;next=d2))");
+
+        List<Map<String, String>> objects = table.objectList("nodes", table.rows().get(0));
+
+        assertEquals(1, objects.size());
+        assertEquals("d1", objects.get(0).get("id"));
+        assertEquals(
+                "(text_key=a;next=d2)",
+                objects.get(0).get("options"),
+                "a nested value keeps its parens; unwrapping is the field contract's business");
+    }
+
+    /** 契约 §2: blank cell = 缺省 (null), () = explicit empty container — distinct states. */
+    @Test
+    void objectListKeepsAbsentAndExplicitlyEmptyApart(@TempDir Path dir) throws IOException {
+        TableSource table = read(dir, "spells.csv", "id,effects", "spell_a,", "spell_b,()");
+
+        assertNull(table.objectList("effects", table.rows().get(0)), "blank = absent = null");
+        assertEquals(
+                List.of(), table.objectList("effects", table.rows().get(1)), "() = empty array");
+    }
+
+    @Test
+    void aSeparatorInsideParensDoesNotSplitTheCell(@TempDir Path dir) throws IOException {
+        TableSource table =
+                read(dir, "factions.csv", "id,relations", "fac_x,key=(a=1;b=2);other=3");
+
+        Map<String, String> mapping = table.mapping("relations", table.rows().get(0));
+
+        assertEquals("(a=1;b=2)", mapping.get("key"));
+        assertEquals("3", mapping.get("other"));
+    }
+
+    @Test
+    void rejectsObjectGrammarInsideAPlainList(@TempDir Path dir) throws IOException {
+        TableSource table = read(dir, "techniques.csv", "id,passives", "tech_x,a;b|c");
+        TableSource.Record row = table.rows().get(0);
+
+        IllegalStateException error =
+                assertThrows(IllegalStateException.class, () -> table.list("passives", row));
+
+        assertTrue(error.getMessage().contains("object grammar"), error.getMessage());
     }
 
     @Test
