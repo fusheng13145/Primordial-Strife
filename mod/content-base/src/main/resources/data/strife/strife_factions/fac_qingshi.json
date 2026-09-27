@@ -1,0 +1,10 @@
+{
+  "@generated": "from tables/factions.csv @ sha256:351f32cdb699c16ee4aa5620ec217f8e102c12f1cdf8df9f98c178db15c57631",
+  "id": "fac_qingshi",
+  "display_name_key": "faction.strife.fac_qingshi",
+  "alignment": "orthodox",
+  "home_region": "qi_luoxia",
+  "relations": {
+    "fac_yuelai": 10
+  }
+}
