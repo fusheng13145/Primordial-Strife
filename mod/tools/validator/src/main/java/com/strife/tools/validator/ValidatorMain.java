@@ -631,6 +631,248 @@ public final class ValidatorMain {
         }
     }
 
+    /**
+     * V-PROB (docs/04 §6 概率归一): probability lists in products must sum to 1 within the contracted
+     * tolerance of 1e-6 (JSON_SCHEMA §4.4 outputs / §4.5 quality_probs — the tolerance is a checker
+     * parameter from the contract, not a managed game number). Domains without probability arrays
+     * are skipped by shape.
+     */
+    public static List<String> probabilitySum(Options options) {
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            String field = probabilityField(options.dataRoot().relativize(file).toString());
+            if (field == null) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has(field) || !object.get(field).isJsonArray()) {
+                continue;
+            }
+            double sum = 0;
+            int entries = 0;
+            for (JsonElement element : object.getAsJsonArray(field)) {
+                if (element.isJsonObject() && element.getAsJsonObject().has("prob")) {
+                    sum += element.getAsJsonObject().get("prob").getAsDouble();
+                    entries++;
+                }
+            }
+            if (entries > 0 && Math.abs(sum - 1.0) > 1e-6) {
+                problems.add(
+                        file
+                                + ": "
+                                + field
+                                + " probabilities sum to "
+                                + sum
+                                + " across "
+                                + entries
+                                + " entries, must be 1 within 1e-6 (docs/04 §6 V-PROB)");
+            }
+        }
+        return problems;
+    }
+
+    /** The probability array field a domain carries, or null when it carries none. */
+    private static String probabilityField(String relativePath) {
+        String path = relativePath.replace('\\', '/');
+        String[] parts = path.split("/");
+        if (parts.length < 2 || !"strife".equals(parts[0])) {
+            return null;
+        }
+        return switch (parts[1]) {
+            case "strife_pills" -> "outputs";
+            case "strife_artifacts" -> "quality_probs";
+            default -> null;
+        };
+    }
+
+    /**
+     * V-RANGE sub-items on products (docs/04 §6): H1 prices must be non-negative (docs/03 §10).
+     * Further numeric ranges live in the truth source and are checked by {@link
+     * #truthSourceRanges}.
+     */
+    public static List<String> numericRanges(Options options) {
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("price") || !object.get("price").isJsonObject()) {
+                continue;
+            }
+            JsonObject price = object.getAsJsonObject("price");
+            if (!price.has("count") || !price.get("count").isJsonPrimitive()) {
+                continue;
+            }
+            long count = price.get("count").getAsLong();
+            if (count < 0) {
+                problems.add(
+                        file
+                                + ": price count "
+                                + count
+                                + " is negative — H1 prices are non-negative (docs/03 §10,"
+                                + " V-RANGE)");
+            }
+        }
+        return problems;
+    }
+
+    /**
+     * V-RANGE sub-items on the truth source itself (docs/04 §6), gated on content/ being merged
+     * like V-GROWTH: success rates stay inside the success_rate bounds NUMBERS declares, and
+     * lifespan_years must strictly increase along the realm chain — with the [占位] relaxation the
+     * contract grants for the unnamed later realms (JSON_SCHEMA §4.1 disabled_by_placeholder).
+     */
+    public static List<String> truthSourceRanges(Options options) {
+        Path numbers = NumbersBlocks.numbersFile(options.contentRoot());
+        if (numbers == null) {
+            return List.of();
+        }
+        List<String> problems = new ArrayList<>();
+        List<NumbersBlocks.Line> limits;
+        List<NumbersBlocks.Line> breakthrough;
+        List<NumbersBlocks.Line> realms;
+        try {
+            limits = NumbersBlocks.yamlBlock(numbers, "limits");
+            breakthrough = NumbersBlocks.yamlBlock(numbers, "breakthrough");
+            realms = NumbersBlocks.yamlBlock(numbers, "realms");
+        } catch (IllegalStateException e) {
+            return List.of(numbers + ": " + e.getMessage());
+        }
+        BigDecimal rateMin = null;
+        BigDecimal rateMax = null;
+        for (NumbersBlocks.Line line : limits) {
+            String content = NumbersBlocks.stripComment(line.text()).trim();
+            if (content.isEmpty() || content.startsWith("#")) {
+                continue;
+            }
+            int colon = content.indexOf(':');
+            String key = colon < 0 ? content : content.substring(0, colon).trim();
+            String value = colon < 0 ? null : content.substring(colon + 1).trim();
+            if ("success_rate_min".equals(key)) {
+                rateMin = parseBound(numbers, line, value, problems);
+            } else if ("success_rate_max".equals(key)) {
+                rateMax = parseBound(numbers, line, value, problems);
+            }
+        }
+        if (rateMin == null || rateMax == null) {
+            problems.add(
+                    numbers
+                            + ": @@limits declares no success_rate_min/max, so success rates"
+                            + " cannot be range-checked (NUMBERS §2)");
+        }
+        for (NumbersBlocks.Line line : breakthrough) {
+            String content = NumbersBlocks.stripComment(line.text()).trim();
+            if (content.isEmpty() || content.startsWith("#")) {
+                continue;
+            }
+            int colon = content.indexOf(':');
+            if (colon <= 0) {
+                continue;
+            }
+            String key = content.substring(0, colon).trim();
+            for (String field : List.of("base", "floor")) {
+                String raw = flowValue(content.substring(colon + 1).trim(), field);
+                if (raw == null) {
+                    continue;
+                }
+                try {
+                    BigDecimal rate = new BigDecimal(raw);
+                    if (rateMin != null && rate.compareTo(rateMin) < 0
+                            || rateMax != null && rate.compareTo(rateMax) > 0) {
+                        problems.add(
+                                numbers
+                                        + ":"
+                                        + line.number()
+                                        + ": @@breakthrough '"
+                                        + key
+                                        + "' has "
+                                        + field
+                                        + " "
+                                        + rate
+                                        + " outside success_rate bounds ["
+                                        + rateMin
+                                        + ", "
+                                        + rateMax
+                                        + "] (NUMBERS §2/§3, V-RANGE)");
+                    }
+                } catch (NumberFormatException e) {
+                    problems.add(
+                            numbers
+                                    + ":"
+                                    + line.number()
+                                    + ": @@breakthrough '"
+                                    + key
+                                    + "' has a non-numeric "
+                                    + field
+                                    + " '"
+                                    + raw
+                                    + "' (NUMBERS §3)");
+                }
+            }
+        }
+        Long previousLifespan = null;
+        String previousId = null;
+        boolean previousPlaceholder = false;
+        for (NumbersBlocks.Line line : realms) {
+            String text = line.text();
+            String content = NumbersBlocks.stripComment(text).trim();
+            if (content.isEmpty() || content.startsWith("#")) {
+                continue;
+            }
+            int colon = content.indexOf(':');
+            if (colon <= 0) {
+                continue;
+            }
+            String id = content.substring(0, colon).trim();
+            String raw = flowValue(content.substring(colon + 1).trim(), "lifespan_years");
+            if (raw == null) {
+                continue; // V-GROWTH already reports unparseable realm entries
+            }
+            boolean placeholder = text.contains("[占位]");
+            try {
+                long lifespan = Long.parseLong(raw);
+                if (previousLifespan != null
+                        && !placeholder
+                        && !previousPlaceholder
+                        && lifespan <= previousLifespan) {
+                    problems.add(
+                            numbers
+                                    + ":"
+                                    + line.number()
+                                    + ": @@realms '"
+                                    + id
+                                    + "' lifespan_years "
+                                    + lifespan
+                                    + " does not increase over '"
+                                    + previousId
+                                    + "' ("
+                                    + previousLifespan
+                                    + ") — 寿元随境界单调递增 (docs/05 §4, V-RANGE)");
+                }
+                previousLifespan = lifespan;
+                previousId = id;
+                previousPlaceholder = placeholder;
+            } catch (NumberFormatException e) {
+                problems.add(
+                        numbers
+                                + ":"
+                                + line.number()
+                                + ": @@realms '"
+                                + id
+                                + "' has a non-integer lifespan_years '"
+                                + raw
+                                + "' (NUMBERS §1)");
+            }
+        }
+        return problems;
+    }
+
     public static List<Check> checks() {
         return List.of(ValidatorMain::duplicateIds, ValidatorMain::staleGeneratedHeaders);
     }
@@ -646,11 +888,13 @@ public final class ValidatorMain {
         }
         if (NumbersBlocks.numbersFile(options.contentRoot()) != null) {
             problems.addAll(growthRatio(options));
-            executed++;
+            problems.addAll(truthSourceRanges(options));
+            executed += 2;
         } else {
             notices.add(
-                    "V-GROWTH skipped — content/NUMBERS.md is not present yet"
-                            + " (A0-7 truth source unmerged); the check arms itself when it lands");
+                    "V-GROWTH / V-RANGE(truth source) skipped — content/NUMBERS.md is not present"
+                            + " yet (A0-7 truth source unmerged); the checks arm themselves when it"
+                            + " lands");
         }
         if (hasUnverifiableNumbersProducts(options)) {
             notices.add(
@@ -663,6 +907,10 @@ public final class ValidatorMain {
         } else {
             notices.add("V-TEXT skipped — no --assets-root given, lang coverage unchecked");
         }
+        problems.addAll(probabilitySum(options));
+        executed++;
+        problems.addAll(numericRanges(options));
+        executed++;
         notices.forEach(n -> System.out.println("validator: " + n));
         problems.forEach(p -> System.err.println("validator: " + p));
         System.out.printf(

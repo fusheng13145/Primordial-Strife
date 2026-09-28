@@ -523,4 +523,130 @@ class ValidatorMainTest {
 
         assertEquals(false, ValidatorMain.hasUnverifiableNumbersProducts(verifiable));
     }
+
+    // ===== V-PROB 概率归一 (docs/04 §6) =====
+
+    @Test
+    void flagsOutputProbabilitiesThatDoNotSumToOne(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_pills/pill_x.json"),
+                "{\"id\":\"pill_x\",\"outputs\":[{\"item_id\":\"a\",\"prob\":0.9}]}");
+
+        List<String> problems = ValidatorMain.probabilitySum(productsOnly(root.resolve("data")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("0.9"), problems.get(0));
+        assertTrue(problems.get(0).contains("outputs"), problems.get(0));
+    }
+
+    @Test
+    void probabilitySumAcceptsOneWithinTolerance(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_pills/pill_x.json"),
+                "{\"id\":\"pill_x\",\"outputs\":[{\"prob\":0.7},{\"prob\":0.3}]}");
+
+        assertEquals(List.of(), ValidatorMain.probabilitySum(productsOnly(root.resolve("data"))));
+    }
+
+    @Test
+    void qualityProbsAreCheckedToo(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_artifacts/art_x.json"),
+                "{\"id\":\"art_x\",\"quality_probs\":[{\"quality_tier\":\"fan\",\"prob\":0.7},{\"prob\":0.25}]}");
+
+        List<String> problems = ValidatorMain.probabilitySum(productsOnly(root.resolve("data")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("quality_probs"), problems.get(0));
+    }
+
+    // ===== V-RANGE price 非负 (docs/03 §10 H1) =====
+
+    @Test
+    void flagsANegativePrice(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_techniques/tech_x.json"),
+                "{\"id\":\"tech_x\",\"price\":{\"item_id\":\"item_lingshi\",\"count\":-5}}");
+
+        List<String> problems = ValidatorMain.numericRanges(productsOnly(root.resolve("data")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("-5"), problems.get(0));
+    }
+
+    @Test
+    void aZeroPriceIsAValueNotAMissingField(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_pills/pill_x.json"),
+                "{\"id\":\"pill_x\",\"price\":{\"item_id\":\"item_lingshi\",\"count\":0}}");
+
+        assertEquals(List.of(), ValidatorMain.numericRanges(productsOnly(root.resolve("data"))));
+    }
+
+    // ===== V-RANGE truth-source sub-items (成功率域 / 寿元单调) =====
+
+    private static final String RANGES =
+            """
+            @@limits
+            ```yaml
+            success_rate_min: 0.0        # [锚]
+            success_rate_max: 1.0        # [锚]
+            ```
+
+            @@breakthrough
+            ```yaml
+            bs_a: { base: 0.95, fail_step: 0.00, floor: 0.95 } # [拟]
+            bs_bad: { base: 1.50, fail_step: 0.00, floor: 0.40 } # [拟]
+            ```
+
+            @@realms
+            ```yaml
+            fanren: { qi_max: 100, lifespan_years: 80, unlocks: [] } # [拟]
+            qili: { qi_max: 230, lifespan_years: 120, unlocks: [] } # [拟]
+            lianxu: { qi_max: 13500, lifespan_years: 50, unlocks: [] } # [拟][占位]
+            ```
+            """;
+
+    @Test
+    void flagsASuccessRateOutsideTheDeclaredBounds(@TempDir Path root) throws IOException {
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, RANGES), null);
+
+        List<String> problems = ValidatorMain.truthSourceRanges(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("bs_bad"), problems.get(0));
+        assertTrue(problems.get(0).contains("outside success_rate bounds"), problems.get(0));
+    }
+
+    @Test
+    void inBoundsRatesAndPlaceholderLifespanPass(@TempDir Path root) throws IOException {
+        Options options =
+                new Options(
+                        root.resolve("data"),
+                        null,
+                        withNumbers(root, RANGES.replace("base: 1.50", "base: 0.50")),
+                        null);
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.truthSourceRanges(options),
+                "lianxu 的 lifespan 50<120 因 [占位] 放宽（JSON_SCHEMA §4.1）");
+    }
+
+    @Test
+    void lifespanMustStrictlyIncreaseForNamedRealms(@TempDir Path root) throws IOException {
+        String decreasing =
+                RANGES.replace("base: 1.50", "base: 0.50")
+                        .replace(
+                                "qili: { qi_max: 230, lifespan_years: 120",
+                                "qili: { qi_max: 230, lifespan_years: 60");
+        Options options =
+                new Options(root.resolve("data"), null, withNumbers(root, decreasing), null);
+
+        List<String> problems = ValidatorMain.truthSourceRanges(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("does not increase"), problems.get(0));
+        assertTrue(problems.get(0).contains("qili"), problems.get(0));
+    }
 }
