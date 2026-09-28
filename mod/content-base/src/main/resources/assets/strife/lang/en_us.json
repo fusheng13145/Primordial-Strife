@@ -25,5 +25,16 @@
   "item.strife.item_yaocai": "Beast Material",
   "item.strife.item_ningxu": "Ningxu Herb",
   "item.strife.item_yuejian": "Moonrise Herb",
-  "item.strife.item_duanxue": "Bloodstanch Herb"
+  "item.strife.item_duanxue": "Bloodstanch Herb",
+  "gui.strife.hud.realm": "Realm %s",
+  "gui.strife.hud.qi": "Qi %s",
+  "gui.strife.hud.lifespan": "Lifespan %sy",
+  "gui.strife.hud.spiritroot": "Spirit Root %s",
+  "gui.strife.hud.none": "Unawakened",
+  "gui.strife.hud.quality": "Grade %s",
+  "element.strife.jin": "Metal",
+  "element.strife.mu": "Wood",
+  "element.strife.shui": "Water",
+  "element.strife.huo": "Fire",
+  "element.strife.tu": "Earth"
 }

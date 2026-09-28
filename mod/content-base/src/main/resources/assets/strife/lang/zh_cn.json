@@ -25,5 +25,16 @@
   "item.strife.item_yaocai": "妖兽材料",
   "item.strife.item_ningxu": "凝须草",
   "item.strife.item_yuejian": "月见草",
-  "item.strife.item_duanxue": "断血草"
+  "item.strife.item_duanxue": "断血草",
+  "gui.strife.hud.realm": "境界 %s",
+  "gui.strife.hud.qi": "修为 %s",
+  "gui.strife.hud.lifespan": "寿元 %s 年",
+  "gui.strife.hud.spiritroot": "灵根 %s",
+  "gui.strife.hud.none": "未生成",
+  "gui.strife.hud.quality": "品阶 %s",
+  "element.strife.jin": "金",
+  "element.strife.mu": "木",
+  "element.strife.shui": "水",
+  "element.strife.huo": "火",
+  "element.strife.tu": "土"
 }
