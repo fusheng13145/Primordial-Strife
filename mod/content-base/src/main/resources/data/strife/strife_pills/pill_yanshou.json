@@ -1,12 +1,12 @@
 {
-  "@generated": "from tables/pills.csv @ sha256:cb1fa219ea8e9d6d0a27c9e420d91d08e81353ecb1d121213f591cb9941d22d1",
+  "@generated": "from tables/pills.csv @ sha256:61dc09af4900bcff689c2ca3da509dbccd03864e53ea5b1caaca338f23460bf9",
   "id": "pill_yanshou",
   "quality_tier": "di",
-  "pattern": "1x1=herb_duanxue",
-  "core_slot": "herb_duanxue",
+  "pattern": "1x1=item_duanxue",
+  "core_slot": "item_duanxue",
   "materials": [
     {
-    "item_id": "herb_duanxue",
+    "item_id": "item_duanxue",
     "count": 2
   },
     {

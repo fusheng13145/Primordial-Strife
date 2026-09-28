@@ -1,0 +1,391 @@
+{
+  "@generated": "from tables/quests_prologue.csv @ sha256:517c8ef7577d13d0b7e19c0ca7b2a2e3cd89ff9455e0c528eaedf202696df08c",
+  "id": "quest_prologue_root_read_01",
+  "chapter": "prologue",
+  "quests": [
+    {
+    "id": "quest_prologue_root_read_01",
+    "entry": true,
+    "prerequisites": [],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_qingshi_zhizhi",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "fac_qingshi:prologue:met_elder",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_meditation_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_root_read_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "sit",
+    "target": null,
+    "count": 60,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "qi",
+    "id": null,
+    "count": 40,
+    "unlock_key": null
+  },
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "meditation"
+  },
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "cultivation_panel"
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_herb_pick_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_meditation_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "collect",
+    "target": "item_ningxu",
+    "count": 6,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 3,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_deliver_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_herb_pick_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "deliver",
+    "target": "npc_yaonong_su",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "qi",
+    "id": null,
+    "count": 60,
+    "unlock_key": null
+  },
+    {
+    "type": "technique",
+    "id": "tech_qingxin_jue",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_breakthrough_qi_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_meditation_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "breakthrough",
+    "target": "bs_fanren_qili",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "spiritroot_panel"
+  },
+    {
+    "type": "flag",
+    "id": "prologue:first_qi",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_elder_story_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_breakthrough_qi_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_qingshi_zhizhi",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "fac_qingshi:prologue:saw_debt",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_nine_layers_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_elder_story_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "sit",
+    "target": null,
+    "count": 240,
+    "optional": false
+  },
+    {
+    "id": "2",
+    "type": "kill",
+    "target": null,
+    "count": 3,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "qi",
+    "id": null,
+    "count": 207,
+    "unlock_key": null
+  },
+    {
+    "type": "item",
+    "id": "item_yaocai",
+    "count": 2,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_prepare_zhuji_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_nine_layers_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "collect",
+    "target": "item_duanxue",
+    "count": 2,
+    "optional": false
+  },
+    {
+    "id": "2",
+    "type": "collect",
+    "target": "item_lingshi",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "prologue:ready_to_zhuji",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_breakthrough_zhuji_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_prepare_zhuji_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "breakthrough",
+    "target": "bs_qili_zhuji",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "technique_equip"
+  },
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "spell_cast"
+  },
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "pill_crafting"
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_prologue_sect_choice_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_prologue_breakthrough_zhuji_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_taishang_wu",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "prologue:sect_chosen",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  }
+  ]
+}
