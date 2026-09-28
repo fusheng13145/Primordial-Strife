@@ -151,7 +151,9 @@ class FactionGeneratorTest {
         DataGenMain.Summary summary =
                 DataGenMain.run(
                         new DataGenMain.Options(tables, root.resolve("resources"), null),
-                        List.of(new FactionGenerator()));
+                        List.of(new FactionGenerator()),
+                        List.of(),
+                        NumbersSource.at(null));
 
         assertEquals(2, summary.products());
         assertEquals(List.of(), summary.problems());

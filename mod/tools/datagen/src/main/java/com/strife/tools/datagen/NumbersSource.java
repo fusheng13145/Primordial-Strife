@@ -28,6 +28,8 @@ public final class NumbersSource {
 
     private final Path file;
     private Map<String, Map<String, Object>> blocks;
+    private Map<String, Map<String, String>> comments;
+    private String sha256;
 
     private NumbersSource(Path file) {
         this.file = file;
@@ -38,6 +40,25 @@ public final class NumbersSource {
      */
     public static NumbersSource at(Path contentRoot) {
         return new NumbersSource(contentRoot == null ? null : contentRoot.resolve("NUMBERS.md"));
+    }
+
+    /**
+     * Whether the truth source is present. Generators that can only run with NUMBERS.md are skipped
+     * with a printed notice while {@code content/} (A0-7) is unmerged — the same arm-on-merge
+     * contract the validator's V-GROWTH uses.
+     */
+    public boolean available() {
+        return file != null && Files.isRegularFile(file);
+    }
+
+    /** The whole @@block in written key order — for realms, the chain order is the truth (§4.1). */
+    public Map<String, Object> block(String blockId) {
+        Map<String, Object> entries = parse().get(blockId);
+        if (entries == null) {
+            throw new IllegalStateException(
+                    file + ": no @@" + blockId + " block found (NUMBERS §0)");
+        }
+        return entries;
     }
 
     /**
@@ -77,6 +98,23 @@ public final class NumbersSource {
         return entries.get(key);
     }
 
+    /**
+     * The raw inline comment of an entry, without the leading {@code #}. Derivation flags like
+     * {@code [占位]} live in comments (NUMBERS §0), so generators read this instead of inventing a
+     * second field in the truth source.
+     */
+    public String comment(String block, String key) {
+        parse();
+        Map<String, String> byKey = comments.get(block);
+        return byKey == null ? null : byKey.get(key);
+    }
+
+    /** Product header for NUMBERS-derived products — same freshness contract as table products. */
+    public String generatedHeader() {
+        parse();
+        return "from content/NUMBERS.md @ sha256:" + sha256;
+    }
+
     /** Parses the whole file once; empty until the first lookup actually needs it. */
     private Map<String, Map<String, Object>> parse() {
         if (blocks != null) {
@@ -90,6 +128,7 @@ public final class NumbersSource {
                             + " (content/JSON_SCHEMA.md §3); merge it (A0-7) or point --content-root at it");
         }
         Map<String, Map<String, Object>> parsed = new LinkedHashMap<>();
+        Map<String, Map<String, String>> parsedComments = new LinkedHashMap<>();
         String currentBlock = null;
         List<String> lines;
         try {
@@ -103,6 +142,7 @@ public final class NumbersSource {
                 if (trimmed.startsWith("@@") && trimmed.length() > 2) {
                     currentBlock = trimmed.substring(2);
                     parsed.putIfAbsent(currentBlock, new LinkedHashMap<>());
+                    parsedComments.putIfAbsent(currentBlock, new LinkedHashMap<>());
                 }
                 continue;
             }
@@ -122,13 +162,30 @@ public final class NumbersSource {
             String key = content.substring(0, colon).trim();
             String raw = content.substring(colon + 1).trim();
             parsed.get(currentBlock).put(key, coerce(file, i + 1, raw));
+            int hash = trimmed.indexOf('#');
+            if (hash >= 0) {
+                parsedComments.get(currentBlock).put(key, trimmed.substring(hash + 1).trim());
+            }
         }
         if (currentBlock != null) {
             throw new IllegalStateException(
                     file + ": @@" + currentBlock + " fence is never closed (NUMBERS §0)");
         }
         blocks = parsed;
+        comments = parsedComments;
+        sha256 = sha256Of(file);
         return blocks;
+    }
+
+    private static String sha256Of(Path file) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            return java.util.HexFormat.of().formatHex(digest.digest(Files.readAllBytes(file)));
+        } catch (IOException e) {
+            throw new UncheckedIOException("cannot hash truth source " + file, e);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 missing from this JVM", e);
+        }
     }
 
     private static String stripComment(String text) {
@@ -169,11 +226,26 @@ public final class NumbersSource {
         return raw;
     }
 
+    /**
+     * Splits a flow body on top-level commas: a comma inside a nested {@code [ … ]} or {@code { …
+     * }} (realms carry {@code unlocks: [a, b, …]}) does not split the entry.
+     */
     private static List<String> splitFlow(String body) {
         List<String> parts = new ArrayList<>();
-        for (String part : body.split(",", -1)) {
-            parts.add(part.trim());
+        int depth = 0;
+        int start = 0;
+        for (int i = 0; i < body.length(); i++) {
+            char c = body.charAt(i);
+            if (c == '[' || c == '{') {
+                depth++;
+            } else if (c == ']' || c == '}') {
+                depth = Math.max(0, depth - 1);
+            } else if (c == ',' && depth == 0) {
+                parts.add(body.substring(start, i).trim());
+                start = i + 1;
+            }
         }
+        parts.add(body.substring(start).trim());
         return parts;
     }
 }

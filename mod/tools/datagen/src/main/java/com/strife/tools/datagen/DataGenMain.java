@@ -34,9 +34,17 @@ public final class DataGenMain {
     /**
      * @param problems unfixable-by-rerunning issues; a non-empty list means DataGen cannot produce
      *     a complete content pack from the current tables
+     * @param notices things that were deliberately skipped (with a printed reason), never silent
      */
     public record Summary(
-            int tables, int rows, int generators, int products, List<String> problems) {}
+            int tables,
+            int rows,
+            int generators,
+            int numbers,
+            int numbersSkipped,
+            int products,
+            List<String> problems,
+            List<String> notices) {}
 
     /** Registered generators, one per contracted table domain. */
     public static List<TableGenerator> generators(NumbersSource numbers) {
@@ -48,18 +56,26 @@ public final class DataGenMain {
                 new ArtifactGenerator(numbers));
     }
 
+    /** Registered NUMBERS-driven generators (domains with no CSV table, JSON_SCHEMA §4.1). */
+    public static List<NumbersGenerator> numbersGenerators() {
+        return List.of(new RealmsGenerator());
+    }
+
     public static void main(String[] args) {
         Options options = parse(args);
-        Summary summary = run(options, generators(NumbersSource.at(options.contentRoot())));
+        NumbersSource numbers = NumbersSource.at(options.contentRoot());
+        Summary summary = run(options, generators(numbers), numbersGenerators(), numbers);
+        summary.notices().forEach(n -> System.out.println("datagen: " + n));
         summary.problems().forEach(p -> System.err.println("datagen: " + p));
         System.out.printf(
-                "datagen: tables-root=%s resources-root=%s content-root=%s tables=%d rows=%d generators=%d products=%d problems=%d%n",
+                "datagen: tables-root=%s resources-root=%s content-root=%s tables=%d rows=%d generators=%d numbers=%d products=%d problems=%d%n",
                 options.tablesRoot(),
                 options.resourcesRoot(),
                 options.contentRoot(),
                 summary.tables(),
                 summary.rows(),
                 summary.generators(),
+                summary.numbers(),
                 summary.products(),
                 summary.problems().size());
         if (!summary.problems().isEmpty()) {
@@ -67,15 +83,21 @@ public final class DataGenMain {
         }
     }
 
-    static Summary run(Options options, List<TableGenerator> registeredGenerators) {
+    static Summary run(
+            Options options,
+            List<TableGenerator> registeredGenerators,
+            List<NumbersGenerator> registeredNumbersGenerators,
+            NumbersSource numbers) {
         Map<String, TableGenerator> registered = new LinkedHashMap<>();
         for (TableGenerator generator : registeredGenerators) {
             registered.put(generator.tableFile(), generator);
         }
         List<Product> products = new ArrayList<>();
         List<String> problems = new ArrayList<>();
+        List<String> notices = new ArrayList<>();
         int tables = 0;
         int rows = 0;
+        int numbersSkipped = 0;
         for (Path table : listCsv(options.tablesRoot())) {
             TableSource source = TableSource.read(table);
             tables++;
@@ -95,8 +117,28 @@ public final class DataGenMain {
             }
             products.addAll(generator.generate(source));
         }
+        if (numbers.available()) {
+            for (NumbersGenerator numbersGenerator : registeredNumbersGenerators) {
+                products.addAll(numbersGenerator.generate(numbers));
+            }
+        } else {
+            numbersSkipped = registeredNumbersGenerators.size();
+            notices.add(
+                    "NUMBERS-driven generation skipped — content/NUMBERS.md is not present yet"
+                            + " (A0-7 truth source unmerged); "
+                            + numbersSkipped
+                            + " generator(s) arm themselves when it lands");
+        }
         write(products, options.resourcesRoot());
-        return new Summary(tables, rows, registered.size(), products.size(), problems);
+        return new Summary(
+                tables,
+                rows,
+                registered.size(),
+                registeredNumbersGenerators.size() - numbersSkipped,
+                numbersSkipped,
+                products.size(),
+                problems,
+                notices);
     }
 
     /** Writes each product under the resources root; order comes from the sorted table walk. */

@@ -108,4 +108,49 @@ class NumbersSourceTest {
 
         assertTrue(error.getMessage().contains("never closed"), error.getMessage());
     }
+
+    /** Derivation flags like [占位] live in inline comments (NUMBERS §0), so they stay readable. */
+    @Test
+    void exposesInlineCommentsPerEntry(@TempDir Path root) throws IOException {
+        NumbersSource source =
+                numbers(
+                        root,
+                        "@@realms\n"
+                                + "```yaml\n"
+                                + "fanren: { qi_max: 100 } # [拟]\n"
+                                + "lianxu: { qi_max: 13500 } # [拟][占位]\n"
+                                + "```\n");
+
+        assertEquals("[拟]", source.comment("realms", "fanren"));
+        assertEquals("[拟][占位]", source.comment("realms", "lianxu"));
+    }
+
+    @Test
+    void nestedSequencesInsideFlowMapsSurvive(@TempDir Path root) throws IOException {
+        NumbersSource source =
+                numbers(
+                        root,
+                        "@@realms\n"
+                                + "```yaml\n"
+                                + "qili: { qi_max: 230, unlocks: [meditation, spell_cast] } # [拟]\n"
+                                + "```\n");
+
+        Object unlocks = source.map("realms", "qili").get("unlocks");
+
+        assertEquals(List.of("meditation", "spell_cast"), unlocks);
+    }
+
+    @Test
+    void generatedHeaderCarriesTheFileHash(@TempDir Path root) throws IOException {
+        NumbersSource source = numbers(root, NUMBERS);
+
+        String header = source.generatedHeader();
+
+        assertTrue(header.startsWith("from content/NUMBERS.md @ sha256:"), header);
+        assertEquals(
+                64,
+                header.substring("from content/NUMBERS.md @ sha256:".length()).length(),
+                header);
+        assertEquals(header, source.generatedHeader(), "the hash is stable within a run");
+    }
 }

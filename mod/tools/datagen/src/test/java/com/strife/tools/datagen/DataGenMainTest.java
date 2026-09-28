@@ -59,7 +59,8 @@ class DataGenMainTest {
     void reportsRowsThatNoGeneratorWasRegisteredFor(@TempDir Path root) throws IOException {
         write(tableDir(root), "factions.csv", "id,alignment", "fac_qingshi,orthodox");
 
-        DataGenMain.Summary summary = DataGenMain.run(options(root), List.of());
+        DataGenMain.Summary summary =
+                DataGenMain.run(options(root), List.of(), List.of(), NumbersSource.at(null));
 
         assertEquals(
                 1,
@@ -79,14 +80,18 @@ class DataGenMainTest {
                 "id,kind,used_by_field",
                 "bs_placeholder_high_1,突破成功率键占位,strife_realms:lianxu.breakthrough_success_key");
 
-        assertEquals(List.of(), DataGenMain.run(options(root), List.of()).problems());
+        assertEquals(
+                List.of(),
+                DataGenMain.run(options(root), List.of(), List.of(), NumbersSource.at(null))
+                        .problems());
     }
 
     @Test
     void anEmptyUnregisteredTableIsNotYetAProblem(@TempDir Path root) throws IOException {
         write(tableDir(root), "factions.csv", "id,alignment");
 
-        DataGenMain.Summary summary = DataGenMain.run(options(root), List.of());
+        DataGenMain.Summary summary =
+                DataGenMain.run(options(root), List.of(), List.of(), NumbersSource.at(null));
 
         assertEquals(List.of(), summary.problems());
         assertEquals(1, summary.tables());
@@ -103,7 +108,11 @@ class DataGenMainTest {
                 "fac_yuelai,demonic");
 
         DataGenMain.Summary summary =
-                DataGenMain.run(options(root), List.of(new IdEchoGenerator("factions.csv")));
+                DataGenMain.run(
+                        options(root),
+                        List.of(new IdEchoGenerator("factions.csv")),
+                        List.of(),
+                        NumbersSource.at(null));
 
         assertEquals(2, summary.products());
         Path product = resourcesDir(root).resolve("data/strife/strife_factions/fac_qingshi.json");
@@ -112,7 +121,11 @@ class DataGenMainTest {
         assertTrue(json.contains("\"id\": \"fac_qingshi\""), json);
         assertTrue(json.contains("\"@generated\": \"from tables/factions.csv @ sha256:"), json);
         // Re-running over identical tables must not move a single byte (04 §5 确定性产物).
-        DataGenMain.run(options(root), List.of(new IdEchoGenerator("factions.csv")));
+        DataGenMain.run(
+                options(root),
+                List.of(new IdEchoGenerator("factions.csv")),
+                List.of(),
+                NumbersSource.at(null));
         assertEquals(json, Files.readString(product));
     }
 
