@@ -43,7 +43,7 @@ public final class ValidatorMain {
         List<String> run(Options options);
     }
 
-    record Options(Path dataRoot, Path tablesRoot, Path contentRoot) {}
+    record Options(Path dataRoot, Path tablesRoot, Path contentRoot, Path assetsRoot) {}
 
     /**
      * Where an ID was declared: the table it came from plus a human-addressable location.
@@ -160,13 +160,26 @@ public final class ValidatorMain {
         return problems;
     }
 
-    private static String originOf(JsonObject object, Path file) {
+    /**
+     * The source named by a product's {@code @generated} header: {@code tables/<file>.csv} or
+     * {@code content/NUMBERS.md} (NUMBERS-derived domains like strife_realms, JSON_SCHEMA §4.1), or
+     * {@code null} when there is no well-formed header (hand-edited, 04 §1).
+     */
+    private static String headerSource(JsonObject object) {
         if (!object.has("@generated") || !object.get("@generated").isJsonPrimitive()) {
-            return file.toString();
+            return null;
         }
         String header = object.get("@generated").getAsString();
-        int from = header.indexOf("tables/");
-        return from < 0 ? file.toString() : header.substring(from).split(" ")[0];
+        if (!header.startsWith("from ")) {
+            return null;
+        }
+        int at = header.indexOf(" @ ");
+        return at < 0 ? null : header.substring("from ".length(), at);
+    }
+
+    private static String originOf(JsonObject object, Path file) {
+        String source = headerSource(object);
+        return source == null ? file.toString() : source;
     }
 
     /**
@@ -217,14 +230,15 @@ public final class ValidatorMain {
     }
 
     /**
-     * V-FRESH (docs/04 §6 "产物新鲜"): every product must name a source table that still exists and
-     * carry that table's current hash, so an edited table with an uncommitted regeneration cannot
-     * pass.
+     * V-FRESH (docs/04 §6 "产物新鲜"): every product must name a source that still exists and carry
+     * that source's current hash, so an edited source with an uncommitted regeneration cannot pass.
+     *
+     * <p>Sources are {@code tables/<file>.csv} (resolved against {@code --tables-root}) and {@code
+     * content/NUMBERS.md} (against {@code --content-root}). While the truth source is unmerged the
+     * latter cannot be verified: {@link #main} prints a notice instead of failing, and the check
+     * arms itself the moment {@code contentRoot} is wired — an unverified pass is never silent.
      */
     public static List<String> staleGeneratedHeaders(Options options) {
-        if (options.tablesRoot() == null) {
-            return List.of();
-        }
         List<String> problems = new ArrayList<>();
         for (Path file : jsonFiles(options.dataRoot())) {
             JsonElement root = parse(file);
@@ -232,30 +246,38 @@ public final class ValidatorMain {
                 continue;
             }
             JsonObject object = root.getAsJsonObject();
-            if (!object.has("@generated") || !object.get("@generated").isJsonPrimitive()) {
+            String source = headerSource(object);
+            if (source == null) {
+                if (object.has("@generated")) {
+                    problems.add(
+                            file
+                                    + ": @generated header names no source (expected 'from "
+                                    + "tables/<file> @ sha256:<hex>' or 'from content/NUMBERS.md"
+                                    + " @ sha256:<hex>'): '"
+                                    + object.get("@generated").getAsString()
+                                    + "'");
+                }
                 continue;
             }
-            String header = object.get("@generated").getAsString();
-            int from = header.indexOf("tables/");
-            if (from < 0) {
-                problems.add(file + ": @generated header names no source table: '" + header + "'");
-                continue;
+            Path sourceRoot = resolveSourceRoot(options, source);
+            if (sourceRoot == null) {
+                continue; // content/ unmerged: main() prints the cannot-verify notice
             }
-            String source = header.substring(from + "tables/".length()).split(" ")[0];
-            Path table = options.tablesRoot().resolve(source);
-            if (!Files.isRegularFile(table)) {
+            Path sourceFile = sourceRoot.resolve(source.replaceFirst("^(tables|content)/", ""));
+            if (!Files.isRegularFile(sourceFile)) {
                 problems.add(
                         file
-                                + ": @generated names tables/"
+                                + ": @generated names "
                                 + source
                                 + ", which no longer exists — rerun DataGen (docs/04 §6 产物新鲜)");
                 continue;
             }
+            String header = object.get("@generated").getAsString();
             int marker = header.indexOf("sha256:");
             if (marker < 0) {
                 problems.add(
                         file
-                                + ": @generated names tables/"
+                                + ": @generated names "
                                 + source
                                 + " but carries no source hash, so freshness cannot be checked"
                                 + " (docs/04 §5 requires it): '"
@@ -264,21 +286,162 @@ public final class ValidatorMain {
                 continue;
             }
             String claimed = header.substring(marker + "sha256:".length()).trim();
-            String actual = hashOf(table);
+            String actual = hashOf(sourceFile);
             if (!claimed.equals(actual)) {
                 problems.add(
                         file
                                 + ": @generated claims sha256:"
                                 + claimed
-                                + " but tables/"
+                                + " but "
                                 + source
                                 + " is now sha256:"
                                 + actual
-                                + " — the table changed without regenerating (docs/04 §1:"
+                                + " — the source changed without regenerating (docs/04 §1:"
                                 + " 产物永远不被手工编辑)");
             }
         }
         return problems;
+    }
+
+    /** Root for a header source, or null when that root is not wired yet (content/ unmerged). */
+    private static Path resolveSourceRoot(Options options, String source) {
+        if (source.startsWith("tables/")) {
+            return options.tablesRoot();
+        }
+        if (source.startsWith("content/")) {
+            return options.contentRoot() != null && Files.isDirectory(options.contentRoot())
+                    ? options.contentRoot()
+                    : null;
+        }
+        return null;
+    }
+
+    /** True when any committed product was generated from the (possibly unmerged) truth source. */
+    static boolean hasUnverifiableNumbersProducts(Options options) {
+        if (options.contentRoot() != null
+                && Files.isRegularFile(options.contentRoot().resolve("NUMBERS.md"))) {
+            return false;
+        }
+        for (Path file : jsonFiles(options.dataRoot())) {
+            JsonElement root = parse(file);
+            if (root.isJsonObject() && isNumbersSourced(root.getAsJsonObject())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isNumbersSourced(JsonObject object) {
+        String source = headerSource(object);
+        return source != null && source.startsWith("content/");
+    }
+
+    /**
+     * V-TEXT lang coverage (docs/04 §4/§6, the C1-2 gate): every generated content ID must have its
+     * registered lang key present and non-empty in zh_cn (源语言) and en_us (占位但不得空串).
+     *
+     * <p>Required keys are derived from the product's domain, using the prefix table registered in
+     * JSON_SCHEMA §4.10 — quests/dialog trees are一章一文件 and get their key rules with M3's
+     * generators, so they are skipped here for now. A content ID without a contract prefix would be
+     * silent in game, which is exactly what this check exists to stop.
+     */
+    public static List<String> langCoverage(Options options) {
+        Path assets = options.assetsRoot();
+        if (assets == null || !Files.isDirectory(assets)) {
+            return List.of();
+        }
+        Path zh = assets.resolve("strife/lang/zh_cn.json");
+        Path en = assets.resolve("strife/lang/en_us.json");
+        if (!Files.isRegularFile(zh) || !Files.isRegularFile(en)) {
+            return List.of(
+                    assets
+                            + ": strife/lang/zh_cn.json and en_us.json must both exist once content"
+                            + " products are generated (docs/04 §4: zh_cn 缺失 = 构建失败)");
+        }
+        Map<String, Object> zhKeys = langEntries(zh);
+        Map<String, Object> enKeys = langEntries(en);
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("id") || !object.get("id").isJsonPrimitive()) {
+                continue;
+            }
+            String key = requiredLangKey(options.dataRoot(), file, object);
+            if (key == null) {
+                continue;
+            }
+            problems.addAll(langProblems(zhKeys, zh, key, "zh_cn"));
+            problems.addAll(langProblems(enKeys, en, key, "en_us"));
+        }
+        return problems;
+    }
+
+    /**
+     * The lang key a product demands, per the §4.10 prefix registry; null = no rule for this domain
+     * yet (quests/dialog land with M3, non-strife namespaces use vanilla semantics).
+     */
+    private static String requiredLangKey(Path dataRoot, Path file, JsonObject object) {
+        String path = dataRoot.relativize(file).toString().replace('\\', '/');
+        String[] parts = path.split("/");
+        if (parts.length < 3 || !"strife".equals(parts[0])) {
+            return null;
+        }
+        String id = object.get("id").getAsString();
+        return switch (parts[1]) {
+            case "strife_realms" -> "realm.strife." + id;
+            case "strife_techniques" -> "technique.strife." + id;
+            case "strife_spells" -> "spell.strife." + id;
+            case "strife_pills" -> "item.strife." + id;
+            case "strife_artifacts" -> "artifact.strife." + id;
+            case "strife_factions" ->
+                    object.has("display_name_key")
+                                    && object.get("display_name_key").isJsonPrimitive()
+                            ? object.get("display_name_key").getAsString()
+                            : null;
+            default -> null;
+        };
+    }
+
+    private static List<String> langProblems(
+            Map<String, Object> entries, Path file, String key, String lang) {
+        Object value = entries.get(key);
+        if (value instanceof String s && !s.isBlank()) {
+            return List.of();
+        }
+        return List.of(
+                file
+                        + ": lang key '"
+                        + key
+                        + "' is missing or blank in "
+                        + lang
+                        + " — every content ID maps one-to-one onto a lang key"
+                        + " (docs/04 §4; en_us may be a placeholder but never an empty string)");
+    }
+
+    private static Map<String, Object> langEntries(Path file) {
+        try (var reader = Files.newBufferedReader(file)) {
+            JsonElement root = JsonParser.parseReader(reader);
+            Map<String, Object> entries = new LinkedHashMap<>();
+            if (root.isJsonObject()) {
+                root.getAsJsonObject()
+                        .entrySet()
+                        .forEach(
+                                e ->
+                                        entries.put(
+                                                e.getKey(),
+                                                e.getValue().isJsonPrimitive()
+                                                        ? e.getValue().getAsString()
+                                                        : null));
+            }
+            return entries;
+        } catch (IOException | com.google.gson.JsonSyntaxException e) {
+            throw new IllegalStateException(
+                    "cannot read lang file " + file + ": " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -460,6 +623,7 @@ public final class ValidatorMain {
     public static void main(String[] args) {
         Options options = parseArgs(args);
         List<String> problems = new ArrayList<>();
+        List<String> notices = new ArrayList<>();
         int executed = 0;
         for (Check check : checks()) {
             problems.addAll(check.run(options));
@@ -469,10 +633,22 @@ public final class ValidatorMain {
             problems.addAll(growthRatio(options));
             executed++;
         } else {
-            System.out.println(
-                    "validator: V-GROWTH skipped — content/NUMBERS.md is not present yet"
+            notices.add(
+                    "V-GROWTH skipped — content/NUMBERS.md is not present yet"
                             + " (A0-7 truth source unmerged); the check arms itself when it lands");
         }
+        if (hasUnverifiableNumbersProducts(options)) {
+            notices.add(
+                    "V-FRESH cannot verify products generated from content/NUMBERS.md while the"
+                            + " truth source is unmerged (A0-7) — freshness re-arms when it lands");
+        }
+        if (options.assetsRoot() != null && Files.isDirectory(options.assetsRoot())) {
+            problems.addAll(langCoverage(options));
+            executed++;
+        } else {
+            notices.add("V-TEXT skipped — no --assets-root given, lang coverage unchecked");
+        }
+        notices.forEach(n -> System.out.println("validator: " + n));
         problems.forEach(p -> System.err.println("validator: " + p));
         System.out.printf(
                 "validator: data-root=%s tables-root=%s json-files=%d csv-files=%d checks=%d problems=%d%n",
@@ -491,17 +667,20 @@ public final class ValidatorMain {
         Path dataRoot = null;
         Path tablesRoot = null;
         Path contentRoot = null;
+        Path assetsRoot = null;
         for (int i = 0; i < args.length - 1; i++) {
             switch (args[i]) {
                 case "--data-root" -> dataRoot = Path.of(args[++i]);
                 case "--tables-root" -> tablesRoot = Path.of(args[++i]);
                 case "--content-root" -> contentRoot = Path.of(args[++i]);
+                case "--assets-root" -> assetsRoot = Path.of(args[++i]);
                 default -> {}
             }
         }
         if (dataRoot == null) {
             throw new IllegalArgumentException(
-                    "usage: validator --data-root <dir> [--tables-root <dir>] [--content-root <dir>]");
+                    "usage: validator --data-root <dir> [--tables-root <dir>] [--content-root"
+                            + " <dir>] [--assets-root <dir>]");
         }
         if (tablesRoot != null && !Files.isDirectory(tablesRoot)) {
             throw new IllegalArgumentException(
@@ -509,7 +688,7 @@ public final class ValidatorMain {
                             + tablesRoot
                             + " is not a directory (typo? CI must not skip the source tables)");
         }
-        return new Options(dataRoot, tablesRoot, contentRoot);
+        return new Options(dataRoot, tablesRoot, contentRoot, assetsRoot);
     }
 
     /**

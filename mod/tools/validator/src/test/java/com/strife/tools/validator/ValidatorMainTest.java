@@ -20,11 +20,11 @@ class ValidatorMainTest {
     }
 
     private static Options productsOnly(Path dataRoot) {
-        return new Options(dataRoot, null, null);
+        return new Options(dataRoot, null, null, null);
     }
 
     private static Options withTables(Path dataRoot, Path tablesRoot) {
-        return new Options(dataRoot, tablesRoot, null);
+        return new Options(dataRoot, tablesRoot, null, null);
     }
 
     /** Writes a content/NUMBERS.md carrying the given @@blocks and returns the content root. */
@@ -51,7 +51,8 @@ class ValidatorMainTest {
 
     @Test
     void growthRatioInsideBoundsPasses(@TempDir Path root) throws IOException {
-        Options options = new Options(root.resolve("data"), null, withNumbers(root, TWO_REALMS));
+        Options options =
+                new Options(root.resolve("data"), null, withNumbers(root, TWO_REALMS), null);
 
         assertEquals(List.of(), ValidatorMain.growthRatio(options));
     }
@@ -62,7 +63,8 @@ class ValidatorMainTest {
                 new Options(
                         root.resolve("data"),
                         null,
-                        withNumbers(root, TWO_REALMS.replace("qi_max: 230", "qi_max: 320")));
+                        withNumbers(root, TWO_REALMS.replace("qi_max: 230", "qi_max: 320")),
+                        null);
 
         List<String> problems = ValidatorMain.growthRatio(options);
 
@@ -78,7 +80,8 @@ class ValidatorMainTest {
                 new Options(
                         root.resolve("data"),
                         null,
-                        withNumbers(root, TWO_REALMS.replace("qi_max: 230", "qi_max: 150")));
+                        withNumbers(root, TWO_REALMS.replace("qi_max: 230", "qi_max: 150")),
+                        null);
 
         List<String> problems = ValidatorMain.growthRatio(options);
 
@@ -90,7 +93,7 @@ class ValidatorMainTest {
     @Test
     void growthBoundsAreReadFromLimitsNotHardcoded(@TempDir Path root) throws IOException {
         String widened = TWO_REALMS.replace("growth_ratio_max: 2.5", "growth_ratio_max: 3.3");
-        Options options = new Options(root.resolve("data"), null, withNumbers(root, widened));
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, widened), null);
 
         assertEquals(
                 List.of(),
@@ -101,7 +104,7 @@ class ValidatorMainTest {
     @Test
     void missingLimitsBoundIsAProblem(@TempDir Path root) throws IOException {
         String noMin = TWO_REALMS.replace("growth_ratio_min: 1.8        # [锚] 下限\n", "");
-        Options options = new Options(root.resolve("data"), null, withNumbers(root, noMin));
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, noMin), null);
 
         List<String> problems = ValidatorMain.growthRatio(options);
 
@@ -112,7 +115,7 @@ class ValidatorMainTest {
     @Test
     void unparseableRealmEntryIsAProblemNotASilentSkip(@TempDir Path root) throws IOException {
         String broken = TWO_REALMS.replace("qili: { qi_max: 230, stage_count: 9 }", "qili ??? 230");
-        Options options = new Options(root.resolve("data"), null, withNumbers(root, broken));
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, broken), null);
 
         List<String> problems = ValidatorMain.growthRatio(options);
 
@@ -123,7 +126,7 @@ class ValidatorMainTest {
     @Test
     void zeroQiMaxCannotFormARatio(@TempDir Path root) throws IOException {
         String zeroed = TWO_REALMS.replace("qi_max: 100", "qi_max: 0");
-        Options options = new Options(root.resolve("data"), null, withNumbers(root, zeroed));
+        Options options = new Options(root.resolve("data"), null, withNumbers(root, zeroed), null);
 
         List<String> problems = ValidatorMain.growthRatio(options);
 
@@ -133,7 +136,7 @@ class ValidatorMainTest {
 
     @Test
     void aMissingNumbersFileSkipsInsteadOfFailing(@TempDir Path root) throws IOException {
-        Options options = new Options(root.resolve("data"), null, root.resolve("content"));
+        Options options = new Options(root.resolve("data"), null, root.resolve("content"), null);
 
         assertEquals(
                 List.of(),
@@ -146,7 +149,10 @@ class ValidatorMainTest {
             throws IOException {
         Options options =
                 new Options(
-                        root.resolve("data"), null, withNumbers(root, "@@realms\n```yaml\n```"));
+                        root.resolve("data"),
+                        null,
+                        withNumbers(root, "@@realms\n```yaml\n```"),
+                        null);
 
         List<String> problems = ValidatorMain.growthRatio(options);
 
@@ -398,5 +404,123 @@ class ValidatorMainTest {
                                             root.resolve("absent").toString()
                                         }));
         assertTrue(error.getMessage().contains("not a directory"), error.getMessage());
+    }
+
+    // ===== V-TEXT lang coverage (docs/04 §4, C1-2 gate) =====
+
+    private static Options withAssets(Path dataRoot, Path assetsRoot) {
+        return new Options(dataRoot, null, null, assetsRoot);
+    }
+
+    private static void writeLang(Path root, String zh, String en) throws IOException {
+        Path lang = root.resolve("assets/strife/lang");
+        write(lang.resolve("zh_cn.json"), zh);
+        write(lang.resolve("en_us.json"), en);
+    }
+
+    private static final String ZH_QILI = "{\"realm.strife.qili\": \"练气\"}";
+    private static final String EN_QILI = "{\"realm.strife.qili\": \"Qi Condensation\"}";
+
+    @Test
+    void aMissingZhLangKeyStopsTheBuild(@TempDir Path root) throws IOException {
+        write(root.resolve("data/strife/strife_realms/qili.json"), "{\"id\":\"qili\"}");
+        writeLang(root, "{}", EN_QILI);
+
+        List<String> problems =
+                ValidatorMain.langCoverage(
+                        withAssets(root.resolve("data"), root.resolve("assets")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("realm.strife.qili"), problems.get(0));
+        assertTrue(problems.get(0).contains("zh_cn"), problems.get(0));
+    }
+
+    @Test
+    void aBlankEnUsPlaceholderIsAProblem(@TempDir Path root) throws IOException {
+        write(root.resolve("data/strife/strife_realms/qili.json"), "{\"id\":\"qili\"}");
+        writeLang(root, ZH_QILI, "{\"realm.strife.qili\": \"\"}");
+
+        List<String> problems =
+                ValidatorMain.langCoverage(
+                        withAssets(root.resolve("data"), root.resolve("assets")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("en_us"), problems.get(0));
+    }
+
+    @Test
+    void fullCoveragePassesAndDomainsWithoutARuleAreSkipped(@TempDir Path root) throws IOException {
+        write(root.resolve("data/strife/strife_realms/qili.json"), "{\"id\":\"qili\"}");
+        // Quest/dialog key rules land with M3's generators — a quest product demands nothing yet.
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                "{\"id\":\"quest_prologue_meditation_01\"}");
+        writeLang(root, ZH_QILI, EN_QILI);
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.langCoverage(
+                        withAssets(root.resolve("data"), root.resolve("assets"))));
+    }
+
+    @Test
+    void langCoverageWithoutAssetsRootIsADeclaredSkip(@TempDir Path root) throws IOException {
+        write(root.resolve("data/strife/strife_realms/qili.json"), "{\"id\":\"qili\"}");
+
+        assertEquals(List.of(), ValidatorMain.langCoverage(productsOnly(root.resolve("data"))));
+    }
+
+    // ===== V-FRESH for content/-sourced products (realms, JSON_SCHEMA §4.1) =====
+
+    @Test
+    void verifiesAProductGeneratedFromTheNumbersSource(@TempDir Path root) throws IOException {
+        Path content = root.resolve("content");
+        write(content.resolve("NUMBERS.md"), "@@realms\n```yaml\nqili: { qi_max: 230 }\n```\n");
+        write(
+                root.resolve("data/strife/strife_realms/qili.json"),
+                product(
+                        "from content/NUMBERS.md @ sha256:"
+                                + sha256(content.resolve("NUMBERS.md"))));
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.staleGeneratedHeaders(
+                        new Options(root.resolve("data"), null, content, null)));
+    }
+
+    @Test
+    void flagsANumbersEditWithoutRegeneration(@TempDir Path root) throws IOException {
+        Path content = root.resolve("content");
+        write(content.resolve("NUMBERS.md"), "@@realms\n```yaml\nqili: { qi_max: 230 }\n```\n");
+        write(
+                root.resolve("data/strife/strife_realms/qili.json"),
+                product("from content/NUMBERS.md @ sha256:" + "0".repeat(64)));
+
+        List<String> problems =
+                ValidatorMain.staleGeneratedHeaders(
+                        new Options(root.resolve("data"), null, content, null));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("content/NUMBERS.md"), problems.get(0));
+        assertTrue(problems.get(0).contains("without regenerating"), problems.get(0));
+    }
+
+    /** Until content/ merges, the unverifiable state must be declarable, never silently green. */
+    @Test
+    void unverifiableNumbersProductsAreDeclaredNotSilent(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_realms/qili.json"),
+                product("from content/NUMBERS.md @ sha256:" + "0".repeat(64)));
+        Options unverifiable = new Options(root.resolve("data"), null, null, null);
+
+        assertTrue(
+                ValidatorMain.hasUnverifiableNumbersProducts(unverifiable),
+                "contentRoot absent + numbers-sourced products = must be declared");
+
+        Path content = root.resolve("content");
+        write(content.resolve("NUMBERS.md"), "@@realms\n```yaml\nqili: { qi_max: 230 }\n```\n");
+        Options verifiable = new Options(root.resolve("data"), null, content, null);
+
+        assertEquals(false, ValidatorMain.hasUnverifiableNumbersProducts(verifiable));
     }
 }
