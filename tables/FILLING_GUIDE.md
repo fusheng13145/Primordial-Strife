@@ -13,9 +13,9 @@
 
 | 环节 | 契约里应该有 | 现在实际有 | 证据 |
 |---|---|---|---|
-| DataGen | 把 CSV 读成 JSON 产物 | **读表器与产物写入器已建好，已接 5 张表**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`（各自 `data/strife/<域>/<id>.json`）。**境界无 CSV 也已接**：`strife_realms` 由 NUMBERS `@@realms` 生成（含 ordinal/tribulation/display_name_key/占位标记四个推导项，§4.1）。其余 12 张表仍无生成器 —— 但**只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器） |
-| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项 + 两个子项**：`V-DUP`（ID 全域唯一）、`V-FRESH`（源哈希比对，已支持 `content/NUMBERS.md` 源头）、**V-RANGE 成长比子项**（V-GROWTH，上下限读 NUMBERS `@@limits`）、**V-TEXT zh_cn/en_us 覆盖**（内容 ID ↔ lang key 一一映射，缺 key 构建失败）。`content/` 合入（A0-7）前 V-GROWTH 与 content/ 源头新鲜度在 CI 打印声明并跳过。其余四项（引用/DAG/概率/越界其余子项/DSL）仍未实现 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
-| 产物 | `data/strife/**.json` + `lang` | **22 个产物在库**：realms 9 + factions 2 + techniques 5 + spells 3 + pills 3（C1-1 首批，取值依据 LORE/NUMBERS 初稿）；lang 种子 `assets/strife/lang/zh_cn.json` + `en_us.json`（V-TEXT 守覆盖）。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
+| DataGen | 把 CSV 读成 JSON 产物 | **读表器与产物写入器已建好，已接 9 个生成器实例 / 7 张表**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`、`quests_prologue.csv` / `quests_ch1.csv` → `strife_quests`（一章一文件聚合产物）、`dialog_trees_prologue.csv` / `dialog_trees_ch1.csv` → `dialog_trees`（一章一文件）。**境界无 CSV 也已接**：`strife_realms` 由 NUMBERS `@@realms` 生成（含 ordinal/tribulation/display_name_key/占位标记四个推导项，§4.1）。其余 4 张表（dialog 文本源 2 + spirit_field + ores）仍无生成器 —— 但**只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器） |
+| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项 + 三个子项族**：`V-DUP`（ID 全域唯一）、`V-FRESH`（源哈希比对，已支持 `content/NUMBERS.md` 源头）、**V-RANGE 成长比**（V-GROWTH）、**V-TEXT zh_cn/en_us 覆盖**、**V-PROB 概率和=1**（outputs/quality_probs，容差 1e-6）、**V-RANGE 其余子项**（H1 price 非负；成功率域与寿元单调在真相源侧校验，`[占位]` 境界放宽）。`content/` 合入（A0-7）前 NUMBERS 侧检查在 CI 打印声明并跳过。仍未实现：引用存在性 / DAG 连通 / DSL 合法 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
+| 产物 | `data/strife/**.json` + `lang` | **23 个产物在库**：realms 9 + factions 2 + techniques 5 + spells 3 + pills 3 + **序章任务 DAG 1**（STORY §4 十节点转译，奖励与占位 ID 待 C 审）；lang 种子 `assets/strife/lang/zh_cn.json` + `en_us.json`（V-TEXT 守覆盖）。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
 | 打进 jar | 生成的 JSON 必须随 MOD 一起进游戏（`docs/04` §1「构建进 jar」/ §9「内置内容」） | **已接通**：`platform` 把 `content-base/src/main/resources` 挂成自己的 resources 目录，所以 `:platform:jar` 里就有 `data/strife/**`，开发期 `runClient`/`runServer`/`runData` 也看见同一批文件。并有 `:platform:checkContentBundled`（挂在 `check` 上，CI 必跑）逐个比对磁盘产物与 jar 条目 | 本机实测：磁盘放一个探针文件时报 `checkContentBundled: 1 content file(s) present in the platform jar`；把那行 `srcDir` 注释掉后报 `platform jar does not ship generated content: [data/strife/strife_factions/fac_probe.json]` |
 | 内容热更 | `content-base-X.Y.Z.zip` 独立内容包（`docs/04` §9、`docs/07` §5 交付物） | **还没有**：内置内容这条路已通，"整合包作者换 zip 覆盖"这条导出任务还没建工单 | 仓库现状（无任何 `contentZip` 任务） |
 
@@ -257,9 +257,9 @@ art_demo,<器胚ID 待C定名>,3,<核心材料ID 待C定名>,item_id=<材料ID>;
 
 容易错：`quality_probs` 用 `di`（品质 tiers 里的"地"）却和 `slot_type` 的 `treasure` 混填；`cooldown_key` 只能填 `light/medium/heavy` 三档。
 
-### 3.5 `quests_prologue.csv` / `quests_ch1.csv` —— 任务 DAG（各 16 列）
+### 3.5 `quests_prologue.csv` / `quests_ch1.csv` —— 任务 DAG（各 16 列，**已接生成器**，一章一文件聚合产物）
 
-产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §1.3）。两张表**列完全相同**，只是按章分文件；以后每加一章就复制一份 `quests_<章>.csv`（复制文件属于加表，请先和 C 打招呼）。
+产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §4.6）。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名一致；空表合法。`objectives`/`rewards` 为对象数组（`|` 分隔），`reputation_delta` 用映射简写（生成器转对象数组）。序章表已有 STORY §4 十节点转译的初稿行，**奖励数值与占位 ID（`item_yaocai` 等）待 C 审定**。
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
@@ -288,9 +288,9 @@ quest_prologue_meditation_01,prologue,true,,id=1;type=sit;count=1;optional=false
 
 容易错（都是 `V-DAG` 会抓的）：前置关系成环；入口不可达某个必做节点；`fail_goto` 指到一个不该到的节点；`rewards` 引用的物品/法术/功法 ID 不存在；一章出现两个 `entry=true` 或一个都没有。
 
-### 3.6 `dialog_trees_prologue.csv` / `dialog_trees_ch1.csv` —— 对话树（各 7 列）
+### 3.6 `dialog_trees_prologue.csv` / `dialog_trees_ch1.csv` —— 对话树（各 7 列，**已接生成器**，一章一文件聚合产物）
 
-产物：`data/strife/dialog_trees/<章>.json`，一章一个文件（契约 §4.7）。
+产物：`data/strife/dialog_trees/<章>.json`，一章一个文件（契约 §4.7），文件 `id` = 首棵树的 `root`。**多选项必须整体双包裹**：`options=((text_key=a;next=b)|(text_key=c;next=d))`——内层 `|` 与单元格顶层对象分隔符靠这层括号区分（契约 §2 末条）；单选项 `options=(…)` 即可。
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
@@ -529,10 +529,10 @@ cd mod
 
 预期输出（本机实测，**这就是 §0 说的现状**）：
 
-- `datagen: tables-root=… resources-root=… content-root=… tables=17 rows=18 generators=5 numbers=1 products=22 problems=0`
-  - `tables=17` 全部被读进来；`rows=18` = factions 2 + techniques 5 + spells 3 + pills 3 + 白名单台账 5；`generators=5`；`numbers=1` = realms 生成器（由 NUMBERS `@@realms` 产 9 个境界产物，`content/NUMBERS.md` 合入前 CI 侧会打印 skipped 声明）；`products=22` = factions 2 + realms 9 + techniques 5 + spells 3 + pills 3。
-- `validator: data-root=… tables-root=… json-files=22 csv-files=17 checks=4 problems=0`
-  - `checks=4` = `V-DUP` + `V-FRESH`（含 content/ 源头）+ V-GROWTH（成长比）+ `V-TEXT`（zh_cn/en_us 覆盖）。CI 在 `content/` 合入前是 `checks=3` 加两行 skip 声明（V-GROWTH 与 content/ 源头新鲜度）。
+- `datagen: tables-root=… resources-root=… content-root=… tables=17 rows=28 generators=9 numbers=1 products=23 problems=0`
+  - `tables=17` 全部被读进来；`rows=28` = factions 2 + techniques 5 + spells 3 + pills 3 + 序章任务 10 + 白名单台账 5；`generators=9`（7 张表 + quests/dialog 各章实例）；`numbers=1` = realms 生成器；`products=23` = realms 9 + factions 2 + techniques 5 + spells 3 + pills 3 + 序章 DAG 1。
+- `validator: data-root=… tables-root=… json-files=23 csv-files=17 checks=7 problems=0`
+  - `checks=7` = `V-DUP` + `V-FRESH`（含 content/ 源头）+ V-GROWTH + 真相源数值域（成功率/寿元）+ `V-TEXT` + `V-PROB` + price 非负。CI 在 `content/` 合入前是 `checks=5` 加两行 skip 声明。
 
 往已接生成器的表填行后，`products` 与 `json-files` 会同步增长，产物落在
 `mod/content-base/src/main/resources/data/strife/<域>/<id>.json`，**必须连产物一起提交**（CI 的"生成器漂移"检查就是比对它）；新增内容 ID 时 `assets/strife/lang/zh_cn.json` 与 `en_us.json` 必须同步补 key（V-TEXT 会红）。

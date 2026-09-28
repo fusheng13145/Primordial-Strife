@@ -23,8 +23,8 @@ factions / techniques / spells / pills / artifacts）：
 | `spells.csv` | §4.3 | **已接**（→ `data/strife/strife_spells/`） | 填（C1-1/M2） |
 | `pills.csv` | §4.4 | **已接**（→ `data/strife/strife_pills/`） | 填（C1-1：入门丹方 3 张） |
 | `artifacts.csv` | §4.5 | **已接**（→ `data/strife/strife_artifacts/`） | 填（M2） |
-| `quests_prologue.csv` / `quests_ch1.csv` | §4.6 | 无 | 待接生成器后填（一章一表，列结构相同） |
-| `dialog_trees_prologue.csv` / `dialog_trees_ch1.csv` | §4.7 | 无 | 待接生成器后填 |
+| `quests_prologue.csv` / `quests_ch1.csv` | §4.6 | **已接**（→ `data/strife/strife_quests/<章>.json`，一章一文件） | 填（序章已带 STORY §4 十节点初稿） |
+| `dialog_trees_prologue.csv` / `dialog_trees_ch1.csv` | §4.7 | **已接**（→ `data/strife/dialog_trees/<章>.json`，一章一文件） | 填（M3，多选项需整体双包裹，见指南 §3.6） |
 | `dialog_prologue_text.csv` / `dialog_ch1_text.csv` | §4.10 | 无 | 待接生成器后填（节点文本 + 2 个变体） |
 | `spirit_field.csv` / `ores.csv` | §4.8 | 无 | 待接生成器后填（M4） |
 | `periods.csv` / `wars.csv` | §5.1 / §5.3 | 无 | **不填**（`[占位]` 结构先定） |
