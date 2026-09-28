@@ -36,5 +36,18 @@
   "element.strife.mu": "木",
   "element.strife.shui": "水",
   "element.strife.huo": "火",
-  "element.strife.tu": "土"
+  "element.strife.tu": "土",
+  "key.categories.strife": "玄黄劫争",
+  "key.strife.panel": "打开修仙面板",
+  "gui.strife.panel.title": "修仙面板",
+  "gui.strife.panel.realm": "境界：%s",
+  "gui.strife.panel.stage": "小境界：第 %s 层",
+  "gui.strife.panel.lifespan": "寿元：%s 年（%s 刻）",
+  "gui.strife.panel.spiritroot_full": "灵根：%s",
+  "gui.strife.panel.breakthrough_attempts": "本境界突破失败：%s 次",
+  "gui.strife.panel.affiliation": "所属：%s",
+  "gui.strife.panel.affiliation.none": "散修",
+  "gui.strife.panel.reputation": "声望 · %s：%s",
+  "gui.strife.panel.reputation.none": "声望：无记录",
+  "gui.strife.panel.no_data": "无服务端权威数据镜像（联机同步 M1 接入后显示）"
 }

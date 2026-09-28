@@ -14,3 +14,14 @@ sourceSets {
 jar {
     archiveBaseName = 'content-base'
 }
+
+// docs/04 §9 / docs/07 §5: the standalone content pack modpack authors can swap in.
+// Loaded with lower priority than the built-in copy, so "same-ID override" stays deliberate.
+tasks.register('contentZip', Zip) {
+    group = 'build'
+    description = 'Packs content-base resources into the standalone content zip (docs/04 §9 热更通道).'
+    archiveBaseName = 'content-base'
+    archiveVersion = providers.gradleProperty('mod_version')
+    destinationDirectory = layout.buildDirectory.dir('libs')
+    from 'src/main/resources'
+}
