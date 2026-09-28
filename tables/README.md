@@ -30,7 +30,7 @@ factions / techniques / spells / pills / artifacts）：
 | `periods.csv` / `wars.csv` | §5.1 / §5.3 | 无 | **不填**（`[占位]` 结构先定） |
 | `id_migration.csv` | §6 | 不适用（台账表） | 不填（本期无破档 ID） |
 | `known-placeholders.csv` | §2 末条 | 不适用（台账表） | **已带 5 行初值**（Validator 占位键白名单，每行必须挂工单号） |
-| ~~`realms.csv`~~ | §4.1 | 境界无 CSV | **故意不建**：数值与解锁改在 `content/NUMBERS.md` §1 `@@realms` 块（详见指南 §2） |
+| ~~`realms.csv`~~ | §4.1 | 境界无 CSV，**产物由 NUMBERS `@@realms` 生成**（realms 生成器，已接） | 不建表：数值与解锁改在 `content/NUMBERS.md` §1 `@@realms` 块（详见指南 §2） |
 
 MVP 需要填充的表（04 §2）：realms / techniques / spells / pills / artifacts / quests /
 dialog_trees。符箓、阵法、灵植目录在 EP0 只占位不填。

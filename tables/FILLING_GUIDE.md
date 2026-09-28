@@ -13,9 +13,9 @@
 
 | 环节 | 契约里应该有 | 现在实际有 | 证据 |
 |---|---|---|---|
-| DataGen | 把 CSV 读成 JSON 产物 | **读表器与产物写入器已建好，已接 5 张表**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`（各自 `data/strife/<域>/<id>.json`）。其余 12 张表仍无生成器 —— 但**只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器） |
-| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项 + 一项的子项**：`V-DUP`（ID 全域唯一，源表与产物一起扫，**按来源归并**：一行数据与它生成的产物算同一次声明）、`V-FRESH`（`@generated` 指名的源表必须还在，且哈希必须等于这张表当前的哈希）、**V-RANGE 的成长比子项**（V-GROWTH：相邻境界 `qi_max` 比值逐对审计，上下限从 NUMBERS §2 `@@limits` 读取——受管数值不写进代码；`content/NUMBERS.md` 合入前该检查在 CI 打印 skip 并跳过，合入即自动生效）。其余六项（引用/DAG/概率/越界其余子项/文本/DSL）仍未实现 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
-| 产物 | `data/strife/**.json` + `lang` | **已开始产出**：`factions.csv` 的 2 行 M0 占位已生成 `fac_qingshi.json` / `fac_yuelai.json`（取值依据 LORE §4 初稿，未经人名义确认）。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
+| DataGen | 把 CSV 读成 JSON 产物 | **读表器与产物写入器已建好，已接 5 张表**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`（各自 `data/strife/<域>/<id>.json`）。**境界无 CSV 也已接**：`strife_realms` 由 NUMBERS `@@realms` 生成（含 ordinal/tribulation/display_name_key/占位标记四个推导项，§4.1）。其余 12 张表仍无生成器 —— 但**只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器） |
+| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜） | **实现了两项 + 两个子项**：`V-DUP`（ID 全域唯一）、`V-FRESH`（源哈希比对，已支持 `content/NUMBERS.md` 源头）、**V-RANGE 成长比子项**（V-GROWTH，上下限读 NUMBERS `@@limits`）、**V-TEXT zh_cn/en_us 覆盖**（内容 ID ↔ lang key 一一映射，缺 key 构建失败）。`content/` 合入（A0-7）前 V-GROWTH 与 content/ 源头新鲜度在 CI 打印声明并跳过。其余四项（引用/DAG/概率/越界其余子项/DSL）仍未实现 | `mod/tools/validator/src/main/java/com/strife/tools/validator/ValidatorMain.java` |
+| 产物 | `data/strife/**.json` + `lang` | **22 个产物在库**：realms 9 + factions 2 + techniques 5 + spells 3 + pills 3（C1-1 首批，取值依据 LORE/NUMBERS 初稿）；lang 种子 `assets/strife/lang/zh_cn.json` + `en_us.json`（V-TEXT 守覆盖）。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
 | 打进 jar | 生成的 JSON 必须随 MOD 一起进游戏（`docs/04` §1「构建进 jar」/ §9「内置内容」） | **已接通**：`platform` 把 `content-base/src/main/resources` 挂成自己的 resources 目录，所以 `:platform:jar` 里就有 `data/strife/**`，开发期 `runClient`/`runServer`/`runData` 也看见同一批文件。并有 `:platform:checkContentBundled`（挂在 `check` 上，CI 必跑）逐个比对磁盘产物与 jar 条目 | 本机实测：磁盘放一个探针文件时报 `checkContentBundled: 1 content file(s) present in the platform jar`；把那行 `srcDir` 注释掉后报 `platform jar does not ship generated content: [data/strife/strife_factions/fac_probe.json]` |
 | 内容热更 | `content-base-X.Y.Z.zip` 独立内容包（`docs/04` §9、`docs/07` §5 交付物） | **还没有**：内置内容这条路已通，"整合包作者换 zip 覆盖"这条导出任务还没建工单 | 仓库现状（无任何 `contentZip` 任务） |
 
@@ -529,13 +529,13 @@ cd mod
 
 预期输出（本机实测，**这就是 §0 说的现状**）：
 
-- `datagen: tables-root=… resources-root=… content-root=… tables=17 rows=7 generators=5 products=2 problems=0`
-  - `tables=17` = 17 张表**全部被读进来了**（表头不合规当场报错）；`rows=7` = factions 的 2 行占位 + `known-placeholders.csv` 的 5 行台账；`generators=5` = factions / techniques / spells / pills / artifacts；`products=2` = factions 两行占位的产物。
-- `validator: data-root=… tables-root=… json-files=2 csv-files=17 checks=3 problems=0`
-  - `json-files=2` = factions 两个产物；`checks=3` = `V-DUP` + `V-FRESH` + V-GROWTH（成长比；本机有 `content/NUMBERS.md` 故实际执行——CI 在该文件合入前是 `checks=2` 加一行 skip 声明）。
+- `datagen: tables-root=… resources-root=… content-root=… tables=17 rows=18 generators=5 numbers=1 products=22 problems=0`
+  - `tables=17` 全部被读进来；`rows=18` = factions 2 + techniques 5 + spells 3 + pills 3 + 白名单台账 5；`generators=5`；`numbers=1` = realms 生成器（由 NUMBERS `@@realms` 产 9 个境界产物，`content/NUMBERS.md` 合入前 CI 侧会打印 skipped 声明）；`products=22` = factions 2 + realms 9 + techniques 5 + spells 3 + pills 3。
+- `validator: data-root=… tables-root=… json-files=22 csv-files=17 checks=4 problems=0`
+  - `checks=4` = `V-DUP` + `V-FRESH`（含 content/ 源头）+ V-GROWTH（成长比）+ `V-TEXT`（zh_cn/en_us 覆盖）。CI 在 `content/` 合入前是 `checks=3` 加两行 skip 声明（V-GROWTH 与 content/ 源头新鲜度）。
 
 往已接生成器的表填行后，`products` 与 `json-files` 会同步增长，产物落在
-`mod/content-base/src/main/resources/data/strife/<域>/<id>.json`，**必须连产物一起提交**（CI 的"生成器漂移"检查就是比对它）。
+`mod/content-base/src/main/resources/data/strife/<域>/<id>.json`，**必须连产物一起提交**（CI 的"生成器漂移"检查就是比对它）；新增内容 ID 时 `assets/strife/lang/zh_cn.json` 与 `en_us.json` 必须同步补 key（V-TEXT 会红）。
 
 ### 5.2 CI 会跑什么（`docs/04` §8）
 
@@ -665,6 +665,6 @@ datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMa
 | `wars.csv` | 8 | 无 | §5.3，`[占位]` 本期不填 |
 | `id_migration.csv` | 7 | 无 | §6，本期无迁移项 |
 | `known-placeholders.csv` | 6 | **5 行** | §2 末条白名单，初值取自 NUMBERS §1/§11 |
-| `realms.csv` | **不建** | — | 境界无 CSV，见 §2 |
+| `realms.csv` | **不建** | — | 境界无 CSV，见 §2；**产物已由 DataGen 从 NUMBERS `@@realms` 生成**（9 个境界 JSON，`content/` 合入前 CI 侧跳过） |
 
 每张表都以 `id` 开头、以 `_note` 结尾（契约 §2 强制两列）。除 factions 两行 M0 占位与白名单台账外，模板都是空表，等你按格式填第一行。
