@@ -327,6 +327,12 @@ dlg_prologue_demo,<npc ID 待C定名>,d1,id=d1;speaker=<npc ID>;text_key=dialog.
 
 未知谓词、未知 flag、未知 ID 会让校验直接失败（`V-DSL`）。求值步数上限拟稿 1000，超限按 false 处理并记日志 —— 也就是说**条件写太长会被静默判假**，请把复杂逻辑拆成节点。
 
+**解释器已实现**（`com.strife.quest.dsl`，M3 前置，22 用例单测矩阵在库）。写条件时注意三条已冻结的实现口径：
+
+1. `item(item_lingshi:10)` 是**"持有至少 N 个"**（at-least），不是恰好；
+2. `realm` 的右值**境界 ID 与 ordinal 字面量都收**（`realm>=qili` 与 `realm>=1` 等价），未知 ID 求值判假、构建期由 V-DSL 二期拦截；
+3. `reputation` 右值可写负数（区间 [-100,100]）；负号只允许贴着数字（`==-5` 合法，`- 5` 非法）。
+
 ### 3.8 `dialog_prologue_text.csv` / `dialog_ch1_text.csv` —— 对话文本源（各 5 列）
 
 这是 AI 文本流程（`docs/05` §7）的落地台账，不是 lang 文件。规则在契约 §4.10：
