@@ -89,13 +89,12 @@ jobs:
 
       # Gates not yet lit — each lights up with its own ticket, never with a stub that
       # reports success without checking anything (docs/06 §4: an unverified pass is a fail).
-      # - validator 覆盖 docs/04 §6 八项中的 2 项（V-DUP / V-FRESH，后者已支持 content/
-      #   NUMBERS.md 源头）+ 四个已实装的子项族：V-RANGE 成长比（V-GROWTH）、V-RANGE 真相源
-      #   数值域（成功率/寿元单调，[占位] 放宽）、V-TEXT zh_cn/en_us 覆盖（--assets-root）、
-      #   V-PROB 概率和=1 与 H1 price 非负（对产物）。content/ 未合入（A0-7）时 NUMBERS 侧
-      #   检查在 CI 打印声明并跳过，真相源合入后自动生效。仍未实现：引用存在性（V-REF）/
-      #   DAG 连通（V-DAG）/ DSL 合法（V-DSL）。step 摘要里的 checks=5（content/ 未合入）
-      #   或 checks=7（已合入）就是这个差距的读数，别把它读成"全项已过"。
+      # - validator 覆盖 docs/04 §6 八项中的 4 项（V-DUP / V-FRESH 含 content/ 源头 /
+      #   V-DAG 任务图 / V-REF 引用存在性第一期：unlock 词表 + NUMBERS 块键 +
+      #   known-placeholders 白名单）+ 子项族：V-RANGE 成长比与真相源数值域、V-TEXT、
+      #   V-PROB、price 非负。content/ 未合入（A0-7）时 NUMBERS 侧检查打印声明并跳过。
+      #   仍未实现：V-REF 第二期（item_/npc_/spell_ 引用，等注册表）、V-DSL。
+      #   step 摘要 checks=7（content/ 未合入）或 9（已合入）就是这个差距的读数。
       # - content-base-X.Y.Z.zip 导出（docs/04 §9 热更通道）  -> 待立工单
       # Nightly (docs/04 §8): tick 采样 / 灵气场 chunk 生成耗时 / 丹方蒙特卡洛 10 万 / 2h 长跑 -> M2+
 

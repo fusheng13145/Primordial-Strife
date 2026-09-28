@@ -51,4 +51,4 @@ cd mod
 
 ## 当前状态
 
-M0 工程骨架已就位：MOD 可被服务端与客户端载入，`:platform` 有 `strife` 附件与 `/strife info` 兜底命令根。内容管线跑真实数据：**23 个内容产物在库**（realms 9 由 NUMBERS 生成、factions 2、techniques 5、spells 3、pills 3、序章任务 DAG 1——STORY §4 十节点转译），`*_key` 列从 NUMBERS `@@块` 内联展开，lang 种子 zh_cn/en_us 在库。DataGen 已接 7 张表 + realms（quests/dialog_trees 为一章一文件聚合产物）。validator 实装 V-DUP / V-FRESH（含 content/ 源头）/ V-GROWTH / 真相源数值域 / V-TEXT / V-PROB / price 非负——`content/` 合入前 NUMBERS 侧 CI 自动跳过并声明。后续任务与准出条件见 docs/07 与 docs/04 §8 的"未点亮门禁"清单。
+M0 工程骨架已就位：MOD 可被服务端与客户端载入，`:platform` 有 `strife` 附件与 `/strife info` 兜底命令根。内容管线跑真实数据：**23 个内容产物在库**（realms 9 由 NUMBERS 生成、factions 2、techniques 5、spells 3、pills 3、序章任务 DAG 1——STORY §4 十节点转译），`*_key` 列从 NUMBERS `@@块` 内联展开，lang 种子 zh_cn/en_us 在库。DataGen 已接 7 张表 + realms（quests/dialog_trees 为一章一文件聚合产物）。validator 实装八项中的四项（V-DUP / V-FRESH 含 content/ 源头 / V-DAG 任务图 / V-REF 第一期）+ V-GROWTH / 真相源数值域 / V-TEXT / V-PROB / price 非负——`content/` 合入前 NUMBERS 侧 CI 自动跳过并声明。后续任务与准出条件见 docs/07 与 docs/04 §8 的"未点亮门禁"清单。
