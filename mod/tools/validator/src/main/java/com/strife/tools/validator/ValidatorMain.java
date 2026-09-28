@@ -163,7 +163,9 @@ public final class ValidatorMain {
     /**
      * The source named by a product's {@code @generated} header: {@code tables/<file>.csv} or
      * {@code content/NUMBERS.md} (NUMBERS-derived domains like strife_realms, JSON_SCHEMA §4.1), or
-     * {@code null} when there is no well-formed header (hand-edited, 04 §1).
+     * {@code null} when there is no {@code from <source>} prefix at all (hand-edited, 04 §1). A
+     * header that names a source but carries no {@code @ sha256:…} still parses here, so V-FRESH
+     * can diagnose the missing hash instead of a vague "no source".
      */
     private static String headerSource(JsonObject object) {
         if (!object.has("@generated") || !object.get("@generated").isJsonPrimitive()) {
@@ -174,7 +176,11 @@ public final class ValidatorMain {
             return null;
         }
         int at = header.indexOf(" @ ");
-        return at < 0 ? null : header.substring("from ".length(), at);
+        String source =
+                at < 0
+                        ? header.substring("from ".length())
+                        : header.substring("from ".length(), at);
+        return source.trim();
     }
 
     private static String originOf(JsonObject object, Path file) {
@@ -261,7 +267,16 @@ public final class ValidatorMain {
             }
             Path sourceRoot = resolveSourceRoot(options, source);
             if (sourceRoot == null) {
-                continue; // content/ unmerged: main() prints the cannot-verify notice
+                if (source.startsWith("content/")) {
+                    continue; // content/ unmerged: main() prints the cannot-verify notice
+                }
+                problems.add(
+                        file
+                                + ": @generated names '"
+                                + source
+                                + "' but no root is wired for it (tables/ needs --tables-root,"
+                                + " content/ needs --content-root)");
+                continue;
             }
             Path sourceFile = sourceRoot.resolve(source.replaceFirst("^(tables|content)/", ""));
             if (!Files.isRegularFile(sourceFile)) {
