@@ -11,12 +11,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Build-time content validator (docs/04 §6). Runs on plain JVM, never launches Minecraft.
@@ -873,6 +877,370 @@ public final class ValidatorMain {
         return problems;
     }
 
+    /** unlock_key 词表（JSON_SCHEMA §1.4 `[拟]`）——契约写明 Validator 白名单即源于此。 */
+    private static final List<String> UNLOCK_KEYS =
+            List.of(
+                    "meditation",
+                    "spiritroot_panel",
+                    "cultivation_panel",
+                    "technique_equip",
+                    "spell_cast",
+                    "pill_crafting",
+                    "artifact_slot",
+                    "item_refine",
+                    "quest_line_ch1",
+                    "tribulation",
+                    "sect_join",
+                    "ambient_qi_affinity",
+                    "soul_scan",
+                    "upper_realm_gate",
+                    "ascension");
+
+    /** tables/known-placeholders.csv 的 id 列（契约 §2：`[占位]` 键走白名单，禁止长期驻留）。 */
+    private static Set<String> placeholderWhitelist(Options options) {
+        Set<String> ids = new LinkedHashSet<>();
+        if (options.tablesRoot() == null) {
+            return ids;
+        }
+        for (Path table : csvFiles(options.tablesRoot())) {
+            if (!"known-placeholders.csv".equals(table.getFileName().toString())) {
+                continue;
+            }
+            List<String> lines = readLines(table);
+            for (int row = 1; row < lines.size(); row++) {
+                String line = lines.get(row);
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                List<String> cells = splitRow(line);
+                if (!cells.isEmpty() && !cells.get(0).isBlank()) {
+                    ids.add(cells.get(0));
+                }
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * V-DAG (docs/04 §6): quest chapters are well-formed DAGs — exactly one entry, prerequisites
+     * and {@code fail_goto} stay inside the chapter, no cycles, and every quest is reachable from
+     * the entry so nothing silently becomes unobtainable. The generator enforces the entry rule
+     * too; the validator re-checks because content can also enter through the hot-update zip.
+     */
+    public static List<String> questDag(Options options) {
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!isDomain(file, options, "strife_quests")) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject() || !root.getAsJsonObject().has("quests")) {
+                continue;
+            }
+            Map<String, JsonObject> quests = new LinkedHashMap<>();
+            List<String> entries = new ArrayList<>();
+            for (JsonElement element : root.getAsJsonObject().getAsJsonArray("quests")) {
+                if (!element.isJsonObject()) {
+                    continue;
+                }
+                JsonObject quest = element.getAsJsonObject();
+                String id =
+                        quest.has("id") && quest.get("id").isJsonPrimitive()
+                                ? quest.get("id").getAsString()
+                                : null;
+                if (id == null) {
+                    problems.add(file + ": quest row without id (V-DAG)");
+                    continue;
+                }
+                quests.put(id, quest);
+                if (quest.has("entry")
+                        && quest.get("entry").isJsonPrimitive()
+                        && quest.get("entry").getAsBoolean()) {
+                    entries.add(id);
+                }
+            }
+            if (quests.isEmpty()) {
+                continue;
+            }
+            if (entries.size() != 1) {
+                problems.add(
+                        file
+                                + ": has "
+                                + entries.size()
+                                + " entry=true quests, exactly one required (docs/04 §6 V-DAG)");
+            }
+            Map<String, List<String>> children = new LinkedHashMap<>();
+            Set<String> brokenDependencies = new LinkedHashSet<>();
+            for (Map.Entry<String, JsonObject> quest : quests.entrySet()) {
+                for (String prerequisite : stringArray(quest.getValue().get("prerequisites"))) {
+                    if (!quests.containsKey(prerequisite)) {
+                        problems.add(
+                                file
+                                        + ": quest '"
+                                        + quest.getKey()
+                                        + "' has a dangling prerequisite '"
+                                        + prerequisite
+                                        + "' (docs/04 §6 V-DAG)");
+                        // 该节点的不可达已由这条根因解释，不再重复报衍生噪音
+                        brokenDependencies.add(quest.getKey());
+                    } else {
+                        children.computeIfAbsent(prerequisite, k -> new ArrayList<>())
+                                .add(quest.getKey());
+                    }
+                }
+                for (String failGoto : failGotos(quest.getValue())) {
+                    if (!quests.containsKey(failGoto)) {
+                        problems.add(
+                                file
+                                        + ": quest '"
+                                        + quest.getKey()
+                                        + "' points fail_goto at '"
+                                        + failGoto
+                                        + "', which is not in this chapter (docs/04 §6 V-DAG)");
+                    }
+                }
+            }
+            // 环检测（Kahn 拓扑）：入度 = 章内有效前置数；成环时只报环本身，
+            // 可达性抱怨都是它的衍生噪音。
+            Map<String, Integer> indegree = new LinkedHashMap<>();
+            for (String id : quests.keySet()) {
+                indegree.put(id, 0);
+            }
+            for (List<String> kids : children.values()) {
+                for (String kid : kids) {
+                    indegree.merge(kid, 1, Integer::sum);
+                }
+            }
+            Deque<String> ready = new ArrayDeque<>();
+            for (Map.Entry<String, Integer> degree : indegree.entrySet()) {
+                if (degree.getValue() == 0) {
+                    ready.add(degree.getKey());
+                }
+            }
+            int processed = 0;
+            while (!ready.isEmpty()) {
+                String current = ready.pop();
+                processed++;
+                for (String kid : children.getOrDefault(current, List.of())) {
+                    if (indegree.merge(kid, -1, Integer::sum) == 0) {
+                        ready.add(kid);
+                    }
+                }
+            }
+            if (processed < quests.size()) {
+                problems.add(
+                        file
+                                + ": "
+                                + (quests.size() - processed)
+                                + " quest(s) form a prerequisite cycle (docs/04 §6 V-DAG)");
+            } else if (entries.size() == 1) {
+                Set<String> reachable = new LinkedHashSet<>();
+                collectReachable(children, entries.get(0), reachable);
+                for (String id : quests.keySet()) {
+                    if (!reachable.contains(id) && !brokenDependencies.contains(id)) {
+                        problems.add(
+                                file
+                                        + ": quest '"
+                                        + id
+                                        + "' is unreachable from the entry '"
+                                        + entries.get(0)
+                                        + "' — a missing prerequisite edge"
+                                        + " (docs/04 §6 V-DAG)");
+                    }
+                }
+            }
+        }
+        return problems;
+    }
+
+    private static List<String> failGotos(JsonObject quest) {
+        List<String> targets = new ArrayList<>();
+        String failGoto = stringOrNull(quest.get("fail_goto"));
+        if (failGoto != null) {
+            targets.add(failGoto);
+        }
+        if (quest.has("timer") && quest.get("timer").isJsonObject()) {
+            String timerFailGoto = stringOrNull(quest.getAsJsonObject("timer").get("fail_goto"));
+            if (timerFailGoto != null) {
+                targets.add(timerFailGoto);
+            }
+        }
+        return targets;
+    }
+
+    private static void collectReachable(
+            Map<String, List<String>> children, String start, Set<String> reachable) {
+        Deque<String> queue = new ArrayDeque<>();
+        queue.push(start);
+        while (!queue.isEmpty()) {
+            String current = queue.pop();
+            if (!reachable.add(current)) {
+                continue;
+            }
+            List<String> kids = children.get(current);
+            if (kids != null) {
+                queue.addAll(kids);
+            }
+        }
+    }
+
+    /**
+     * V-REF phase 1 (docs/04 §6 引用存在性): the reference surfaces whose registries already exist.
+     * Unlock keys are checked against the §1.4 vocabulary; realm unlock lists, breakthrough keys
+     * and quest breakthrough objectives against NUMBERS blocks (content-gated). References whose
+     * registries do not exist yet (item_/npc_/spell_…) are phase 2. {@code [占位]} keys ride the
+     * known-placeholders whitelist (JSON_SCHEMA §2), which this check finally reads.
+     */
+    public static List<String> referenceExistence(Options options) {
+        Set<String> whitelist = placeholderWhitelist(options);
+        Set<String> unlockKeys = new LinkedHashSet<>(UNLOCK_KEYS);
+        unlockKeys.addAll(whitelist);
+        Set<String> breakthroughKeys = new LinkedHashSet<>(whitelist);
+        Path numbers = NumbersBlocks.numbersFile(options.contentRoot());
+        List<String> problems = new ArrayList<>();
+        if (numbers != null) {
+            try {
+                for (NumbersBlocks.Line line : NumbersBlocks.yamlBlock(numbers, "breakthrough")) {
+                    String content = NumbersBlocks.stripComment(line.text()).trim();
+                    if (content.isEmpty() || content.startsWith("#")) {
+                        continue;
+                    }
+                    int colon = content.indexOf(':');
+                    if (colon > 0) {
+                        breakthroughKeys.add(content.substring(0, colon).trim());
+                    }
+                }
+            } catch (IllegalStateException e) {
+                problems.add(numbers + ": " + e.getMessage());
+            }
+        }
+        for (Path file : jsonFiles(options.dataRoot())) {
+            String domain = domainOf(file, options);
+            JsonElement root = parse(file);
+            if (domain == null || !root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            switch (domain) {
+                case "strife_realms" -> {
+                    if (object.has("unlocks") && object.get("unlocks").isJsonArray()) {
+                        for (JsonElement key : object.getAsJsonArray("unlocks")) {
+                            String value = stringOrNull(key);
+                            if (value != null && !unlockKeys.contains(value)) {
+                                problems.add(
+                                        file
+                                                + ": unlocks references '"
+                                                + value
+                                                + "', which is neither a JSON_SCHEMA §1.4"
+                                                + " unlock_key nor in tables/known-placeholders.csv"
+                                                + " (docs/04 §6 V-REF)");
+                            }
+                        }
+                    }
+                    String successKey = stringOrNull(object.get("breakthrough_success_key"));
+                    if (numbers != null
+                            && successKey != null
+                            && !breakthroughKeys.contains(successKey)) {
+                        problems.add(
+                                file
+                                        + ": breakthrough_success_key '"
+                                        + successKey
+                                        + "' has no entry in NUMBERS §3 @@breakthrough"
+                                        + " and is not whitelisted (docs/04 §6 V-REF)");
+                    }
+                }
+                case "strife_quests" -> {
+                    if (!object.has("quests") || !object.get("quests").isJsonArray()) {
+                        continue;
+                    }
+                    for (JsonElement element : object.getAsJsonArray("quests")) {
+                        if (!element.isJsonObject()) {
+                            continue;
+                        }
+                        JsonObject quest = element.getAsJsonObject();
+                        for (JsonElement reward : stringArrayElement(quest.get("rewards"))) {
+                            String unlockKey =
+                                    stringOrNull(reward.getAsJsonObject().get("unlock_key"));
+                            if (unlockKey != null && !unlockKeys.contains(unlockKey)) {
+                                problems.add(
+                                        file
+                                                + ": quest '"
+                                                + stringOrNull(quest.get("id"))
+                                                + "' rewards unlock_key '"
+                                                + unlockKey
+                                                + "', which is neither a JSON_SCHEMA §1.4"
+                                                + " unlock_key nor whitelisted (docs/04 §6 V-REF)");
+                            }
+                        }
+                        if (numbers == null) {
+                            continue;
+                        }
+                        for (JsonElement objective : stringArrayElement(quest.get("objectives"))) {
+                            JsonObject target = objective.getAsJsonObject();
+                            if (!"breakthrough".equals(stringOrNull(target.get("type")))) {
+                                continue;
+                            }
+                            String key = stringOrNull(target.get("target"));
+                            if (key != null && !breakthroughKeys.contains(key)) {
+                                problems.add(
+                                        file
+                                                + ": quest '"
+                                                + stringOrNull(quest.get("id"))
+                                                + "' breakthrough objective targets '"
+                                                + key
+                                                + "', which has no entry in NUMBERS §3"
+                                                + " @@breakthrough and is not whitelisted"
+                                                + " (docs/04 §6 V-REF)");
+                            }
+                        }
+                    }
+                }
+                default -> {}
+            }
+        }
+        return problems;
+    }
+
+    private static boolean isDomain(Path file, Options options, String domain) {
+        return domainOf(file, options) != null && domain.equals(domainOf(file, options));
+    }
+
+    /** {@code data/strife/<domain>/<file>.json} 的域段，非该形态返回 null。 */
+    private static String domainOf(Path file, Options options) {
+        String relative = options.dataRoot().relativize(file).toString().replace('\\', '/');
+        String[] parts = relative.split("/");
+        return parts.length == 3 && "strife".equals(parts[0]) ? parts[1] : null;
+    }
+
+    private static List<String> stringArray(JsonElement element) {
+        List<String> values = new ArrayList<>();
+        if (element != null && element.isJsonArray()) {
+            for (JsonElement item : element.getAsJsonArray()) {
+                String value = stringOrNull(item);
+                if (value != null) {
+                    values.add(value);
+                }
+            }
+        }
+        return values;
+    }
+
+    private static List<JsonElement> stringArrayElement(JsonElement element) {
+        List<JsonElement> items = new ArrayList<>();
+        if (element != null && element.isJsonArray()) {
+            for (JsonElement item : element.getAsJsonArray()) {
+                if (item.isJsonObject()) {
+                    items.add(item);
+                }
+            }
+        }
+        return items;
+    }
+
+    private static String stringOrNull(JsonElement element) {
+        return element != null && element.isJsonPrimitive() ? element.getAsString() : null;
+    }
+
     public static List<Check> checks() {
         return List.of(ValidatorMain::duplicateIds, ValidatorMain::staleGeneratedHeaders);
     }
@@ -907,6 +1275,10 @@ public final class ValidatorMain {
         } else {
             notices.add("V-TEXT skipped — no --assets-root given, lang coverage unchecked");
         }
+        problems.addAll(questDag(options));
+        executed++;
+        problems.addAll(referenceExistence(options));
+        executed++;
         problems.addAll(probabilitySum(options));
         executed++;
         problems.addAll(numericRanges(options));

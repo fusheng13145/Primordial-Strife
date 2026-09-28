@@ -649,4 +649,164 @@ class ValidatorMainTest {
         assertTrue(problems.get(0).contains("does not increase"), problems.get(0));
         assertTrue(problems.get(0).contains("qili"), problems.get(0));
     }
+
+    // ===== V-DAG 任务图 (docs/04 §6) =====
+
+    private static String quest(String id, boolean entry, String prerequisites) {
+        return "{\"id\":\""
+                + id
+                + "\",\"entry\":"
+                + entry
+                + ",\"prerequisites\":["
+                + prerequisites
+                + "],\"objectives\":[],\"rewards\":[]}";
+    }
+
+    private static String chapter(String... quests) {
+        return "{\"id\":\"entry\",\"chapter\":\"prologue\",\"quests\":["
+                + String.join(",", quests)
+                + "]}";
+    }
+
+    @Test
+    void flagsADanglingPrerequisite(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                chapter(quest("a", true, ""), quest("b", false, "\"ghost\"")));
+
+        List<String> problems = ValidatorMain.questDag(productsOnly(root.resolve("data")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("dangling prerequisite 'ghost'"), problems.get(0));
+    }
+
+    @Test
+    void flagsAPrerequisiteCycle(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                chapter(
+                        quest("a", true, ""),
+                        quest("b", false, "\"c\""),
+                        quest("c", false, "\"b\"")));
+
+        List<String> problems = ValidatorMain.questDag(productsOnly(root.resolve("data")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("prerequisite cycle"), problems.get(0));
+    }
+
+    @Test
+    void flagsAnUnreachableQuestWhenNoCycleExists(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                chapter(quest("a", true, ""), quest("orphan", false, "")));
+
+        List<String> problems = ValidatorMain.questDag(productsOnly(root.resolve("data")));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("unreachable from the entry"), problems.get(0));
+    }
+
+    @Test
+    void acceptsAWellFormedBranchingDag(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                chapter(
+                        quest("a", true, ""),
+                        quest("b", false, "\"a\""),
+                        quest("c", false, "\"a\""),
+                        quest("d", false, "\"b\",\"c\"")));
+
+        assertEquals(List.of(), ValidatorMain.questDag(productsOnly(root.resolve("data"))));
+    }
+
+    @Test
+    void flagsTwoEntryQuests(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                chapter(quest("a", true, ""), quest("b", true, "")));
+
+        List<String> problems = ValidatorMain.questDag(productsOnly(root.resolve("data")));
+
+        assertTrue(
+                problems.stream().anyMatch(p -> p.contains("exactly one required")),
+                problems::toString);
+    }
+
+    // ===== V-REF 引用存在性 第一期 (docs/04 §6) =====
+
+    private static Options refOptions(Path data, Path tables, Path content) {
+        return new Options(data, tables, content, null);
+    }
+
+    @Test
+    void flagsAnUnlockKeyOutsideTheVocabularyAndWhitelist(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_realms/qili.json"),
+                "{\"id\":\"qili\",\"unlocks\":[\"meditation\",\"bogus_key\"]}");
+        Path tables = root.resolve("tables");
+        write(tables.resolve("known-placeholders.csv"), "id,kind\n");
+
+        List<String> problems =
+                ValidatorMain.referenceExistence(refOptions(root.resolve("data"), tables, null));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("bogus_key"), problems.get(0));
+        assertTrue(problems.get(0).contains("known-placeholders"), problems.get(0));
+    }
+
+    @Test
+    void whitelistedPlaceholderKeysRideThrough(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_realms/lianxu.json"),
+                "{\"id\":\"lianxu\",\"unlocks\":[\"unlock_placeholder_1\"]}");
+        Path tables = root.resolve("tables");
+        write(tables.resolve("known-placeholders.csv"), "id,kind\nunlock_placeholder_1,占位\n");
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.referenceExistence(refOptions(root.resolve("data"), tables, null)));
+    }
+
+    @Test
+    void flagsAQuestRewardUnlockKeyOutsideTheVocabulary(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                chapter(
+                        quest("a", true, "")
+                                .replace(
+                                        "\"rewards\":[]",
+                                        "\"rewards\":[{\"type\":\"unlock\",\"unlock_key\":\"bogus\"}]")));
+        Path tables = root.resolve("tables");
+        write(tables.resolve("known-placeholders.csv"), "id,kind\n");
+
+        List<String> problems =
+                ValidatorMain.referenceExistence(refOptions(root.resolve("data"), tables, null));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("rewards unlock_key 'bogus'"), problems.get(0));
+    }
+
+    @Test
+    void questBreakthroughTargetsAreCheckedAgainstNumbers(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_quests/prologue.json"),
+                chapter(
+                        quest("a", true, "")
+                                .replace(
+                                        "\"objectives\":[]",
+                                        "\"objectives\":[{\"id\":\"1\",\"type\":\"breakthrough\",\"target\":\"bs_ghost\",\"count\":1,\"optional\":false}]")));
+        Path content = root.resolve("content");
+        write(
+                content.resolve("NUMBERS.md"),
+                "@@breakthrough\n```yaml\nbs_fanren_qili: { base: 0.95, floor: 0.95 }\n```\n");
+        Path tables = root.resolve("tables");
+        write(tables.resolve("known-placeholders.csv"), "id,kind\n");
+
+        List<String> problems =
+                ValidatorMain.referenceExistence(refOptions(root.resolve("data"), tables, content));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("bs_ghost"), problems.get(0));
+    }
 }
