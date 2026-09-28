@@ -213,6 +213,39 @@ public record TableSource(String fileName, List<String> columns, List<Record> ro
         return objects;
     }
 
+    /**
+     * Parses an object-array VALUE that {@link #objectList} kept verbatim — the inner nesting of
+     * the contract grammar ({@code ( … )} wrapping, JSON_SCHEMA §2). The whole value is the inner
+     * array, so its own wrapping layer is stripped first: {@code (text_key=a;next=b)} is one
+     * object, {@code ((a;b)|(c;d))} is two — the double wrap is what keeps the inner {@code |} from
+     * colliding with the cell-level object separator.
+     */
+    public List<Map<String, String>> parseObjectArray(String column, Record record, String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String body = raw.trim();
+        if (body.startsWith("(") && body.endsWith(")")) {
+            body = body.substring(1, body.length() - 1).trim();
+        }
+        List<Map<String, String>> objects = new ArrayList<>();
+        for (String part : splitTopLevel(body, '|')) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                throw new IllegalStateException(
+                        fileName
+                                + ":"
+                                + record.line()
+                                + ": column '"
+                                + column
+                                + "' has an empty object between '|' separators"
+                                + " (content/JSON_SCHEMA.md §2)");
+            }
+            objects.add(parseObject(column, record, trimmed));
+        }
+        return objects;
+    }
+
     /** One object: optional surrounding parens, then {@code k=v} entries split on top-level ';'. */
     private Map<String, String> parseObject(String column, Record record, String text) {
         String body = text;

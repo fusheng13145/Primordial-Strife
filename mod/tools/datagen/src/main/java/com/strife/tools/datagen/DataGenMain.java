@@ -46,14 +46,18 @@ public final class DataGenMain {
             List<String> problems,
             List<String> notices) {}
 
-    /** Registered generators, one per contracted table domain. */
+    /** Registered generators, one per contracted table domain (一章一文件的域每章注册一次). */
     public static List<TableGenerator> generators(NumbersSource numbers) {
         return List.of(
                 new FactionGenerator(),
                 new TechniqueGenerator(),
                 new SpellGenerator(numbers),
                 new PillGenerator(numbers),
-                new ArtifactGenerator(numbers));
+                new ArtifactGenerator(numbers),
+                new QuestGenerator("quests_prologue.csv"),
+                new QuestGenerator("quests_ch1.csv"),
+                new DialogTreeGenerator("dialog_trees_prologue.csv"),
+                new DialogTreeGenerator("dialog_trees_ch1.csv"));
     }
 
     /** Registered NUMBERS-driven generators (domains with no CSV table, JSON_SCHEMA §4.1). */

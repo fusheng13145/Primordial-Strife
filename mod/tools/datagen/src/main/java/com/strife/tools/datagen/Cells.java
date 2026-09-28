@@ -95,15 +95,48 @@ final class Cells {
         return value;
     }
 
+    /** Strict boolean cell: only the two literals are legal, blank is not false. */
+    static Boolean bool(
+            TableSource source, TableSource.Record row, String column, String contract) {
+        String value = required(source, row, column, contract);
+        return boolOf(source, row, column, value);
+    }
+
+    /**
+     * Strict boolean for an object member's raw value ({@code optional=false} inside objectives).
+     */
+    static Boolean boolOf(TableSource source, TableSource.Record row, String column, String raw) {
+        if ("true".equals(raw)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equals(raw)) {
+            return Boolean.FALSE;
+        }
+        throw new IllegalStateException(
+                source.fileName()
+                        + ":"
+                        + row.line()
+                        + ": column '"
+                        + column
+                        + "' expects true or false, got '"
+                        + raw
+                        + "'");
+    }
+
     /**
      * H1 price (JSON_SCHEMA §5): {@code item_id=<id>;count=<n>} or a blank cell for null. Whether
      * the count is non-negative is the Validator's V-RANGE call, not this conversion's.
      */
     static Map<String, Object> price(TableSource source, TableSource.Record row) {
-        if (source.get("price", row) == null) {
+        return price(source, row, "price");
+    }
+
+    /** Same H1 shape under a different column name ({@code price_reward} for quests). */
+    static Map<String, Object> price(TableSource source, TableSource.Record row, String column) {
+        if (source.get(column, row) == null) {
             return null;
         }
-        Map<String, String> mapping = source.mapping("price", row);
+        Map<String, String> mapping = source.mapping(column, row);
         String item = mapping.get("item_id");
         String count = mapping.get("count");
         if (item == null || count == null) {
@@ -111,14 +144,16 @@ final class Cells {
                     source.fileName()
                             + ":"
                             + row.line()
-                            + ": column 'price' expects 'item_id=<id>;count=<n>' (JSON_SCHEMA §5"
+                            + ": column '"
+                            + column
+                            + "' expects 'item_id=<id>;count=<n>' (JSON_SCHEMA §5"
                             + " H1), got '"
-                            + source.get("price", row)
+                            + source.get(column, row)
                             + "'");
         }
         Map<String, Object> price = new LinkedHashMap<>();
         price.put("item_id", item);
-        price.put("count", longOf(source, row, "price", count));
+        price.put("count", longOf(source, row, column, count));
         return price;
     }
 }
