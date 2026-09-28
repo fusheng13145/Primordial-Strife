@@ -1,0 +1,18 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "yuanying",
+  "ordinal": 4,
+  "qi_max": 2650,
+  "stage_count": 4,
+  "lifespan_years": 800,
+  "sit_rate": 3.2,
+  "unlocks": [
+    "tribulation",
+    "sect_join",
+    "ambient_qi_affinity"
+  ],
+  "breakthrough_success_key": "bs_yuanying_huashen",
+  "tribulation": true,
+  "display_name_key": "realm.strife.yuanying",
+  "disabled_by_placeholder": false
+}

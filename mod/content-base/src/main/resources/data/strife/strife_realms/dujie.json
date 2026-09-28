@@ -1,0 +1,16 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "dujie",
+  "ordinal": 8,
+  "qi_max": 67000,
+  "stage_count": 1,
+  "lifespan_years": 12000,
+  "sit_rate": 20.5,
+  "unlocks": [
+    "ascension"
+  ],
+  "breakthrough_success_key": "bs_dujie_ascend",
+  "tribulation": false,
+  "display_name_key": "realm.strife.dujie",
+  "disabled_by_placeholder": true
+}

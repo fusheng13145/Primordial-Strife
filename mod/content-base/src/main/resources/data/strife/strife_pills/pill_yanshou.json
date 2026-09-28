@@ -1,0 +1,42 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:cb1fa219ea8e9d6d0a27c9e420d91d08e81353ecb1d121213f591cb9941d22d1",
+  "id": "pill_yanshou",
+  "quality_tier": "di",
+  "pattern": "1x1=herb_duanxue",
+  "core_slot": "herb_duanxue",
+  "materials": [
+    {
+    "item_id": "herb_duanxue",
+    "count": 2
+  },
+    {
+    "item_id": "item_lingshi",
+    "count": 1
+  }
+  ],
+  "heat_range": [
+    0.2,
+    0.8
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_yanshou",
+    "count": 1,
+    "prob": 0.9,
+    "quality": "di"
+  },
+    {
+    "item_id": "pill_peiyuan",
+    "count": 1,
+    "prob": 0.1,
+    "quality": "di"
+  }
+  ],
+  "effect_key": "pill_yanshou",
+  "effect": {
+    "lifespan_years_gain": 10,
+    "max_gain_per_realm": 30
+  },
+  "failure_output": null,
+  "price": null
+}

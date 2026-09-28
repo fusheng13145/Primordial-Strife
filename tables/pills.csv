@@ -1,1 +1,4 @@
 id,quality_tier,pattern,core_slot,materials,heat_range,outputs,effect_key,failure_output,price,_note
+pill_juqi,fan,1x1=herb_ningxu,herb_ningxu,item_id=herb_ningxu;count=3,0.30;0.70,item_id=pill_juqi;count=1;prob=1.0;quality=fan,pill_juqi,,,C1-1 初稿 聚气丹 herb ID 为占位待物品系统登记
+pill_peiyuan,di,1x1=herb_yuejian;2x2=herb_ningxu,herb_yuejian,item_id=herb_yuejian;count=2|item_id=herb_ningxu;count=1,0.40;0.60,item_id=pill_peiyuan;count=1;prob=0.85;quality=di|item_id=pill_juqi;count=2;prob=0.15;quality=fan,pill_peiyuan,,,C1-1 初稿 培元丹
+pill_yanshou,di,1x1=herb_duanxue,herb_duanxue,item_id=herb_duanxue;count=2|item_id=item_lingshi;count=1,0.20;0.80,item_id=pill_yanshou;count=1;prob=0.90;quality=di|item_id=pill_peiyuan;count=1;prob=0.10;quality=di,pill_yanshou,,,C1-1 初稿 延寿丹 即青石观所缺之方（LORE §4）

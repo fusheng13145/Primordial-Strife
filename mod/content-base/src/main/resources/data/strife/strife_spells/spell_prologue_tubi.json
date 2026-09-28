@@ -1,0 +1,19 @@
+{
+  "@generated": "from tables/spells.csv @ sha256:f0f26733f07ccac0f843d943d47476e8c4e673d4049a53df0680a3583c083221",
+  "id": "spell_prologue_tubi",
+  "element": "tu",
+  "required_technique": "tech_houtu_gong",
+  "cost_key": "medium",
+  "cost_qi": 18,
+  "cooldown_key": "heavy",
+  "cooldown_sec": 12.0,
+  "damage_formula_key": "formula_basic",
+  "damage_formula": {
+    "base": 6,
+    "scale": "realm_coeff"
+  },
+  "projectile": null,
+  "aoe_radius_blocks": null,
+  "effects": null,
+  "price": null
+}

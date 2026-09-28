@@ -1,0 +1,22 @@
+{
+  "@generated": "from tables/techniques.csv @ sha256:e0555b5d8a0724266ef79d52db7722ae69a74970494ee706dd94ea42047df60f",
+  "id": "tech_houtu_gong",
+  "grade": "huang",
+  "element": "tu",
+  "required_realm": "qili",
+  "required_stage": 1,
+  "required_spiritroot": [
+    "tu"
+  ],
+  "affinity_rule": "matched",
+  "qi_rate_ratio": 1.1,
+  "passives": null,
+  "grants_spells": null,
+  "faction": "fac_qingshi",
+  "price": {
+    "item_id": "item_lingshi",
+    "count": 25
+  },
+  "source": "inherit",
+  "disabled_reason_key": null
+}

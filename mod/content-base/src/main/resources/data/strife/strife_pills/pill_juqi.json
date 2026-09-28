@@ -1,0 +1,34 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:cb1fa219ea8e9d6d0a27c9e420d91d08e81353ecb1d121213f591cb9941d22d1",
+  "id": "pill_juqi",
+  "quality_tier": "fan",
+  "pattern": "1x1=herb_ningxu",
+  "core_slot": "herb_ningxu",
+  "materials": [
+    {
+    "item_id": "herb_ningxu",
+    "count": 3
+  }
+  ],
+  "heat_range": [
+    0.3,
+    0.7
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_juqi",
+    "count": 1,
+    "prob": 1.0,
+    "quality": "fan"
+  }
+  ],
+  "effect_key": "pill_juqi",
+  "effect": {
+    "qi_rate_bonus": 0.25,
+    "duration_sec": 300,
+    "repeat_step": 0.05,
+    "repeat_floor": 0.1
+  },
+  "failure_output": null,
+  "price": null
+}

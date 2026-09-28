@@ -1,0 +1,17 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "huashen",
+  "ordinal": 5,
+  "qi_max": 6000,
+  "stage_count": 4,
+  "lifespan_years": 1500,
+  "sit_rate": 5.1,
+  "unlocks": [
+    "soul_scan",
+    "upper_realm_gate"
+  ],
+  "breakthrough_success_key": "bs_huashen_placeholder",
+  "tribulation": false,
+  "display_name_key": "realm.strife.huashen",
+  "disabled_by_placeholder": false
+}

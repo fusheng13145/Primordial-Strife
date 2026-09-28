@@ -1,0 +1,44 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:cb1fa219ea8e9d6d0a27c9e420d91d08e81353ecb1d121213f591cb9941d22d1",
+  "id": "pill_peiyuan",
+  "quality_tier": "di",
+  "pattern": "1x1=herb_yuejian;2x2=herb_ningxu",
+  "core_slot": "herb_yuejian",
+  "materials": [
+    {
+    "item_id": "herb_yuejian",
+    "count": 2
+  },
+    {
+    "item_id": "herb_ningxu",
+    "count": 1
+  }
+  ],
+  "heat_range": [
+    0.4,
+    0.6
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_peiyuan",
+    "count": 1,
+    "prob": 0.85,
+    "quality": "di"
+  },
+    {
+    "item_id": "pill_juqi",
+    "count": 2,
+    "prob": 0.15,
+    "quality": "fan"
+  }
+  ],
+  "effect_key": "pill_peiyuan",
+  "effect": {
+    "qi_rate_bonus": 0.6,
+    "duration_sec": 120,
+    "repeat_step": 0.1,
+    "repeat_floor": 0.2
+  },
+  "failure_output": null,
+  "price": null
+}

@@ -1,0 +1,18 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "qili",
+  "ordinal": 1,
+  "qi_max": 230,
+  "stage_count": 9,
+  "lifespan_years": 120,
+  "sit_rate": 0.8,
+  "unlocks": [
+    "meditation",
+    "spiritroot_panel",
+    "cultivation_panel"
+  ],
+  "breakthrough_success_key": "bs_qili_zhuji",
+  "tribulation": false,
+  "display_name_key": "realm.strife.qili",
+  "disabled_by_placeholder": false
+}

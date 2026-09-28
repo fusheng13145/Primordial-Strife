@@ -1,0 +1,14 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "fanren",
+  "ordinal": 0,
+  "qi_max": 100,
+  "stage_count": 1,
+  "lifespan_years": 80,
+  "sit_rate": 0.5,
+  "unlocks": [],
+  "breakthrough_success_key": "bs_fanren_qili",
+  "tribulation": false,
+  "display_name_key": "realm.strife.fanren",
+  "disabled_by_placeholder": false
+}

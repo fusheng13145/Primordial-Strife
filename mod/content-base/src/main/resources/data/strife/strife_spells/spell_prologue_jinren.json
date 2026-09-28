@@ -1,0 +1,28 @@
+{
+  "@generated": "from tables/spells.csv @ sha256:f0f26733f07ccac0f843d943d47476e8c4e673d4049a53df0680a3583c083221",
+  "id": "spell_prologue_jinren",
+  "element": "jin",
+  "required_technique": "tech_jinsha_jue",
+  "cost_key": "medium",
+  "cost_qi": 18,
+  "cooldown_key": "medium",
+  "cooldown_sec": 4.0,
+  "damage_formula_key": "formula_pierce",
+  "damage_formula": {
+    "base": 4,
+    "scale": "realm_coeff",
+    "pen": 0.5
+  },
+  "projectile": {
+    "speed": 1.2,
+    "gravity": 0.0,
+    "range": 24.0,
+    "pierce_count": 1
+  },
+  "aoe_radius_blocks": null,
+  "effects": null,
+  "price": {
+    "item_id": "item_lingshi",
+    "count": 60
+  }
+}

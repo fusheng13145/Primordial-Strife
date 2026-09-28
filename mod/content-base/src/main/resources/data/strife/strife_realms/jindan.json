@@ -1,0 +1,18 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "jindan",
+  "ordinal": 3,
+  "qi_max": 1180,
+  "stage_count": 4,
+  "lifespan_years": 400,
+  "sit_rate": 2.0,
+  "unlocks": [
+    "artifact_slot",
+    "item_refine",
+    "quest_line_ch1"
+  ],
+  "breakthrough_success_key": "bs_jindan_yuanying",
+  "tribulation": false,
+  "display_name_key": "realm.strife.jindan",
+  "disabled_by_placeholder": false
+}

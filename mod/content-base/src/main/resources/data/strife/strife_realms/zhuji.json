@@ -1,0 +1,18 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "zhuji",
+  "ordinal": 2,
+  "qi_max": 520,
+  "stage_count": 4,
+  "lifespan_years": 200,
+  "sit_rate": 1.25,
+  "unlocks": [
+    "technique_equip",
+    "spell_cast",
+    "pill_crafting"
+  ],
+  "breakthrough_success_key": "bs_zhuji_jindan",
+  "tribulation": false,
+  "display_name_key": "realm.strife.zhuji",
+  "disabled_by_placeholder": false
+}

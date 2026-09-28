@@ -1,1 +1,6 @@
 id,grade,element,required_realm,required_stage,required_spiritroot,affinity_rule,qi_rate_ratio,passives,grants_spells,faction,price,source,disabled_reason_key,_note
+tech_qingxin_jue,xuan,mu,qili,,mu,matched,1.15,,,fac_qingshi,item_id=item_lingshi;count=30,inherit,,C1-1 初稿 清心诀 青石观入门功法 序章任务4奖励（STORY §3） 手册拍板示例ID
+tech_duanhu_gong,huang,huo,qili,,huo,matched,1.10,,,fac_qingshi,item_id=item_lingshi;count=25,inherit,,C1-1 初稿 锻火功
+tech_jinsha_jue,huang,jin,qili,,jin,matched,1.05,,,,item_id=item_lingshi;count=40,scroll,,C1-1 初稿 金砂诀 散修抄本 无门无派
+tech_renshui_zhenjie,xuan,shui,zhuji,,shui,matched,1.20,,,fac_qingshi,item_id=item_lingshi;count=120,inherit,,C1-1 初稿 壬水真解 藏经阁一层压箱
+tech_houtu_gong,huang,tu,qili,,tu,matched,1.10,,,fac_qingshi,item_id=item_lingshi;count=25,inherit,,C1-1 初稿 厚土功
