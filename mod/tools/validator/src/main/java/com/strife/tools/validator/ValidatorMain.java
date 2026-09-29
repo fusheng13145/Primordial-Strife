@@ -410,6 +410,10 @@ public final class ValidatorMain {
             return null;
         }
         String id = object.get("id").getAsString();
+        // realm_rules 是 NUMBERS 派生的配置文件（MVP realm 运行时数值表），不是内容 ID
+        if ("strife_realms".equals(parts[1]) && "realm_rules".equals(id)) {
+            return null;
+        }
         return switch (parts[1]) {
             case "strife_realms" -> "realm.strife." + id;
             case "strife_techniques" -> "technique.strife." + id;

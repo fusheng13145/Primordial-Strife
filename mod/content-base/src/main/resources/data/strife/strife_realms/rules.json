@@ -1,0 +1,80 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:c486927cd50059c1e78afcf00f676fc23c0dd625af7020a6383823dda6f79201",
+  "id": "realm_rules",
+  "breakthrough": {
+    "bs_fanren_qili": {
+    "base": 0.95,
+    "fail_step": 0.0,
+    "floor": 0.95
+  },
+    "bs_qili_zhuji": {
+    "base": 0.9,
+    "fail_step": -0.05,
+    "floor": 0.4
+  },
+    "bs_zhuji_jindan": {
+    "base": 0.85,
+    "fail_step": -0.05,
+    "floor": 0.4
+  },
+    "bs_jindan_yuanying": {
+    "base": 0.75,
+    "fail_step": -0.05,
+    "floor": 0.4
+  },
+    "bs_yuanying_huashen": {
+    "base": 0.65,
+    "fail_step": -0.05,
+    "floor": 0.4
+  },
+    "bs_huashen_placeholder": {
+    "base": 0.55,
+    "fail_step": -0.05,
+    "floor": 0.4
+  },
+    "bs_placeholder_high_1": {
+    "base": 0.45,
+    "fail_step": -0.05,
+    "floor": 0.35
+  },
+    "bs_placeholder_high_2": {
+    "base": 0.35,
+    "fail_step": -0.05,
+    "floor": 0.3
+  },
+    "bs_dujie_ascend": {
+    "base": 0.25,
+    "fail_step": -0.05,
+    "floor": 0.2
+  }
+  },
+  "breakthrough_cost": {
+    "qi_reset_ratio_min": 0.6,
+    "qi_reset_ratio_max": 0.8,
+    "tribulation_debuff_key": "debuff_heavy_wound",
+    "debuff_all_stat_delta": -0.3,
+    "debuff_duration_sec": 1800,
+    "tribulation_drop_radius": 16
+  },
+  "meditation": {
+    "interrupt_progress_keep": 0.9,
+    "interrupt_cooldown_sec": 30,
+    "tick_interval_ticks": 40,
+    "offline_gain_allowed": "false"
+  },
+  "spiritroot": {
+    "quality_tier_1": 1.4,
+    "quality_tier_2": 1.2,
+    "quality_tier_3": 0.95,
+    "quality_tier_4": 0.7,
+    "affinity_matched": 1.25,
+    "affinity_neutral": 1.0,
+    "affinity_conflict": 0.6,
+    "roll_weights": {
+    "tier_1": 2,
+    "tier_2": 8,
+    "tier_3": 25,
+    "tier_4": 65
+  }
+  }
+}
