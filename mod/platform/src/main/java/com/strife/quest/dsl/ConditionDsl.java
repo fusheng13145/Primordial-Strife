@@ -55,7 +55,7 @@ public final class ConditionDsl {
     /** 求值失败（未知境界 ID、步数超限等）：运行时按 false 降级，见 {@link #satisfies}。 */
     public static final class EvaluationException extends RuntimeException {
 
-        EvaluationException(String message) {
+        public EvaluationException(String message) {
             super(message);
         }
     }
