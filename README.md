@@ -43,7 +43,7 @@ cd mod
 ./gradlew :platform:runClient  # 载入判据三行见 docs/02 §4
 ```
 
-**只想进游戏看看（不改代码）**：不必用 Gradle。`./gradlew :platform:build` 产出 `mod/platform/build/libs/strife-0.0.1.jar`，把它丢进一个 **NeoForge 1.21.1** 实例的 `mods/`，用官方启动器 / PCL2 / HMCL 启动即可（注意选 NeoForge，不是 Forge）。开发与正式启动两条路径的差别见 docs/02 §4.1。DataGen 已接 7 张表 + realms（NUMBERS 直出），23 个内容产物打进 jar（九境、两势力、五功法、三法术、三丹方、序章任务 DAG）。**进游戏（单机）后屏幕左下角有修仙 HUD**（境界/修为/寿元/灵根），按 **K** 打开详情面板（含声望向量）；读服务端权威附件，专用服上暂不显示。另有 `/strife info`。上手细节见 [SETUP.md](SETUP.md)。服务端专用制品走 `./gradlew :platform:serverJar`（见 docs/02 §4）。
+**只想进游戏看看（不改代码）**：不必用 Gradle。`./gradlew :platform:build` 产出 `mod/platform/build/libs/strife-0.0.1.jar`，把它丢进一个 **NeoForge 1.21.1** 实例的 `mods/`，用官方启动器 / PCL2 / HMCL 启动即可（注意选 NeoForge，不是 Forge）。开发与正式启动两条路径的差别见 docs/02 §4.1。DataGen 已接 7 张表 + realms（NUMBERS 直出），23 个内容产物打进 jar（九境、两势力、五功法、三法术、三丹方、序章任务 DAG）。**进游戏（单机）即可玩修炼主链**：登录随机显现灵根（UUID+种子化，永不重算）→ **按住潜行打坐**积修为（打断惩罚、小境界随修为推进）→ 修为滴满自动尝试突破（成功率按 NUMBERS 表 + 失败累计衰减，失败回退修为）→ 突破成功境界+1、寿元续至新境年限 → 序章任务链前两环（登录引导 + 打坐）随事件推进并发奖励。屏幕左下角 HUD 与 **K 键面板**实时显示以上全部。数值全部经 DataGen 产物（九境 + rules.json）读取，零受管字面量。MVP 简化清单见 `CultivationHandler` 类注（突破无主动押注动作等，待 A 排期）。上手细节见 [SETUP.md](SETUP.md)。服务端专用制品走 `./gradlew :platform:serverJar`（见 docs/02 §4）。
 
 **Windows 本机 `test` 不可运行**（GBK + 非 ASCII 路径的 Gradle 已知缺陷，机制与禁令见 docs/02 §4）：单测由 CI（ubuntu）执行，本地验证以 `build -x test` + headless 冒烟为准，**不得用 `jvmArgs`/`systemProperty`/跳过测试掩盖**。
 
