@@ -1,0 +1,18 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:e2efacc1d26d32f931fe5db6a90807d59aa53831d7e719377f7deb4e7ba52c93",
+  "id": "world_rules",
+  "world": {
+    "ambient_qi_min": 0.5,
+    "ambient_qi_max": 2.0,
+    "ore_drop_weights": {
+    "common": 70,
+    "rare": 25,
+    "spirit": 5
+  },
+    "beast_loot_rolls": 3,
+    "herb_grass_drop_prob": {
+    "item_ningxu": 0.12,
+    "item_duanxue": 0.05
+  }
+  }
+}

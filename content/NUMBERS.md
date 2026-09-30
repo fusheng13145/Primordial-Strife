@@ -149,6 +149,7 @@ ambient_qi_min: 0.50   # [拟] 环境系数下限（绝不为 0，避免"零成�
 ambient_qi_max: 2.00   # [拟] 上限（灵脉/宗门核心区）
 ore_drop_weights: { common: 70, rare: 25, spirit: 5 }  # [拟] 矿石品质权重（和 = 100）
 beast_loot_rolls: 3    # [拟] 妖兽掉落表默认 roll 次数
+herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }  # [拟] 草丛采集 MVP：破坏草类方块时各草药独立掷此概率（序章 #3/#8 的采集来源；键 = 物品内容 ID 全名），待 C 审定
 ```
 
 ## 10. 限速参数（03 分册 §4 表内基线；运行时真值以本块为准）

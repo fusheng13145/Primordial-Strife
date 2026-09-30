@@ -62,7 +62,7 @@ public final class DataGenMain {
 
     /** Registered NUMBERS-driven generators (domains with no CSV table, JSON_SCHEMA §4.1). */
     public static List<NumbersGenerator> numbersGenerators() {
-        return List.of(new RealmsGenerator(), new RealmRulesGenerator());
+        return List.of(new RealmsGenerator(), new RealmRulesGenerator(), new WorldRulesGenerator());
     }
 
     public static void main(String[] args) {
