@@ -259,7 +259,7 @@ art_demo,<器胚ID 待C定名>,3,<核心材料ID 待C定名>,item_id=<材料ID>;
 
 ### 3.5 `quests_prologue.csv` / `quests_ch1.csv` —— 任务 DAG（各 16 列，**已接生成器**，一章一文件聚合产物）
 
-产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §4.6）。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名一致；空表合法。`objectives`/`rewards` 为对象数组（`|` 分隔），`reputation_delta` 用映射简写（生成器转对象数组）。序章表已有 STORY §4 十节点转译的初稿行，**奖励数值与占位 ID（`item_yaocai` 等）待 C 审定**。
+产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §4.6）。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名一致；空表合法。`objectives`/`rewards` 为对象数组（`|` 分隔），`reputation_delta` 用映射简写（生成器转对象数组）。序章表已有 STORY §4 十节点转译的初稿行，**奖励数值与物品命名待 C 审定**（`item_lingshi/item_ningxu/item_yuejian/item_duanxue/item_yaocai` 五件已由 production 注册成真物品，lang 词条在库，定名改 lang 即可）。
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
@@ -287,6 +287,17 @@ quest_prologue_meditation_01,prologue,true,,id=1;type=sit;count=1;optional=false
 ```
 
 容易错（都是 `V-DAG` 会抓的）：前置关系成环；入口不可达某个必做节点；`fail_goto` 指到一个不该到的节点；`rewards` 引用的物品/法术/功法 ID 不存在；一章出现两个 `entry=true` 或一个都没有。
+
+**目标类型现在的游戏内语义（MVP 运行时口径，2026-09-30 起）**：
+
+| type | 现在怎么推进 |
+|---|---|
+| `collect` | **持有对账**：主背包 + 末影箱内该物品的持有量 ≥ count 即满（登录/拾取/任何推进后自动对账）。物品来源：`herb_grass_drop_prob`（NUMBERS @@world，产物 `strife_worldgen/rules.json`）定义的草丛掉落，或任务奖励 |
+| `deliver` / `talk` | 玩家用 `/strife quest deliver <npc_id>` / `/strife quest talk <npc_id>` 触发（NPC 实体与对话 UI 到位前是官方交互原语）；target 必须**全等**任务表里的内容 ID |
+| `kill` | 任意生物被玩家击杀 +1（妖兽实体是 M2；要求指定目标时在 `target` 填实体 ID，引擎按全等匹配） |
+| `sit` / `breakthrough` | 事件驱动，已随修炼主链上线（打坐累计刻数 / 突破键） |
+
+任务状态随时可用 `/strife quest status` 查（已完成/进行中/未解锁 + 目标进度）。
 
 ### 3.6 `dialog_trees_prologue.csv` / `dialog_trees_ch1.csv` —— 对话树（各 7 列，**已接生成器**，一章一文件聚合产物）
 
