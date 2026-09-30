@@ -448,4 +448,75 @@ class QuestBookTest {
         IllegalStateException error = parseError(CHAPTER.replace("realm>=qili", "mana>=5"));
         assertTrue(error.getMessage().contains("illegal condition"), error.getMessage());
     }
+
+    // ===== 库存对账（collectDeltas）与状态一览（describe）=====
+
+    @Test
+    void collectDeltasCapsAtObjectiveCountAndCreditsProgress() {
+        QuestBook book = book();
+        QuestState state = new QuestState();
+        // 前置未完成：quest_b_01 不可用 → 无补报
+        assertTrue(book.collectDeltas(state, dslContext(0), id -> 99).isEmpty(), "前置未完成不产生对账增量");
+
+        book.report(QuestBook.ObjectiveType.TALK, "npc_x", 1, state, new RecordingSink(), null);
+        // 持有 99 但目标 6：增量封顶到 6
+        List<QuestBook.CollectDelta> deltas = book.collectDeltas(state, dslContext(0), id -> 99);
+        assertEquals(1, deltas.size());
+        assertEquals("quest_b_01", deltas.get(0).questId());
+        assertEquals("item_ningxu", deltas.get(0).target());
+        assertEquals(6, deltas.get(0).amount());
+    }
+
+    @Test
+    void collectDeltasOnlyReportsUncreditedRemainder() {
+        QuestBook book = book();
+        QuestState state = new QuestState();
+        book.report(QuestBook.ObjectiveType.TALK, "npc_x", 1, state, new RecordingSink(), null);
+        // 持有 2 → 补报 2（对账先记一部分，剩下的等拾取事件来）
+        List<QuestBook.CollectDelta> first = book.collectDeltas(state, dslContext(0), id -> 2);
+        assertEquals(1, first.size());
+        assertEquals(2, first.get(0).amount());
+
+        book.report(
+                QuestBook.ObjectiveType.COLLECT,
+                "item_ningxu",
+                2,
+                state,
+                new RecordingSink(),
+                null);
+        // 已记 2、仍持有 2 → 不重复补报（状态型目标幂等）
+        assertTrue(book.collectDeltas(state, dslContext(0), id -> 2).isEmpty());
+
+        // 再拾取 4 个 → 补差额 4
+        List<QuestBook.CollectDelta> rest = book.collectDeltas(state, dslContext(0), id -> 6);
+        assertEquals(1, rest.size());
+        assertEquals(4, rest.get(0).amount());
+    }
+
+    @Test
+    void describeMarksCompletedActiveAndLocked() {
+        QuestBook book = book();
+        QuestState state = new QuestState();
+
+        String locked = book.describe(state, dslContext(0));
+        assertTrue(locked.contains("未解锁 quest_b_01"), locked);
+        assertTrue(locked.contains("进行中 quest_a_01"), locked);
+
+        book.report(QuestBook.ObjectiveType.TALK, "npc_x", 1, state, new RecordingSink(), null);
+        book.report(
+                QuestBook.ObjectiveType.SIT, null, 3, state, new RecordingSink(), dslContext(0));
+        book.report(
+                QuestBook.ObjectiveType.COLLECT,
+                "item_ningxu",
+                6,
+                state,
+                new RecordingSink(),
+                dslContext(0));
+
+        String active = book.describe(state, dslContext(0));
+        assertTrue(active.contains("已完成 quest_a_01"), active);
+        // quest_b_01 的 kill 是 optional 不阻塞完成；quest_c_01 条件 realm>=qili，realm=0 → 未解锁
+        assertTrue(active.contains("已完成 quest_b_01"), active);
+        assertTrue(active.contains("未解锁 quest_c_01"), active);
+    }
 }

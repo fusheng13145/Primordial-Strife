@@ -11,6 +11,7 @@ import com.strife.realm.RealmTables;
 import com.strife.realm.UnlockBits;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -26,14 +27,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
 
 /**
- * QuestEngine 的 realm 装配层（docs/07 §7 M3 事件订阅 + 进度入档的 MVP 快速通道）： 把登录 / 打坐 / 突破三类事件喂进 {@link
- * QuestBook#report}，奖励经 {@link RewardSink} 落地。
+ * QuestEngine 的 realm 装配层（docs/07 §7 M3 事件订阅 + 进度入档的 MVP 快速通道）： 把登录 / 打坐 / 突破 / 击杀 / 拾取 /
+ * 命令交互（talk/deliver）喂进 {@link QuestBook#report}，奖励经 {@link RewardSink} 落地，COLLECT 目标经库存对账（{@link
+ * QuestBook#collectDeltas}）推进。
  *
  * <p>持久化：MVP 用世界级 SavedData 挂 per-玩家快照（正式实现应换成玩家附件， 待 core 接线后排期——SavedData 不走
  * copyOnDeath，死亡后任务进度保留是 MVP 的已知取舍）。
  *
- * <p>MVP 脚手架：序章节点 1（talk npc_qingshi_zhizhi）没有 NPC 实体，登录即自动推进—— 正式实现换成 NPC 对话事件（M3）。任务链在节点
- * 3（collect item_ningxu）因物品系统 未落地（M2）而暂停，属预期。
+ * <p>MVP 脚手架：序章节点 1（talk npc_qingshi_zhizhi）没有 NPC 实体，登录即自动推进； 其余 talk/deliver 节点用 {@code /strife
+ * quest talk|deliver <npc>} 交互（正式实现换成 NPC 对话事件与交付 UI，M3/M4）。 击杀口径：任意生物（妖兽实体与专属掉落是 M2）。
  */
 public final class QuestAdapter implements RewardSink {
 
@@ -60,6 +62,8 @@ public final class QuestAdapter implements RewardSink {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(
                 QuestAdapter::onRealmBreakthrough);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(QuestAdapter::onPlayerJoin);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(QuestAdapter::onLivingDeath);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(QuestAdapter::onItemPickup);
     }
 
     private static void onRealmSit(RealmEvents.SitMeditated event) {
@@ -82,6 +86,34 @@ public final class QuestAdapter implements RewardSink {
         }
     }
 
+    /** 击杀推进（序章 #7 kill×3；MVP 口径：任意生物死亡且凶手为玩家即计——妖兽实体是 M2，占位口径）。 */
+    private static void onLivingDeath(
+            net.neoforged.neoforge.event.entity.living.LivingDeathEvent event) {
+        if (event.getSource().getEntity() instanceof ServerPlayer player
+                && !player.level().isClientSide) {
+            adapter(player).reportAndSync(QuestBook.ObjectiveType.KILL, null, 1);
+        }
+    }
+
+    /**
+     * 拾取推进（COLLECT 的即时反馈；Post = 拾取已成功，计数不虚报。与 {@link #syncCollect} 对账互补 不重复——report
+     * 先记拾取量，对账补的是持有量与已记进度的差值）。
+     */
+    private static void onItemPickup(
+            net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Post event) {
+        if (!(event.getPlayer() instanceof ServerPlayer player) || player.level().isClientSide) {
+            return;
+        }
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(event.getCurrentStack().getItem());
+        if ("strife".equals(itemId.getNamespace())) {
+            adapter(player)
+                    .reportAndSync(
+                            QuestBook.ObjectiveType.COLLECT,
+                            itemId.getPath(),
+                            event.getCurrentStack().getCount());
+        }
+    }
+
     static void onLogin(ServerPlayer player) {
         ProgressSavedData saved = ProgressSavedData.get(player.server);
         QuestAdapter adapter =
@@ -90,13 +122,14 @@ public final class QuestAdapter implements RewardSink {
                         saved.stateOf(player.getUUID()),
                         saved.flagsOf(player.getUUID()),
                         saved);
-        if (saved.marked(player.getUUID(), SCAFFOLD_FLAG)) {
-            return;
+        if (!saved.marked(player.getUUID(), SCAFFOLD_FLAG)) {
+            // MVP 脚手架：登录自动完成序章节点 1（教面板读法），正式 NPC 到位后撤掉
+            adapter.report(QuestBook.ObjectiveType.TALK, "npc_qingshi_zhizhi", 1);
+            saved.mark(player.getUUID(), SCAFFOLD_FLAG);
+            adapter.save();
         }
-        // MVP 脚手架：登录自动完成序章节点 1（教面板读法），正式 NPC 到位后撤掉
-        adapter.report(QuestBook.ObjectiveType.TALK, "npc_qingshi_zhizhi", 1);
-        saved.mark(player.getUUID(), SCAFFOLD_FLAG);
-        adapter.save();
+        // 登录即对账一轮：离线间拿到/被奖励的物品可能正好补齐 COLLECT 目标
+        adapter.syncCollect();
     }
 
     private static QuestAdapter adapter(ServerPlayer player) {
@@ -105,9 +138,81 @@ public final class QuestAdapter implements RewardSink {
                 player, saved.stateOf(player.getUUID()), saved.flagsOf(player.getUUID()), saved);
     }
 
+    /** {@code /strife quest talk|deliver} 的落地：一次面向目标 NPC 的交互事件（target 按内容 ID 全等匹配）。 */
+    public static void interact(ServerPlayer player, QuestBook.ObjectiveType type, String target) {
+        adapter(player).reportAndSync(type, target, 1);
+    }
+
+    /** {@code /strife quest status} 的落地：任务一览（状态 + 目标进度），供命令与后续面板消费。 */
+    public static String status(ServerPlayer player) {
+        QuestAdapter instance = adapter(player);
+        return prologueBook(player.server).describe(instance.state, instance.dslContext());
+    }
+
     private void report(QuestBook.ObjectiveType type, String target, long amount) {
-        prologueBook(player.server).report(type, target, amount, state, this, dslContext());
+        List<QuestBook.AppliedReward> applied =
+                prologueBook(player.server).report(type, target, amount, state, this, dslContext());
         save();
+        announceCompleted(applied);
+    }
+
+    /** 事件入口统一走"推进 + 对账"：奖励发放可能解锁下一环采集（如 #3 奖励的灵石进背包）。 */
+    private void reportAndSync(QuestBook.ObjectiveType type, String target, long amount) {
+        report(type, target, amount);
+        syncCollect();
+    }
+
+    /** COLLECT 对账循环：补报直到收敛（级联上限给足链长，正常两三轮即空）。 */
+    private void syncCollect() {
+        QuestBook book = prologueBook(player.server);
+        for (int guard = 0; guard < 16; guard++) {
+            List<QuestBook.CollectDelta> deltas =
+                    book.collectDeltas(state, dslContext(), itemId -> countOwned(player, itemId));
+            if (deltas.isEmpty()) {
+                return;
+            }
+            for (QuestBook.CollectDelta delta : deltas) {
+                report(QuestBook.ObjectiveType.COLLECT, delta.target(), delta.amount());
+            }
+        }
+    }
+
+    private void announceCompleted(List<QuestBook.AppliedReward> applied) {
+        java.util.LinkedHashSet<String> questIds = new java.util.LinkedHashSet<>();
+        applied.forEach(reward -> questIds.add(reward.questId()));
+        for (String questId : questIds) {
+            player.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal("✦ 任务完成：")
+                            .withStyle(net.minecraft.ChatFormatting.GOLD)
+                            .append(
+                                    net.minecraft.network.chat.Component.literal(questId)
+                                            .withStyle(net.minecraft.ChatFormatting.YELLOW)),
+                    false);
+        }
+    }
+
+    /** 任务目标里物品的持有量：主背包 + 末影箱（03 §8"任务物品支持末影箱内交付"的计数口径）。物品未注册 按 0（未进 jar 的热更内容不炸运行时）。 */
+    private static int countOwned(ServerPlayer player, String itemId) {
+        Item item =
+                BuiltInRegistries.ITEM
+                        .getOptional(ResourceLocation.fromNamespaceAndPath("strife", itemId))
+                        .orElse(null);
+        if (item == null) {
+            return 0;
+        }
+        return countIn(player.getInventory(), item)
+                + countIn(player.getEnderChestInventory(), item);
+    }
+
+    private static int countIn(net.minecraft.world.Container container, Item item) {
+        int count = 0;
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack stack = container.getItem(i);
+            if (stack.getItem() == item) {
+                count += stack.getCount();
+            }
+        }
+        return count;
     }
 
     /** 序章任务簿由 quest 模块自己从 datapack 加载（realm 不反向依赖 quest）。 */
@@ -168,7 +273,7 @@ public final class QuestAdapter implements RewardSink {
 
             @Override
             public int itemCount(String itemId) {
-                return 0; // MVP：背包计数等物品系统（M2）接通
+                return countOwned(player, itemId);
             }
 
             @Override
@@ -219,16 +324,15 @@ public final class QuestAdapter implements RewardSink {
 
     @Override
     public void giveItem(String itemId, long count) {
+        // 注册名 = 内容 ID 全名（strife:item_ningxu），与任务表 target / lang key / 丹方 materials 同一口径
         Item item =
                 BuiltInRegistries.ITEM
-                        .getOptional(
-                                ResourceLocation.fromNamespaceAndPath(
-                                        "strife", itemId.substring("item_".length())))
+                        .getOptional(ResourceLocation.fromNamespaceAndPath("strife", itemId))
                         .orElse(null);
         if (item == null) {
             player.displayClientMessage(
                     net.minecraft.network.chat.Component.literal(
-                            "（奖励 " + itemId + " 的物品尚未注册，M2 物品系统落地后补发）"),
+                            "（奖励 " + itemId + " 的物品尚未注册，production 物品注册后补发）"),
                     false);
             return;
         }

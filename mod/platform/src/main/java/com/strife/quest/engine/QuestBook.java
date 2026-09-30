@@ -91,6 +91,9 @@ public final class QuestBook {
     public record AppliedReward(
             String questId, RewardType type, String id, Long count, String unlockKey) {}
 
+    /** 一条库存对账补报计划（装配层把它转成一次 COLLECT report 事件）。 */
+    public record CollectDelta(String questId, String target, long amount) {}
+
     private final String chapter;
     private final String entryId;
     private final Map<String, QuestSpec> quests = new LinkedHashMap<>();
@@ -396,6 +399,69 @@ public final class QuestBook {
             sink.setFlag(flag);
         }
         return applied;
+    }
+
+    /**
+     * 库存对账（COLLECT 目标的语义是"当前持有 ≥ count"，状态型而非事件累计型）：对每个可用任务的 COLLECT 目标，算出需要补报的增量 {@code min(count,
+     * 持有量) − 已记进度}，只返回正增量。
+     *
+     * <p>装配层在登录、拾取、任何 report 之后循环调用本方法并逐条 report，直到返回空——这处理了 "奖励发放把物品送进背包、解锁下一环采集"的级联；无 target 的
+     * COLLECT 目标（无此用法）跳过。
+     */
+    public List<CollectDelta> collectDeltas(
+            QuestState state,
+            ConditionExpression.Context dslContext,
+            java.util.function.ToIntFunction<String> itemCount) {
+        List<CollectDelta> deltas = new ArrayList<>();
+        for (QuestSpec quest : quests.values()) {
+            if (state.completed(quest.id()) || !isAvailable(state, quest.id(), dslContext)) {
+                continue;
+            }
+            for (ObjectiveSpec objective : quest.objectives()) {
+                if (objective.type() != ObjectiveType.COLLECT || objective.target() == null) {
+                    continue;
+                }
+                long have = itemCount.applyAsInt(objective.target());
+                long credited = state.progress(quest.id(), objective.id());
+                long delta = Math.min(objective.count(), have) - credited;
+                if (delta > 0) {
+                    deltas.add(new CollectDelta(quest.id(), objective.target(), delta));
+                }
+            }
+        }
+        return deltas;
+    }
+
+    /**
+     * 任务状态一览（导航 MVP 片）：每任务一行 {@code <状态> <id> [目标 进度/上限…]}，状态 ∈ 已完成/进行中/未解锁（fail-closed 同 {@link
+     * #isAvailable}）。供 {@code /strife quest status} 与后续面板消费。
+     */
+    public String describe(QuestState state, ConditionExpression.Context dslContext) {
+        StringBuilder text = new StringBuilder();
+        for (QuestSpec quest : quests.values()) {
+            if (state.completed(quest.id())) {
+                text.append("已完成 ").append(quest.id());
+            } else if (!isAvailable(state, quest.id(), dslContext)) {
+                text.append("未解锁 ").append(quest.id());
+            } else {
+                text.append("进行中 ").append(quest.id());
+                for (ObjectiveSpec objective : quest.objectives()) {
+                    long progress =
+                            Math.min(state.progress(quest.id(), objective.id()), objective.count());
+                    text.append(
+                            String.format(
+                                    "  %s %d/%d",
+                                    objective.type().name().toLowerCase(java.util.Locale.ROOT),
+                                    progress,
+                                    objective.count()));
+                }
+            }
+            if (quest.hidden()) {
+                text.append("（隐藏）");
+            }
+            text.append('\n');
+        }
+        return text.toString();
     }
 
     /** target 语义：null（如任意地点打坐）只匹配 null 事件；非空按内容 ID 全等。 */
