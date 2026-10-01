@@ -28,6 +28,10 @@ class CoreRulesGeneratorTest {
                         + "```yaml\n"
                         + "cast_per_sec: 5\n"
                         + "sit_per_sec: 2\n"
+                        + "```\n"
+                        + "@@lifespan\n"
+                        + "```yaml\n"
+                        + "seconds_per_year: 1200\n"
                         + "```\n");
         List<Product> products = new CoreRulesGenerator().generate(NumbersSource.at(temp));
 
@@ -40,7 +44,22 @@ class CoreRulesGeneratorTest {
         assertTrue(json.contains("\"rate_limits\""), json);
         assertTrue(json.contains("\"sync_packets_per_sec_idle\": 5"), json);
         assertTrue(json.contains("\"sit_per_sec\": 2"), json);
+        // 派生值：1200 现实秒/修行年 × 20 刻/秒 = 24000 刻（精确值，不再受 0.000833 近似的影响）。
+        assertTrue(json.contains("\"ticks_per_year\": 24000"), json);
         assertTrue(json.contains("\"@generated\": \"from content/NUMBERS.md @ sha256:"), json);
+    }
+
+    /** 派生值依赖 @lifespan；缺块时必须指名块而不是抛一个空指针。 */
+    @Test
+    void failsLoudlyWhenLifespanBlockIsMissing() {
+        writeNumbers(
+                "@@limits\n```yaml\nsync_packets_per_sec_idle: 5\n```\n"
+                        + "@@rate_limits\n```yaml\ncast_per_sec: 5\n```\n");
+        IllegalStateException e =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> new CoreRulesGenerator().generate(NumbersSource.at(temp)));
+        assertTrue(e.getMessage().contains("lifespan"), e.getMessage());
     }
 
     /**
