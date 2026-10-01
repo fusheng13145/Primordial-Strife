@@ -40,6 +40,11 @@ public final class ShippedProducts {
         return json("/data/strife/strife_core/rules.json");
     }
 
+    /** 单张丹方产物，如 {@code pill_juqi}。 */
+    public static JsonObject pill(String pillId) {
+        return json("/data/strife/strife_pills/" + pillId + ".json");
+    }
+
     private static JsonObject json(String path) {
         try (InputStream stream = ShippedProducts.class.getResourceAsStream(path)) {
             if (stream == null) {

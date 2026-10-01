@@ -20,10 +20,14 @@ class AmbientQiFieldTest {
     private static final double MAX = 2.00;
     private static final int REGION = 16;
 
-    /** 粗粒度随区域坐标变化（周期足够大，相邻区域值不同）；细化层随区块坐标变化。 */
+    /**
+     * 粗粒度随区域坐标变化（周期足够大，相邻区域值不同）；细化层随区块坐标变化。
+     *
+     * <p>细化层必须同时依赖 x 与 z——只依赖一个轴时，相邻区块会取到同一个值，"细化层到底有没有起作用"就测不出来了 （这条最初就是这么写错的）。
+     */
     private static AmbientQiField field(double refineWeight) {
         AmbientQiField.Noise coarse = (x, y, z) -> Math.sin(x * 0.1);
-        AmbientQiField.Noise fine = (x, y, z) -> Math.cos(z * 0.1);
+        AmbientQiField.Noise fine = (x, y, z) -> Math.cos((x + z) * 0.1);
         return new AmbientQiField(coarse, fine, MIN, MAX, REGION, refineWeight);
     }
 

@@ -75,7 +75,7 @@ class WorldTablesTest {
         AmbientQiField field =
                 new AmbientQiField(
                         (x, y, z) -> Math.sin(x * 0.1),
-                        (x, y, z) -> Math.cos(z * 0.1),
+                        (x, y, z) -> Math.cos((x + z) * 0.1),
                         ambient.min(),
                         ambient.max(),
                         ambient.regionChunks(),

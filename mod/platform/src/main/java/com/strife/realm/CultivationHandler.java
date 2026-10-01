@@ -184,20 +184,10 @@ public final class CultivationHandler {
 
         if (success) {
             RealmTables.RealmEntry next = tables.realm(realm.ordinal() + 1);
+            // 境界、小境界、修为、寿元、失败计数一并替换（withRealm 就是为"这五项必须一起改"存在的）。
             StrifeData advanced =
-                    new StrifeData(
-                            data.dataVersion(),
-                            next.ordinal(),
-                            1,
-                            0,
-                            yearsToTicks(player, next.lifespanYears()),
-                            data.flags(),
-                            data.spiritrootQuality(),
-                            data.spiritrootElements(),
-                            0,
-                            data.affiliation(),
-                            data.reputation(),
-                            data.meditation());
+                    data.withRealm(
+                            next.ordinal(), 1, 0, yearsToTicks(player, next.lifespanYears()), 0);
             write(player, data, d -> advanced);
             player.displayClientMessage(
                     Component.translatable(
@@ -360,20 +350,9 @@ public final class CultivationHandler {
                         StrifeCoreRules.get(player.server).ticksPerYear());
 
         StrifeData updated =
-                new StrifeData(
-                        data.dataVersion(),
-                        outcome.newOrdinal(),
-                        1,
-                        outcome.qi(),
-                        outcome.lifespanTicks(),
-                        data.flags(),
-                        data.spiritrootQuality(),
-                        data.spiritrootElements(),
-                        0,
-                        data.affiliation(),
-                        data.reputation(),
+                data.withRealm(outcome.newOrdinal(), 1, outcome.qi(), outcome.lifespanTicks(), 0)
                         // 大限即出定：不清打坐状态的话，玩家会在虚弱中继续按旧会话结算修为。
-                        data.meditation().stop());
+                        .withMeditation(data.meditation().stop());
         write(player, data, d -> updated);
 
         RealmEffects.apply(player, RealmEffects.WEAK, tables.rules().debuffDurationTicks());
@@ -419,38 +398,20 @@ public final class CultivationHandler {
         return Long.toString(Math.max(0L, ticks) / StrifeTime.TICKS_PER_SECOND);
     }
 
+    /** 只改寿元（core 的 wither 替代手拼 13 个字段——漏一个字段是这类构造最常见的错法）。 */
     private static StrifeData withLifespan(StrifeData data, long lifespan) {
-        return new StrifeData(
-                data.dataVersion(),
-                data.realmOrdinal(),
-                data.stage(),
-                data.qi(),
-                lifespan,
-                data.flags(),
-                data.spiritrootQuality(),
-                data.spiritrootElements(),
-                data.breakthroughAttempts(),
-                data.affiliation(),
-                data.reputation(),
-                data.meditation());
+        return data.withLifespanTicks(lifespan);
     }
 
     /** 改 qi 并同步推导小境界（NUMBERS §1：阈值不入表）。 */
     private static StrifeData withQiAndStage(
             StrifeData data, int qi, RealmTables.RealmEntry realm) {
-        return new StrifeData(
-                data.dataVersion(),
+        return data.withRealm(
                 data.realmOrdinal(),
                 BreakthroughMath.stageFor(qi, realm.qiMax(), realm.stageCount()),
                 qi,
                 data.lifespanTicks(),
-                data.flags(),
-                data.spiritrootQuality(),
-                data.spiritrootElements(),
-                data.breakthroughAttempts(),
-                data.affiliation(),
-                data.reputation(),
-                data.meditation());
+                data.breakthroughAttempts());
     }
 
     /** 附件值对象不可变：改字段 = 构造新记录整体 setData 回写（core 契约）；未变则不写。 */

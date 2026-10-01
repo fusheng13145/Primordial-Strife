@@ -169,7 +169,9 @@ public record StrifeDelta(
                 (int) values[StrifeSyncField.BREAKTHROUGH_ATTEMPTS.ordinal()],
                 has(StrifeSyncField.AFFILIATION) ? affiliation : base.affiliation(),
                 mergedReputation(base),
-                meditation);
+                meditation,
+                // 丹药状态不在同步清单里（客户端不读它，面板读的是服务端算好的系数）：镜像保留原值即可。
+                base.pills());
     }
 
     private Map<String, Integer> mergedReputation(StrifeData base) {

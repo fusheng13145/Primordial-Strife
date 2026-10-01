@@ -31,6 +31,7 @@ import java.util.Map;
  * @param affiliation 所属势力内容 ID，空串 = 散修（H2）
  * @param reputation 势力声望向量 factionId → [-100,100]（H2）
  * @param meditation 打坐会话状态（03 §3 时间片结算的时间戳载体）
+ * @param pills 丹药增益状态（NUMBERS §7：在效增益与本境界丹药延寿记账）
  */
 public record StrifeData(
         int dataVersion,
@@ -44,12 +45,13 @@ public record StrifeData(
         int breakthroughAttempts,
         String affiliation,
         Map<String, Integer> reputation,
-        MeditationState meditation) {
+        MeditationState meditation,
+        PillState pills) {
 
     /**
-     * 兼容构造：不关心打坐状态的调用点（任务奖励、灵根生成等）默认 {@link MeditationState#IDLE}。
+     * 兼容构造：不关心打坐/丹药状态的调用点（任务奖励、灵根生成等）默认取两条空状态。
      *
-     * <p>刻意保留这个重载而不是让所有调用点补第 12 个参数：打坐是 realm 单点拥有的状态，让它渗透到每个构造点只会增加 "某处顺手重置了会话"的机会。
+     * <p>刻意保留这个重载而不是让所有调用点补两个参数：这两块状态各有单一归属（realm 与 production），让它们渗透到每个 构造点只会增加"某处顺手重置了状态"的机会。
      */
     public StrifeData(
             int dataVersion,
@@ -75,7 +77,8 @@ public record StrifeData(
                 breakthroughAttempts,
                 affiliation,
                 reputation,
-                MeditationState.IDLE);
+                MeditationState.IDLE,
+                PillState.EMPTY);
     }
 
     public static final int CURRENT_DATA_VERSION = 1;
@@ -131,13 +134,29 @@ public record StrifeData(
                                             MeditationState.CODEC
                                                     .fieldOf("meditation")
                                                     .orElse(MeditationState.IDLE)
-                                                    .forGetter(StrifeData::meditation))
+                                                    .forGetter(StrifeData::meditation),
+                                            PillState.CODEC
+                                                    .fieldOf("pills")
+                                                    .orElse(PillState.EMPTY)
+                                                    .forGetter(StrifeData::pills))
                                     .apply(instance, StrifeData::new));
 
     /** 新玩家默认值：凡人、寿元未初始化（0 表示 realm 侧尚未结算，面板需显示"未知"而非 0 岁）。 */
     public static StrifeData newPlayer() {
         return new StrifeData(
-                CURRENT_DATA_VERSION, 0, 1, 0, 0L, 0L, 0, 0, 0, "", Map.of(), MeditationState.IDLE);
+                CURRENT_DATA_VERSION,
+                0,
+                1,
+                0,
+                0L,
+                0L,
+                0,
+                0,
+                0,
+                "",
+                Map.of(),
+                MeditationState.IDLE,
+                PillState.EMPTY);
     }
 
     /** 该数据的可变性由调用方负责：附件值对象一旦写入即视为不可变，改字段须整体 setData 回写。 */
@@ -154,7 +173,8 @@ public record StrifeData(
                 breakthroughAttempts,
                 affiliation,
                 reputation,
-                meditation);
+                meditation,
+                pills);
     }
 
     /** 整体替换打坐状态（时间片结算与打断的唯一入口，避免调用点各自拼字段）。 */
@@ -171,7 +191,8 @@ public record StrifeData(
                 breakthroughAttempts,
                 affiliation,
                 reputation,
-                updated);
+                updated,
+                pills);
     }
 
     /** 累计失败次数（突破失败 +1、成功清零，05 §3 的 fail_step 依据）。 */
@@ -188,6 +209,66 @@ public record StrifeData(
                 Math.max(0, attempts),
                 affiliation,
                 reputation,
-                meditation);
+                meditation,
+                pills);
+    }
+
+    /** 整体替换丹药增益状态（production 的丹药路径唯一入口）。 */
+    public StrifeData withPills(PillState updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                meditation,
+                updated);
+    }
+
+    /** 改寿元（丹药延长与境界续命共用；调用方负责范围校验）。 */
+    public StrifeData withLifespanTicks(long updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                updated,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                meditation,
+                pills);
+    }
+
+    /**
+     * 整块境界变更（突破成功 / 大限跌落共用）：境界、小境界、修为、寿元、失败计数一并替换。
+     *
+     * <p>这五项必须一起改才自洽——只改境界不改寿元会留下"化神境界配凡人寿元"这类状态；它们分散在几个 wither 里时， 调用点很容易漏掉一个。
+     */
+    public StrifeData withRealm(
+            int newRealmOrdinal, int newStage, int newQi, long newLifespanTicks, int newAttempts) {
+        return new StrifeData(
+                dataVersion,
+                newRealmOrdinal,
+                newStage,
+                newQi,
+                newLifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                Math.max(0, newAttempts),
+                affiliation,
+                reputation,
+                meditation,
+                pills);
     }
 }

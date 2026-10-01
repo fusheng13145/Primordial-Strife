@@ -24,8 +24,18 @@ public final class StrifeItems {
     public static final DeferredHolder<Item, Item> DUANXUE = register("item_duanxue");
     public static final DeferredHolder<Item, Item> YAOCAI = register("item_yaocai");
 
+    /** 丹方产物 pill_* 对应的可服用品（右键服用，行为在 {@link StrifePills}）。 */
+    public static final DeferredHolder<Item, Item> PILL_JUQI = registerPill("pill_juqi");
+
+    public static final DeferredHolder<Item, Item> PILL_PEIYUAN = registerPill("pill_peiyuan");
+    public static final DeferredHolder<Item, Item> PILL_YANSHOU = registerPill("pill_yanshou");
+
     private static DeferredHolder<Item, Item> register(String name) {
         return ITEMS.register(name, () -> new Item(new Item.Properties()));
+    }
+
+    private static DeferredHolder<Item, Item> registerPill(String pillId) {
+        return ITEMS.register(pillId, () -> StrifePills.item(pillId));
     }
 
     private StrifeItems() {}
