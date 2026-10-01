@@ -77,5 +77,13 @@
     "tier_3": 25,
     "tier_4": 65
   }
+  },
+  "lifespan": {
+    "seconds_per_year": 1200,
+    "seconds_per_year_sitting": 1200,
+    "limit_recovery_pill_key": "pill_yanshou",
+    "dasheng_realm_drop_stages": 1,
+    "dasheng_reset_years_ratio": 0.05,
+    "dasheng_debuff_key": "debuff_weak"
   }
 }

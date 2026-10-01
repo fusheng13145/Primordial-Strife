@@ -55,9 +55,13 @@ public final class RealmTables {
             int rollWeightTier1,
             int rollWeightTier2,
             int rollWeightTier3,
-            int rollWeightTier4) {}
+            int rollWeightTier4,
+            int dashengRealmDropStages) {}
 
     private static volatile RealmTables instance;
+
+    /** 上一次已打印过的失败信息（防 ERROR 刷屏）。 */
+    private static volatile String loggedFailure;
 
     private final Map<Integer, RealmEntry> realmsByOrdinal = new HashMap<>();
     private final Map<String, RealmEntry> realmsById = new HashMap<>();
@@ -93,12 +97,21 @@ public final class RealmTables {
         }
     }
 
-    /** tick 路径的容错形态：表加载失败时返回 null（tick 跳过），登录路径仍走 get() 显式报错。 */
+    /**
+     * tick 路径的容错形态：表加载失败时返回 null（tick 跳过），登录路径与启动自检仍走 {@link #get} 显式报错。
+     *
+     * <p>失败只报一次：调用点在每玩家每刻，失败重试会把 ERROR 刷成每 tick 一条，把真正有用的那条埋掉。相同的失败信息在 {@link #invalidate()}
+     * 之前不再重复打印。
+     */
     public static RealmTables getOrNull(MinecraftServer server) {
         try {
             return get(server);
         } catch (RuntimeException e) {
-            LOGGER.error("realm tables unavailable: {}", e.getMessage());
+            String message = String.valueOf(e.getMessage());
+            if (!message.equals(loggedFailure)) {
+                loggedFailure = message;
+                LOGGER.error("realm tables unavailable（相同失败不再重复打印）: {}", message, e);
+            }
             return null;
         }
     }
@@ -126,6 +139,7 @@ public final class RealmTables {
 
     public static void invalidate() {
         instance = null;
+        loggedFailure = null;
     }
 
     public RealmEntry realm(int ordinal) {
@@ -168,13 +182,20 @@ public final class RealmTables {
         };
     }
 
-    private static Rules parseRules(JsonObject rules) {
+    /**
+     * 解析 {@code strife_realms/rules.json}。
+     *
+     * <p>包内可见以便用例直接喂<b>真实产物</b>（{@code content-base} 的 resources 在测试 classpath 上）：这套解析器
+     * 此前从未被任何用例或冒烟跑到过，结果是一处"读错块"的缺陷潜伏到第一个玩家登录才发作——而发作形态是 NPE 被容错分支 吞掉、整个 realm 系统静默停工。
+     */
+    static Rules parseRules(JsonObject rules) {
         if (rules == null) {
             throw new IllegalStateException(
                     "strife_realms/rules.json missing — RealmRulesGenerator 未跑？");
         }
         Map<String, BreakthroughRate> rates = new HashMap<>();
-        rules.getAsJsonObject("breakthrough")
+        JsonObject breakthrough = block(rules, "breakthrough");
+        breakthrough
                 .entrySet()
                 .forEach(
                         entry -> {
@@ -182,32 +203,67 @@ public final class RealmTables {
                             rates.put(
                                     entry.getKey(),
                                     new BreakthroughRate(
-                                            value.get("base").getAsDouble(),
-                                            value.get("fail_step").getAsDouble(),
-                                            value.get("floor").getAsDouble()));
+                                            number(value, "base", "breakthrough." + entry.getKey()),
+                                            number(
+                                                    value,
+                                                    "fail_step",
+                                                    "breakthrough." + entry.getKey()),
+                                            number(
+                                                    value,
+                                                    "floor",
+                                                    "breakthrough." + entry.getKey())));
                         });
-        JsonObject cost = rules.getAsJsonObject("breakthrough_cost");
-        JsonObject meditation = rules.getAsJsonObject("meditation");
-        JsonObject spiritroot = rules.getAsJsonObject("spiritroot");
+        JsonObject cost = block(rules, "breakthrough_cost");
+        JsonObject meditation = block(rules, "meditation");
+        JsonObject spiritroot = block(rules, "spiritroot");
+        // 寿元与大限在 NUMBERS 的 @@lifespan 块里，与突破代价分属两块：混读就是上面说的那处缺陷。
+        JsonObject lifespan = block(rules, "lifespan");
         JsonObject weights = spiritroot.getAsJsonObject("roll_weights");
         return new Rules(
                 rates,
-                cost.get("qi_reset_ratio_min").getAsDouble(),
-                cost.get("qi_reset_ratio_max").getAsDouble(),
-                cost.get("dasheng_reset_years_ratio").getAsDouble(),
-                meditation.get("interrupt_progress_keep").getAsDouble(),
-                meditation.get("tick_interval_ticks").getAsInt(),
+                number(cost, "qi_reset_ratio_min", "breakthrough_cost"),
+                number(cost, "qi_reset_ratio_max", "breakthrough_cost"),
+                number(lifespan, "dasheng_reset_years_ratio", "lifespan"),
+                number(meditation, "interrupt_progress_keep", "meditation"),
+                (int) number(meditation, "tick_interval_ticks", "meditation"),
                 // NUMBERS 的冷却以秒计，结算在刻上：换算集中在这里，调用方不再各乘一次 20。
-                StrifeTime.secondsToTicks(meditation.get("interrupt_cooldown_sec").getAsDouble()),
-                meditation.get("interrupt_move_sqr").getAsDouble(),
-                spiritroot.get("quality_tier_1").getAsDouble(),
-                spiritroot.get("quality_tier_2").getAsDouble(),
-                spiritroot.get("quality_tier_3").getAsDouble(),
-                spiritroot.get("quality_tier_4").getAsDouble(),
-                weights.get("tier_1").getAsInt(),
-                weights.get("tier_2").getAsInt(),
-                weights.get("tier_3").getAsInt(),
-                weights.get("tier_4").getAsInt());
+                StrifeTime.secondsToTicks(
+                        number(meditation, "interrupt_cooldown_sec", "meditation")),
+                number(meditation, "interrupt_move_sqr", "meditation"),
+                number(spiritroot, "quality_tier_1", "spiritroot"),
+                number(spiritroot, "quality_tier_2", "spiritroot"),
+                number(spiritroot, "quality_tier_3", "spiritroot"),
+                number(spiritroot, "quality_tier_4", "spiritroot"),
+                (int) number(weights, "tier_1", "spiritroot.roll_weights"),
+                (int) number(weights, "tier_2", "spiritroot.roll_weights"),
+                (int) number(weights, "tier_3", "spiritroot.roll_weights"),
+                (int) number(weights, "tier_4", "spiritroot.roll_weights"),
+                (int) number(lifespan, "dasheng_realm_drop_stages", "lifespan"));
+    }
+
+    /** 取块；缺块时按 {@code 02 §5"内容加载失败必须 fail-fast 并报出具体路径"} 报出块名，而不是让后续 {@code get} 抛裸 NPE。 */
+    private static JsonObject block(JsonObject rules, String name) {
+        JsonObject value = rules.getAsJsonObject(name);
+        if (value == null) {
+            throw new IllegalStateException(
+                    "strife_realms/rules.json 缺 @@"
+                            + name
+                            + " 块——NUMBERS 块名与 RealmRulesGenerator.BLOCKS 不一致（JSON_SCHEMA §4.12）");
+        }
+        return value;
+    }
+
+    /** 取数值键；缺键时报出"块.键"，让缺陷一眼可定位。 */
+    private static double number(JsonObject block, String key, String blockName) {
+        if (!block.has(key)) {
+            throw new IllegalStateException(
+                    "strife_realms/rules.json 的 "
+                            + blockName
+                            + " 块缺键 '"
+                            + key
+                            + "'（NUMBERS 改了键名？）");
+        }
+        return block.get(key).getAsDouble();
     }
 
     private static JsonObject read(Resource resource) {
