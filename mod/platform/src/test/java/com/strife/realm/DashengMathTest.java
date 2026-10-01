@@ -32,7 +32,12 @@ class DashengMathTest {
 
         assertEquals(0, outcome.newOrdinal(), "已在凡人：不删角色、不出现负境界");
         assertFalse(outcome.demoted(), "没有退档就不能对外宣称退档（面板文案据此分支）");
-        assertEquals(80L * 24000L, outcome.lifespanTicks(), "退无可退时寿元仍按凡人年限重置");
+        // 05 §4：大限后寿元一律重置为"残余寿元"（新境界年限 × 比例），退无可退也不例外——
+        // 若这里给满年限，凡人境界就再也没有寿元压力，"续命玩法"随之失去意义。
+        assertEquals(
+                (long) Math.floor(80 * RESET_RATIO) * TICKS_PER_YEAR,
+                outcome.lifespanTicks(),
+                "退无可退时仍按凡人年限 × 残余比例重置");
     }
 
     @Test
