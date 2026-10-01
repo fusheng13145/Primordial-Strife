@@ -4,6 +4,8 @@ import com.strife.core.StrifeMod;
 import com.strife.core.net.IntentRateLimiter;
 import com.strife.core.net.StrifeCoreRules;
 import com.strife.core.net.StrifeIntents;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -55,8 +57,27 @@ public final class StrifeRealm {
                     "strife realm tables loaded: {} realms, {} breakthrough rates",
                     tables.realmCount(),
                     tables.rules().rates().size());
+            verifyEffectsRegistered(event, tables);
         } catch (RuntimeException e) {
             LOGGER.error("strife realm tables failed to load —— 修炼主链不可用: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 负面状态的运行时契约检查：NUMBERS 点名的键必须真的在注册表里存在。
+     *
+     * <p>代码侧的 id 是编译期常量，真相源侧的键名是数据——两者分叉时不会崩、不会报错，只是<b>大限什么都不中</b>。这条检查把 那种"静默无效"变成启动日志里的一条 ERROR。
+     */
+    private static void verifyEffectsRegistered(ServerStartedEvent event, RealmTables tables) {
+        var effects = event.getServer().registryAccess().registryOrThrow(Registries.MOB_EFFECT);
+        for (String effectId :
+                new String[] {tables.rules().dashengDebuffKey(), RealmEffects.HEAVY_WOUND_ID}) {
+            boolean present =
+                    effects.containsKey(
+                            ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, effectId));
+            if (!present) {
+                LOGGER.error("负面状态 '{}' 未注册——NUMBERS 的键名与代码注册的 id 不一致，该结算将静默无效", effectId);
+            }
         }
     }
 
