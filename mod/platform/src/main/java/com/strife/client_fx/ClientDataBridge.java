@@ -1,67 +1,95 @@
 package com.strife.client_fx;
 
-import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
+import com.strife.core.content.StrifeOrdinalIndex;
+import com.strife.core.net.StrifeClientMirror;
+import com.strife.core.net.StrifeCoreRules;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 
 /**
  * client_fx 的服务端权威数据桥：HUD 与面板共用的一条读取路径。
  *
- * <p>数据纪律（docs/03 服务端权威）：客户端附件镜像要等 M1 的 A1-5 S2C 同步框架，因此在 <b>单机</b>下直接读 integrated server
- * 持有的权威附件——渲染线程读 int/long 字段对显示足够； 读不到权威镜像（专用服、未同步）返回 null，调用方静默降级，<b>绝不显示编造的数值</b>。
- * 同步上线后本类整体换成客户端镜像读取。
+ * <p>数据来源是 {@link StrifeClientMirror}——服务端经 S2C 推送的镜像（docs/03 §5）。客户端既不读本地附件，也不读 integrated
+ * server，因此<b>专用服与单机走的是同一条路径</b>，面板在两种环境下的表现一致（此前"只在单机可见"的做法已随 A1-5 落地移除）。
+ *
+ * <p>读不到镜像（还没收到快照）时返回 null，调用方静默降级为"暂无数据"：<b>绝不显示编造的数值</b>（03 §4 服务端权威的显示侧纪律）。
+ *
+ * <p>境界名与寿元年数都由内容层还原，不在客户端留第二份真相：序号经 {@link StrifeOrdinalIndex} 查产物得 ID，换算率来自 NUMBERS §4 的 DataGen
+ * 产物。
  */
 public final class ClientDataBridge {
 
-    /**
-     * 显示层临时映射：ordinal → 境界内容 ID，顺序即 NUMBERS §1 链序，仅用于把序号拼成 lang key。 待接入（M1）：同步框架由服务端下发 id
-     * 后删除此表——链序的真相只允许存在于 NUMBERS。
-     */
-    private static final List<String> REALM_CHAIN =
-            List.of(
-                    "fanren",
-                    "qili",
-                    "zhuji",
-                    "jindan",
-                    "yuanying",
-                    "huashen",
-                    "lianxu",
-                    "heti",
-                    "dujie");
+    /** 境界域（DataGen 产物目录名，JSON_SCHEMA §4.12）。 */
+    private static final String REALM_DOMAIN = "strife_realms";
 
     /** 五行位掩码：bit0 金 bit1 木 bit2 水 bit3 火 bit4 土（StrifeData 契约口径）。 */
     private static final String[] ELEMENT_KEYS = {"jin", "mu", "shui", "huo", "tu"};
 
+    /** 客户端侧的换算率缓存（-1 = 未读到；资源管理器就绪后读一次即可）。 */
+    private static long ticksPerYear = -1L;
+
     private ClientDataBridge() {}
 
-    /** 单机下的权威读取：integrated server 的玩家实体持有序列化与服务端结算的唯一真相。 没有它（专用服 / 同步未接）返回 null。 */
-    public static StrifeData authoritative(Minecraft minecraft) {
-        if (minecraft == null || minecraft.player == null) {
-            return null;
-        }
-        MinecraftServer server = minecraft.getSingleplayerServer();
-        if (server == null) {
-            return null;
-        }
-        ServerPlayer player = server.getPlayerList().getPlayer(minecraft.player.getUUID());
-        return player == null ? null : player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+    /** 服务端权威镜像；未同步时 null。 */
+    public static StrifeData mirror() {
+        return StrifeClientMirror.getOrNull();
     }
 
-    /** ordinal 越界时退回序号显示，绝不因此崩 UI。 */
+    /**
+     * 1 修行年 = 多少刻。客户端读自己的产物副本（与服务端同一份 jar 内容），读不到时返回 -1 让调用方降级—— 绝不退回一个写死的 24000，那会在 NUMBERS
+     * 调整时长曲线后静默显示错的年数。
+     */
+    public static long ticksPerYear() {
+        if (ticksPerYear > 0L) {
+            return ticksPerYear;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null) {
+            return -1L;
+        }
+        try {
+            ticksPerYear = StrifeCoreRules.of(minecraft.getResourceManager()).ticksPerYear();
+        } catch (RuntimeException e) {
+            return -1L;
+        }
+        return ticksPerYear;
+    }
+
+    /** 寿元刻数 → 年；换算率不可用时返回 -1（调用方显示"未知"而不是编一个数）。 */
+    public static long lifespanYears(StrifeData data) {
+        long perYear = ticksPerYear();
+        return perYear <= 0L ? -1L : data.lifespanTicks() / perYear;
+    }
+
+    /**
+     * 境界名：ordinal 经内容索引还原成内容 ID 再拼 lang key。链序的真相只在 NUMBERS——客户端不再维护副本， 加一个境界不需要改这里（旧实现写死了一张九境表）。
+     */
     public static Component realmName(StrifeData data) {
-        if (data.realmOrdinal() < 0 || data.realmOrdinal() >= REALM_CHAIN.size()) {
+        String id = realmId(data.realmOrdinal());
+        if (id == null) {
             return Component.literal("#" + data.realmOrdinal());
         }
-        return Component.translatable("realm.strife." + REALM_CHAIN.get(data.realmOrdinal()));
+        return Component.translatable("realm.strife." + id);
     }
 
-    /** 五行列表 + 品阶；灵根未生成（服务端 A1-1 逻辑未落地）显示"未生成"。 */
+    private static String realmId(int ordinal) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null) {
+            return null;
+        }
+        try {
+            return StrifeOrdinalIndex.of(minecraft.getResourceManager(), REALM_DOMAIN)
+                    .idAt(ordinal);
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    /** 五行列表 + 品阶；灵根未生成时显示"未生成"。 */
     public static Component spiritroot(StrifeData data) {
         if (data.spiritrootQuality() <= 0 || data.spiritrootElements() == 0) {
             return Component.translatable("gui.strife.hud.none");

@@ -52,7 +52,7 @@ public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Sc
     }
 
     private static List<Component> panelLines(Minecraft minecraft) {
-        StrifeData data = ClientDataBridge.authoritative(minecraft);
+        StrifeData data = ClientDataBridge.mirror();
         List<Component> lines = new ArrayList<>();
         if (data == null) {
             lines.add(Component.translatable("gui.strife.panel.no_data"));
@@ -62,11 +62,13 @@ public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Sc
                 Component.translatable("gui.strife.panel.realm", ClientDataBridge.realmName(data)));
         lines.add(Component.translatable("gui.strife.panel.stage", data.stage()));
         lines.add(Component.translatable("gui.strife.hud.qi", data.qi()));
+        long lifespanYears = ClientDataBridge.lifespanYears(data);
         lines.add(
-                Component.translatable(
-                        "gui.strife.panel.lifespan",
-                        data.lifespanTicks() / StrifeData.TICKS_PER_YEAR,
-                        data.lifespanTicks()));
+                lifespanYears < 0L
+                        ? Component.translatable(
+                                "gui.strife.panel.lifespan_unknown", data.lifespanTicks())
+                        : Component.translatable(
+                                "gui.strife.panel.lifespan", lifespanYears, data.lifespanTicks()));
         lines.add(
                 Component.translatable(
                         "gui.strife.panel.spiritroot_full", ClientDataBridge.spiritroot(data)));

@@ -276,6 +276,8 @@ CMP     := '>=' | '<=' | '==' | '!='
 
 约定：产物 `id` = `<域>_rules`（V-DUP 台账外的配置单例，非内容 ID）；域目录名 `strife_realms` / `strife_worldgen` / `strife_core` 由生成器固定、不来自任何表；新增 config 域 = 同一 PR 改本表 + DataGen + 消费者。`@@limits` 中的预算与间隔**同为受管数值**，代码不得复制字面量。
 
+`strife_core/rules.json` 还带一个 `derived` 块：由其他块在**生成期算一次**的换算值，目前只有 `ticks_per_year`（= `@@lifespan.seconds_per_year` × 20 刻/秒）。放这里的理由：它不是独立事实，写进 NUMBERS 就有了两个可互相矛盾的真相，写进代码就是受管字面量；生成期换算是唯一不会漂移的位置。派生值只允许出现在 `derived` 内，且必须注明它由哪个块算出。
+
 ## 5. 七钩子在 schema 中的落点（03 §10，H1–H7 必须从 M0 就存在）
 
 | 钩子 | schema 落点 | 读写入口 | 本期实现 |

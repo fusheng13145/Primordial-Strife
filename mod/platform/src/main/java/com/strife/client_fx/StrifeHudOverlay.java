@@ -18,7 +18,7 @@ public final class StrifeHudOverlay {
 
     static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
-        StrifeData data = ClientDataBridge.authoritative(minecraft);
+        StrifeData data = ClientDataBridge.mirror();
         if (data == null) {
             return;
         }
@@ -29,12 +29,14 @@ public final class StrifeHudOverlay {
                                         "gui.strife.hud.realm", ClientDataBridge.realmName(data)))
                         .append(" · ")
                         .append(Component.translatable("gui.strife.hud.qi", data.qi()));
+        long lifespanYears = ClientDataBridge.lifespanYears(data);
+        Component lifespan =
+                lifespanYears < 0L
+                        ? Component.translatable("gui.strife.hud.lifespan_unknown")
+                        : Component.translatable("gui.strife.hud.lifespan", lifespanYears);
         Component condition =
                 Component.empty()
-                        .append(
-                                Component.translatable(
-                                        "gui.strife.hud.lifespan",
-                                        data.lifespanTicks() / StrifeData.TICKS_PER_YEAR))
+                        .append(lifespan)
                         .append(" · ")
                         .append(
                                 Component.translatable(

@@ -29,6 +29,7 @@
   "gui.strife.hud.realm": "Realm %s",
   "gui.strife.hud.qi": "Qi %s",
   "gui.strife.hud.lifespan": "Lifespan %sy",
+  "gui.strife.hud.lifespan_unknown": "Lifespan unknown",
   "gui.strife.hud.spiritroot": "Spirit Root %s",
   "gui.strife.hud.none": "Unawakened",
   "gui.strife.hud.quality": "Grade %s",
@@ -43,11 +44,12 @@
   "gui.strife.panel.realm": "Realm: %s",
   "gui.strife.panel.stage": "Stage: %s",
   "gui.strife.panel.lifespan": "Lifespan: %sy (%s ticks)",
+  "gui.strife.panel.lifespan_unknown": "Lifespan: rate unavailable (%s ticks)",
   "gui.strife.panel.spiritroot_full": "Spirit Root: %s",
   "gui.strife.panel.breakthrough_attempts": "Failed Breakthroughs: %s",
   "gui.strife.panel.affiliation": "Affiliation: %s",
   "gui.strife.panel.affiliation.none": "None (Maverick)",
   "gui.strife.panel.reputation": "Reputation · %s: %s",
   "gui.strife.panel.reputation.none": "Reputation: none",
-  "gui.strife.panel.no_data": "No authoritative server data mirror (M1 sync pending)"
+  "gui.strife.panel.no_data": "Waiting for authoritative server data (synced on join)"
 }

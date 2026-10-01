@@ -56,8 +56,10 @@ class IntentRateLimiterTest {
                     limiter.allow(IntentRateLimiter.BREAKTHROUGH, 0L),
                     "连点突破不能刷 fail_step（NUMBERS §10 的存在理由）");
         }
-        assertEquals(5.0, limiter.secondsUntilAvailable(IntentRateLimiter.BREAKTHROUGH, 0L), 1e-9);
-        assertTrue(limiter.allow(IntentRateLimiter.BREAKTHROUGH, 5L * SECOND));
+        // 6 次/分钟 = 0.1 令牌/s，桶空后要等 10 秒才回填满 1 个。
+        assertEquals(10.0, limiter.secondsUntilAvailable(IntentRateLimiter.BREAKTHROUGH, 0L), 1e-9);
+        assertFalse(limiter.allow(IntentRateLimiter.BREAKTHROUGH, 9L * SECOND));
+        assertTrue(limiter.allow(IntentRateLimiter.BREAKTHROUGH, 10L * SECOND));
     }
 
     @Test

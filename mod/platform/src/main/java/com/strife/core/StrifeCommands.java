@@ -2,10 +2,12 @@ package com.strife.core;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import com.strife.core.net.StrifeCoreRules;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -66,7 +68,13 @@ public final class StrifeCommands {
                                                 data.breakthroughAttempts())),
                         false);
         context.getSource()
-                .sendSuccess(() -> Component.literal(lifespanLine(data.lifespanTicks())), false);
+                .sendSuccess(
+                        () ->
+                                Component.literal(
+                                        lifespanLine(
+                                                context.getSource().getServer(),
+                                                data.lifespanTicks())),
+                        false);
         context.getSource()
                 .sendSuccess(
                         () ->
@@ -82,12 +90,13 @@ public final class StrifeCommands {
         return 1;
     }
 
-    private static String lifespanLine(long lifespanTicks) {
+    private static String lifespanLine(MinecraftServer server, long lifespanTicks) {
         if (lifespanTicks <= 0L) {
             return "寿元=未初始化（realm 侧尚未结算，0 不代表 0 岁）";
         }
-        return String.format(
-                "寿元=%d 年（%d 刻）", lifespanTicks / StrifeData.TICKS_PER_YEAR, lifespanTicks);
+        // 换算率来自 NUMBERS §4 经 DataGen 产物（core 受管数值零字面量，05 §1）。
+        long ticksPerYear = StrifeCoreRules.get(server).ticksPerYear();
+        return String.format("寿元=%d 年（%d 刻）", lifespanTicks / ticksPerYear, lifespanTicks);
     }
 
     private StrifeCommands() {}

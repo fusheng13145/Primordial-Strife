@@ -1,5 +1,7 @@
 package com.strife.core;
 
+import com.strife.core.net.StrifeNetwork;
+import com.strife.core.net.StrifeSyncManager;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -26,8 +28,14 @@ public final class StrifeMod {
                 "strife platform entry constructed (version {})",
                 container.getModInfo().getVersion());
         StrifeAttachmentTypes.ATTACHMENT_TYPES.register(modEventBus);
+        // 载荷注册在 mod 总线（注册期），玩法事件在游戏总线（03 §2）。
+        StrifeNetwork.register(modEventBus);
         // RegisterCommandsEvent is fired on the game bus whenever Commands is rebuilt.
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+        // S2C 同步（03 §5）：登录发全量快照，每刻按预算推差量。
+        NeoForge.EVENT_BUS.addListener(StrifeSyncManager::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(StrifeSyncManager::onPlayerLoggedOut);
+        NeoForge.EVENT_BUS.addListener(StrifeSyncManager::onPlayerTick);
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {

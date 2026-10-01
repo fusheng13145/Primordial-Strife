@@ -2,6 +2,7 @@ package com.strife.realm;
 
 import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
+import com.strife.core.net.StrifeCoreRules;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,9 +47,7 @@ public final class CultivationHandler {
                     write(
                             player,
                             data,
-                            d ->
-                                    withLifespan(
-                                            d, realm.lifespanYears() * StrifeData.TICKS_PER_YEAR));
+                            d -> withLifespan(d, yearsToTicks(player, realm.lifespanYears())));
         }
 
         // 1. 寿元流动（打坐期间同样流逝，NUMBERS §4）
@@ -127,7 +126,7 @@ public final class CultivationHandler {
                             next.ordinal(),
                             1,
                             0,
-                            next.lifespanYears() * StrifeData.TICKS_PER_YEAR,
+                            yearsToTicks(player, next.lifespanYears()),
                             data.flags(),
                             data.spiritrootQuality(),
                             data.spiritrootElements(),
@@ -182,7 +181,15 @@ public final class CultivationHandler {
                 Component.literal("大限已至。劫数加身，你侥幸续得 " + years + " 年阳寿……")
                         .withStyle(ChatFormatting.DARK_RED),
                 false);
-        return years * StrifeData.TICKS_PER_YEAR;
+        return yearsToTicks(player, years);
+    }
+
+    /**
+     * 修行年 → 游戏刻。换算率取自 NUMBERS §4（经 DataGen 产物 {@code strife_core/rules.json} 的 {@code
+     * derived.ticks_per_year}）， 代码里零字面量——这也是 realm 唯一需要向 core 取数的场景（realm → core 是允许方向，03 §2）。
+     */
+    private static long yearsToTicks(ServerPlayer player, long years) {
+        return years * StrifeCoreRules.get(player.server).ticksPerYear();
     }
 
     private static StrifeData withLifespan(StrifeData data, long lifespan) {

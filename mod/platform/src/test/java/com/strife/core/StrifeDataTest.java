@@ -47,7 +47,9 @@ class StrifeDataTest {
                 8,
                 9,
                 Integer.MAX_VALUE,
-                12000L * StrifeData.TICKS_PER_YEAR,
+                // 12000 年 × 24000 刻/年（NUMBERS §4 的口径）：本用例只关心"把字段撑到最大"，
+                // 换算率的真值由 StrifeCoreRules 从 DataGen 产物读，不在这条断言的责任范围内。
+                12000L * 24000L,
                 -1L,
                 4,
                 0b11111,

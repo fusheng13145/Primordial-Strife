@@ -51,6 +51,7 @@ spell_latency_budget_ms: 100  # [锚] 法术响应延迟预算（07 M2 准出）
 sync_packets_per_sec_idle: 5   # [锚] 静止时单玩家发包上限（03 §6 性能红线）；有变更才发，无变更 0 包
 sync_payload_max_bytes: 32768  # [锚] 单网络包上限（03 §5）；超限必须分片或改拉取式
 sync_full_resync_sec: 30       # [拟] 周期性全量重同步间隔，防 delta 漂移（丢包/重连的兜底）
+intent_args_max_bytes: 4096    # [拟] C2S 意图参数上限；超限直接丢弃（03 §4"不得信任客户端上报"）
 ```
 
 ## 3. 突破与渡劫成功率（05 分册 §3/§4，ADR-008）
@@ -84,8 +85,8 @@ tribulation_drop_radius: 16  # [拟] 天劫材料散落劫台半径（格），�
 
 @@lifespan
 ```yaml
-years_per_realtime_sec: 0.000833 # [拟] = 1 修行年 / 20 分钟现实时间（打坐期间同样流逝）
-years_per_sit_realtime_sec: 0.000833 # [拟] 与挂机一致，避免"打坐即长生"
+seconds_per_year: 1200        # [拟] 1 修行年 = 1200 现实秒（20 分钟），打坐期间同样流逝；×20 刻/秒即 ticks_per_year
+seconds_per_year_sitting: 1200 # [拟] 与挂机一致，避免"打坐即长生"
 limit_recovery_pill_key: pill_yanshou  # [拟] 续命玩法路径入口（丹药/任务，绝不删角色）
 dasheng_realm_drop_stages: 1     # [拟] 大限：回退一档境界下限（段数按 stage_count 计）
 dasheng_reset_years_ratio: 0.05  # [拟] 大限后寿元重置为"残余寿元" = 该境界 lifespan_years × 0.05
@@ -170,6 +171,6 @@ breakthrough_per_min: 6  # [拟] 突破请求（防连点刷 fail_step）
 ## 11. 待审项（A0-7 交审清单）
 
 - `[拟]` 值共 6 处成块：§1 境界量级、§3 小境界成功率梯度、§4 寿元流速、§6 灵根系数、§7 丹药耐药、§8 战斗量级。请 A（节奏/可行性）+ C（内容口径）审定后把 `[拟]` 标注去除或改值。
-- §4 `years_per_realtime_sec` 与 §1 的时长曲线强耦合，先定 §4 再回校 §1。
+- §4 `seconds_per_year` 与 §1 的时长曲线强耦合，先定 §4 再回校 §1。（原键 `years_per_realtime_sec: 0.000833` 是 1/1200 的十进制近似，反推得到 24010 刻/年而非 24000——已改为精确的"每秒多少现实秒"，由 DataGen 派生 `ticks_per_year`。）
 - 后三段境界（炼虚/合体/渡劫）四个必填字段齐但命名与 `unlocks` 待 STORY.md 定稿（05 §3）；M0 仅占位，Validator 需对 `bs_placeholder_high_*` / `unlock_placeholder_*` 这类占位键开白名单，否则 §2 引用存在性检查会红。
 - 本文件与 `content/JSON_SCHEMA.md`（C 出）的解析契约需在同一 PR 内对齐（04 §2 末：表结构变更 = SCHEMA + DataGen + Validator 三处同 PR）。

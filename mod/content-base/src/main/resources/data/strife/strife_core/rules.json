@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:a590a08a8d956d9dd1910cbe27dc747a263831a7d4a5b84d619fb8b7b135e65e",
+  "@generated": "from content/NUMBERS.md @ sha256:b20cf059864bc9e1beb5a49c504c8d066a6d9d6e6130fefb7581a64c0a148450",
   "id": "core_rules",
   "limits": {
     "growth_ratio_min": 1.8,
@@ -12,7 +12,8 @@
     "spell_latency_budget_ms": 100,
     "sync_packets_per_sec_idle": 5,
     "sync_payload_max_bytes": 32768,
-    "sync_full_resync_sec": 30
+    "sync_full_resync_sec": 30,
+    "intent_args_max_bytes": 4096
   },
   "rate_limits": {
     "cast_per_sec": 5,
@@ -20,5 +21,8 @@
     "quest_per_sec": 2,
     "artifact_per_sec": 5,
     "breakthrough_per_min": 6
+  },
+  "derived": {
+    "ticks_per_year": 24000
   }
 }

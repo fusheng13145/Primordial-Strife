@@ -175,7 +175,7 @@ class StrifeDeltaTest {
         reputation.put("fac_qingshi", 1);
 
         StrifeDelta delta =
-                new StrifeDelta(StrifeSyncField.QI.bit(), values, "fac_qingshi", reputation);
+                StrifeDelta.of(StrifeSyncField.QI.bit(), values, "fac_qingshi", reputation);
         values[StrifeSyncField.QI.ordinal()] = 999L;
         reputation.put("fac_yuelai", 2);
 
@@ -234,5 +234,79 @@ class StrifeDeltaTest {
     @Test
     void emptyDeltaSplitsToNothing() {
         assertTrue(StrifeDelta.EMPTY.splitForBudget(1_024).isEmpty());
+    }
+
+    /** 整值替换的语义判据：服务端删掉的势力不能留在客户端镜像里，否则玩家的声望面板会挂着一个已经不存在的关系。 */
+    @Test
+    void reputationReplacementDropsRemovedFactions() {
+        StrifeData before =
+                data(
+                        1,
+                        3,
+                        120,
+                        2_000_000L,
+                        0b101L,
+                        2,
+                        0b00101,
+                        0,
+                        "fac_qingshi",
+                        Map.of("fac_qingshi", 10, "fac_yuelai", 4));
+        StrifeData after =
+                data(
+                        1,
+                        3,
+                        120,
+                        2_000_000L,
+                        0b101L,
+                        2,
+                        0b00101,
+                        0,
+                        "fac_qingshi",
+                        Map.of("fac_qingshi", 12));
+
+        StrifeData mirror = StrifeDelta.between(before, after).applyTo(before);
+
+        assertEquals(Map.of("fac_qingshi", 12), mirror.reputation());
+    }
+
+    /** 分片后的声望必须仍等价于整值替换：首片替换、后续片 upsert。首片若也当 upsert，服务端删掉的旧势力会赖在镜像里； 后续片若也当替换，前面的分片会被后一片整片覆盖掉。 */
+    @Test
+    void chunkedReputationReplacesFirstChunkThenUpsertsTheRest() {
+        StrifeData before =
+                data(
+                        1,
+                        3,
+                        120,
+                        2_000_000L,
+                        0b101L,
+                        2,
+                        0b00101,
+                        0,
+                        "fac_qingshi",
+                        Map.of("fac_stale", -9));
+        Map<String, Integer> big = new LinkedHashMap<>();
+        for (int i = 0; i < 400; i++) {
+            big.put("fac_generated_" + i, i);
+        }
+        StrifeData after = data(2, 1, 500, 1_000_000L, 0b111L, 3, 0b11111, 4, "fac_yuelai", big);
+        List<StrifeDelta> parts = StrifeDelta.between(before, after).splitForBudget(1_024);
+
+        StrifeData mirror = before;
+        for (StrifeDelta part : parts) {
+            mirror = part.applyTo(mirror);
+        }
+
+        assertEquals(after, mirror);
+        assertFalse(mirror.reputation().containsKey("fac_stale"), "首片是整值替换，旧势力必须被清掉");
+        assertEquals(400, mirror.reputation().size(), "分片不许丢条目");
+    }
+
+    /** 分片只发生在超预算时：恰好等于预算的一份差量不该被切开（边界不许随手多切一刀）。 */
+    @Test
+    void deltaExactlyAtBudgetIsNotSplit() {
+        StrifeDelta delta = StrifeDelta.full(base());
+        int budget = delta.encodedSizeUpperBound();
+
+        assertEquals(List.of(delta), delta.splitForBudget(budget));
     }
 }
