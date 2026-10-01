@@ -32,6 +32,8 @@ public final class StrifeRealm {
     public StrifeRealm(IEventBus modEventBus, ModContainer container) {
         LOGGER.info(
                 "strife realm entry constructed (version {})", container.getModInfo().getVersion());
+        // 负面状态走注册总线（注册期），玩法事件走游戏总线（03 §2）。
+        RealmEffects.EFFECTS.register(modEventBus);
         NeoForge.EVENT_BUS.addListener(this::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);

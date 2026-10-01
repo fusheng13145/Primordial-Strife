@@ -33,7 +33,8 @@ public final class RealmTables {
             int stageCount,
             int lifespanYears,
             double sitRate,
-            String breakthroughKey) {}
+            String breakthroughKey,
+            boolean tribulation) {}
 
     /** 单键突破成功率（NUMBERS §3）。 */
     public record BreakthroughRate(double base, double failStep, double floor) {}
@@ -56,7 +57,10 @@ public final class RealmTables {
             int rollWeightTier2,
             int rollWeightTier3,
             int rollWeightTier4,
-            int dashengRealmDropStages) {}
+            int dashengRealmDropStages,
+            String dashengDebuffKey,
+            double debuffAllStatDelta,
+            long debuffDurationTicks) {}
 
     private static volatile RealmTables instance;
 
@@ -88,7 +92,12 @@ public final class RealmTables {
                                     object.get("stage_count").getAsInt(),
                                     object.get("lifespan_years").getAsInt(),
                                     object.get("sit_rate").getAsDouble(),
-                                    object.get("breakthrough_success_key").getAsString());
+                                    object.get("breakthrough_success_key").getAsString(),
+                                    // tribulation 由 RealmsGenerator 从 unlocks 推导（含 tribulation
+                                    // 键即为天劫境）：
+                                    // 突破进入该境要渡劫，失败吃重伤。
+                                    object.has("tribulation")
+                                            && object.get("tribulation").getAsBoolean());
                     realmsByOrdinal.put(entry.ordinal(), entry);
                     realmsById.put(id, entry);
                 });
@@ -238,7 +247,24 @@ public final class RealmTables {
                 (int) number(weights, "tier_2", "spiritroot.roll_weights"),
                 (int) number(weights, "tier_3", "spiritroot.roll_weights"),
                 (int) number(weights, "tier_4", "spiritroot.roll_weights"),
-                (int) number(lifespan, "dasheng_realm_drop_stages", "lifespan"));
+                (int) number(lifespan, "dasheng_realm_drop_stages", "lifespan"),
+                string(lifespan, "dasheng_debuff_key", "lifespan"),
+                number(cost, "debuff_all_stat_delta", "breakthrough_cost"),
+                StrifeTime.secondsToTicks(
+                        number(cost, "debuff_duration_sec", "breakthrough_cost")));
+    }
+
+    /** 取字符串键（内容 ID 类，如 debuff 键名）；缺键时同样报出"块.键"。 */
+    private static String string(JsonObject block, String key, String blockName) {
+        if (!block.has(key)) {
+            throw new IllegalStateException(
+                    "strife_realms/rules.json 的 "
+                            + blockName
+                            + " 块缺键 '"
+                            + key
+                            + "'（NUMBERS 改了键名？）");
+        }
+        return block.get(key).getAsString();
     }
 
     /** 取块；缺块时按 {@code 02 §5"内容加载失败必须 fail-fast 并报出具体路径"} 报出块名，而不是让后续 {@code get} 抛裸 NPE。 */

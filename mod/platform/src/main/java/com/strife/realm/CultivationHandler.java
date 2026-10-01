@@ -54,6 +54,7 @@ public final class CultivationHandler {
                 tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
 
         // 1. 寿元：新玩家先按当前境界初始化，随后按秒结算（每刻回写附件 = 20 次/s 的无谓写档，秒级精度足够）
+        RealmTables.RealmEntry active = realm;
         if (data.lifespanTicks() <= 0L) {
             data =
                     write(
@@ -62,27 +63,27 @@ public final class CultivationHandler {
                             d -> withLifespan(d, yearsToTicks(player, realm.lifespanYears())));
         } else if (now % StrifeTime.TICKS_PER_SECOND == 0L) {
             long remaining = data.lifespanTicks() - StrifeTime.TICKS_PER_SECOND;
-            data =
-                    remaining <= 0L
-                            ? write(
-                                    player,
-                                    data,
-                                    d -> withLifespan(d, greatLimit(player, realm, tables)))
-                            : write(player, data, d -> withLifespan(d, remaining));
+            if (remaining <= 0L) {
+                data = greatLimit(player, data, realm, tables);
+                // 大限可能让境界跌落：后面的打坐结算必须用新境界的上限与速率，否则会按旧境界继续涨修为。
+                active = tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
+            } else {
+                data = write(player, data, d -> withLifespan(d, remaining));
+            }
         }
 
         // 2. 打坐：先判打断（每刻都要判），再按 tick_interval_ticks 降频结算（03 §6 单玩家附加逻辑预算）
         boolean moved = movedBeyond(player, tables.rules().meditationInterruptMoveSqr());
         if (data.meditation().active()) {
             if (interrupted(player, moved)) {
-                data = interrupt(player, data, realm, tables, now);
-            } else if (data.qi() >= realm.qiMax()) {
-                data = settle(player, data, realm, tables, now);
+                data = interrupt(player, data, active, tables, now);
+            } else if (data.qi() >= active.qiMax()) {
+                data = settle(player, data, active, tables, now);
                 data = write(player, data, d -> d.withMeditation(d.meditation().stop()));
                 tell(player, Component.translatable("msg.strife.sit.qi_full"));
             } else if (now % tables.rules().meditationTickIntervalTicks() == 0L) {
                 RealmEvents.postSit(player, tables.rules().meditationTickIntervalTicks());
-                data = settle(player, data, realm, tables, now);
+                data = settle(player, data, active, tables, now);
             }
         }
     }
@@ -222,6 +223,13 @@ public final class CultivationHandler {
                     Component.translatable("msg.strife.breakthrough.failure", reset, realm.qiMax())
                             .withStyle(ChatFormatting.RED),
                     false);
+            // 渡劫境（产物 tribulation=true，由 unlocks 含 tribulation 推导）失败额外吃重伤：05 §4 的
+            // "渡劫失败 = 突破失败代价 + 重伤虚弱"。数值与键名都来自 NUMBERS @@breakthrough_cost。
+            if (tables.realm(realm.ordinal() + 1).tribulation()) {
+                RealmEffects.apply(
+                        player, RealmEffects.HEAVY_WOUND, tables.rules().debuffDurationTicks());
+                tell(player, Component.translatable("msg.strife.tribulation.wounded"));
+            }
             RealmEvents.postBreakthrough(
                     player, realm.breakthroughKey(), false, data.breakthroughAttempts() + 1);
         }
@@ -326,18 +334,73 @@ public final class CultivationHandler {
         return dx * dx + dy * dy + dz * dz > thresholdSqr;
     }
 
-    /** 大限（05 §4，ADR-008 非破坏性）：本步只做寿元按比例重置；境界回退与虚弱 debuff 在后续迭代补齐。 */
-    private static long greatLimit(
-            ServerPlayer player, RealmTables.RealmEntry realm, RealmTables tables) {
-        long years =
-                Math.max(
+    /**
+     * 大限结算（05 §4 / ADR-008 非破坏性）：境界回退 {@code dasheng_realm_drop_stages} 档 → 修为归零重来 → 残余寿元按 新境界年限 ×
+     * {@code dasheng_reset_years_ratio} 重置 → 附加虚弱（{@code dasheng_debuff_key}）。
+     *
+     * <p><b>绝不删角色、绝不扣到凡人以下</b>（{@link DashengMath} 用用例钉住这条）；已在凡人时退无可退，寿元照旧重置——
+     * 这是"续命玩法"存在的意义，而不是把玩家逼进死循环。
+     *
+     * <p>返回整份新数据（境界变了，不能只改一个字段）。
+     */
+    private static StrifeData greatLimit(
+            ServerPlayer player,
+            StrifeData data,
+            RealmTables.RealmEntry realm,
+            RealmTables tables) {
+        int stages = tables.rules().dashengRealmDropStages();
+        int fallenOrdinal = Math.max(0, realm.ordinal() - Math.max(0, stages));
+        RealmTables.RealmEntry fallen = tables.realm(fallenOrdinal);
+        DashengMath.Outcome outcome =
+                DashengMath.settle(
+                        realm.ordinal(),
+                        stages,
+                        fallen.lifespanYears(),
+                        tables.rules().dashengResetYearsRatio(),
+                        StrifeCoreRules.get(player.server).ticksPerYear());
+
+        StrifeData updated =
+                new StrifeData(
+                        data.dataVersion(),
+                        outcome.newOrdinal(),
                         1,
-                        (long) (realm.lifespanYears() * tables.rules().dashengResetYearsRatio()));
-        player.displayClientMessage(
-                Component.translatable("msg.strife.lifespan.limit", years)
-                        .withStyle(ChatFormatting.DARK_RED),
-                false);
-        return yearsToTicks(player, years);
+                        outcome.qi(),
+                        outcome.lifespanTicks(),
+                        data.flags(),
+                        data.spiritrootQuality(),
+                        data.spiritrootElements(),
+                        0,
+                        data.affiliation(),
+                        data.reputation(),
+                        // 大限即出定：不清打坐状态的话，玩家会在虚弱中继续按旧会话结算修为。
+                        data.meditation().stop());
+        write(player, data, d -> updated);
+
+        RealmEffects.apply(player, RealmEffects.WEAK, tables.rules().debuffDurationTicks());
+        long years = outcome.lifespanTicks() / StrifeCoreRules.get(player.server).ticksPerYear();
+        if (outcome.demoted()) {
+            player.displayClientMessage(
+                    Component.translatable(
+                                    "msg.strife.lifespan.limit_demoted",
+                                    Component.translatable("realm.strife." + fallen.id()),
+                                    years)
+                            .withStyle(ChatFormatting.DARK_RED),
+                    false);
+        } else {
+            player.displayClientMessage(
+                    Component.translatable("msg.strife.lifespan.limit", years)
+                            .withStyle(ChatFormatting.DARK_RED),
+                    false);
+        }
+        RealmEvents.postDashengSettlement(
+                player,
+                realm.ordinal(),
+                outcome.newOrdinal(),
+                outcome.demoted(),
+                outcome.lifespanTicks(),
+                tables.rules().dashengDebuffKey());
+        RealmViewBuilder.pushTo(player);
+        return updated;
     }
 
     /**

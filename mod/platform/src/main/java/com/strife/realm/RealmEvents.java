@@ -88,4 +88,69 @@ public final class RealmEvents {
             int attempts) {
         NeoForge.EVENT_BUS.post(new Breakthrough(player, key, success, attempts));
     }
+
+    /**
+     * 大限结算（寿元耗尽，05 §4 / ADR-008 非破坏性）。载荷对齐事件契约草案的 {@code DashengSettlementEvent}：
+     * 结算<b>已经完成</b>才发，订阅方不得再"追加惩罚"；{@code demoted} 区分"真退了档"与"已在凡人退无可退"， 面板与任务文案据此分支。
+     */
+    public static final class DashengSettlement extends Event {
+
+        private final net.minecraft.server.level.ServerPlayer player;
+        private final int realmBefore;
+        private final int realmAfter;
+        private final boolean demoted;
+        private final long lifespanResetTicks;
+        private final String debuffKey;
+
+        public DashengSettlement(
+                net.minecraft.server.level.ServerPlayer player,
+                int realmBefore,
+                int realmAfter,
+                boolean demoted,
+                long lifespanResetTicks,
+                String debuffKey) {
+            this.player = player;
+            this.realmBefore = realmBefore;
+            this.realmAfter = realmAfter;
+            this.demoted = demoted;
+            this.lifespanResetTicks = lifespanResetTicks;
+            this.debuffKey = debuffKey;
+        }
+
+        public net.minecraft.server.level.ServerPlayer player() {
+            return player;
+        }
+
+        public int realmBefore() {
+            return realmBefore;
+        }
+
+        public int realmAfter() {
+            return realmAfter;
+        }
+
+        public boolean demoted() {
+            return demoted;
+        }
+
+        public long lifespanResetTicks() {
+            return lifespanResetTicks;
+        }
+
+        public String debuffKey() {
+            return debuffKey;
+        }
+    }
+
+    public static void postDashengSettlement(
+            net.minecraft.server.level.ServerPlayer player,
+            int realmBefore,
+            int realmAfter,
+            boolean demoted,
+            long lifespanResetTicks,
+            String debuffKey) {
+        NeoForge.EVENT_BUS.post(
+                new DashengSettlement(
+                        player, realmBefore, realmAfter, demoted, lifespanResetTicks, debuffKey));
+    }
 }

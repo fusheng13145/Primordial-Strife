@@ -6,12 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,28 +14,17 @@ import org.junit.jupiter.api.Test;
  * <p>这一层此前没有任何用例覆盖，也没有任何测试跑过真实产物，于是"解析器读错块"这类缺陷可以一直潜伏：它在<b>第一个玩家 登录</b>时才发作，而发作形态是 NPE 被容错分支吞掉、整个
  * realm 系统静默停工（开服冒烟没有玩家，照不出来）。
  *
- * <p>所以这里刻意不造夹具，直接读 {@code content-base} 生成并随 jar 分发的那份 rules.json——它就在测试 classpath 上 （platform 把
- * content-base 的 resources 挂进了 main srcDir）。产物与解析器任何一侧漂移，这条用例都会红。
+ * <p>输入取 {@link ShippedProducts}（content-base 生成并随 jar 分发的那份 JSON），所以产物、解析器与真相源任何一侧漂移， 这里都会红。
  */
 class RealmTablesTest {
 
-    private static JsonObject shippedRules() {
-        try (InputStream in =
-                RealmTablesTest.class.getResourceAsStream(
-                        "/data/strife/strife_realms/rules.json")) {
-            assertNotNull(
-                    in,
-                    "content-base 产物不在测试 classpath 上：platform 的 main resources 必须包含 content-base/src/main/resources");
-            return JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8))
-                    .getAsJsonObject();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+    private static final String[] REALMS = {
+        "fanren", "qili", "zhuji", "jindan", "yuanying", "huashen", "lianxu", "heti", "dujie"
+    };
 
     @Test
     void parsesTheShippedProductWithoutThrowing() {
-        RealmTables.Rules rules = RealmTables.parseRules(shippedRules());
+        RealmTables.Rules rules = RealmTables.parseRules(ShippedProducts.realmRules());
 
         assertNotNull(rules);
         assertEquals(9, rules.rates().size(), "九境各一条突破成功率键");
@@ -53,15 +36,16 @@ class RealmTablesTest {
     /** 寿元与大限来自 NUMBERS 的 @@lifespan 块：这条断言就是那处"读错块"缺陷的回归。 */
     @Test
     void readsDashengValuesFromTheLifespanBlock() {
-        RealmTables.Rules rules = RealmTables.parseRules(shippedRules());
+        RealmTables.Rules rules = RealmTables.parseRules(ShippedProducts.realmRules());
 
         assertEquals(0.05, rules.dashengResetYearsRatio(), 1e-9);
         assertEquals(1, rules.dashengRealmDropStages());
+        assertEquals("debuff_weak", rules.dashengDebuffKey());
     }
 
     @Test
     void convertsSecondsToTicksForTheMeditationCooldown() {
-        RealmTables.Rules rules = RealmTables.parseRules(shippedRules());
+        RealmTables.Rules rules = RealmTables.parseRules(ShippedProducts.realmRules());
 
         assertEquals(40, rules.meditationTickIntervalTicks());
         assertEquals(600L, rules.interruptCooldownTicks(), "30 秒 × 20 刻");
@@ -71,7 +55,7 @@ class RealmTablesTest {
 
     @Test
     void readsSpiritRootCoefficientsAndWeights() {
-        RealmTables.Rules rules = RealmTables.parseRules(shippedRules());
+        RealmTables.Rules rules = RealmTables.parseRules(ShippedProducts.realmRules());
 
         assertEquals(1.40, rules.qualityTier1(), 1e-9);
         assertEquals(0.70, rules.qualityTier4(), 1e-9);
@@ -81,7 +65,7 @@ class RealmTablesTest {
 
     @Test
     void missingBlockFailsLoudlyWithTheBlockName() {
-        JsonObject broken = shippedRules().deepCopy();
+        JsonObject broken = ShippedProducts.realmRules().deepCopy();
         broken.remove("lifespan");
 
         IllegalStateException error =
@@ -92,7 +76,7 @@ class RealmTablesTest {
 
     @Test
     void missingKeyFailsLoudlyWithBlockAndKey() {
-        JsonObject broken = shippedRules().deepCopy();
+        JsonObject broken = ShippedProducts.realmRules().deepCopy();
         broken.getAsJsonObject("lifespan").remove("dasheng_reset_years_ratio");
 
         IllegalStateException error =
@@ -100,5 +84,16 @@ class RealmTablesTest {
 
         assertTrue(error.getMessage().contains("dasheng_reset_years_ratio"), error.getMessage());
         assertTrue(error.getMessage().contains("lifespan"), error.getMessage());
+    }
+
+    /** 每个境界产物都必须带 tribulation 字段：渡劫判定直接读它，缺字段的产物等于把天劫关掉。 */
+    @Test
+    void everyShippedRealmEntryCarriesTheTribulationFlag() {
+        for (String realmId : REALMS) {
+            JsonObject realm = ShippedProducts.realm(realmId);
+            assertTrue(
+                    realm.has("tribulation"),
+                    realmId + ".json 缺 tribulation 字段（RealmsGenerator 的推导项）");
+        }
     }
 }
