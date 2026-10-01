@@ -60,7 +60,10 @@ public final class RealmTables {
             int dashengRealmDropStages,
             String dashengDebuffKey,
             double debuffAllStatDelta,
-            long debuffDurationTicks) {}
+            long debuffDurationTicks,
+            double affinityMatched,
+            double affinityNeutral,
+            double affinityConflict) {}
 
     private static volatile RealmTables instance;
 
@@ -192,6 +195,22 @@ public final class RealmTables {
     }
 
     /**
+     * 功法属性 × 玩家灵根的亲和系数（NUMBERS §6 三档），判定规则在 {@link FiveElements}。
+     *
+     * @param techniqueElement 功法主属性位掩码；{@link FiveElements#NONE} = 无属性
+     * @param rootMask 玩家五行位掩码
+     * @param declaredFallback 内容表声明的亲和（仅当灵根未生成时兜底）
+     */
+    public double affinityCoefficient(
+            int techniqueElement, int rootMask, FiveElements.Affinity declaredFallback) {
+        return FiveElements.coefficient(
+                FiveElements.affinity(techniqueElement, rootMask, declaredFallback),
+                rules.affinityMatched(),
+                rules.affinityNeutral(),
+                rules.affinityConflict());
+    }
+
+    /**
      * 解析 {@code strife_realms/rules.json}。
      *
      * <p>包内可见以便用例直接喂<b>真实产物</b>（{@code content-base} 的 resources 在测试 classpath 上）：这套解析器
@@ -250,8 +269,11 @@ public final class RealmTables {
                 (int) number(lifespan, "dasheng_realm_drop_stages", "lifespan"),
                 string(lifespan, "dasheng_debuff_key", "lifespan"),
                 number(cost, "debuff_all_stat_delta", "breakthrough_cost"),
-                StrifeTime.secondsToTicks(
-                        number(cost, "debuff_duration_sec", "breakthrough_cost")));
+                StrifeTime.secondsToTicks(number(cost, "debuff_duration_sec", "breakthrough_cost")),
+                // 五行亲和三档（NUMBERS §6）：功法倍率的第二个因子，判定见 FiveElements。
+                number(spiritroot, "affinity_matched", "spiritroot"),
+                number(spiritroot, "affinity_neutral", "spiritroot"),
+                number(spiritroot, "affinity_conflict", "spiritroot"));
     }
 
     /** 取字符串键（内容 ID 类，如 debuff 键名）；缺键时同样报出"块.键"。 */

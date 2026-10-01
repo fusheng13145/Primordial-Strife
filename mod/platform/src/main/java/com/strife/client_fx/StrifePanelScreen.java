@@ -155,6 +155,22 @@ public final class StrifePanelScreen extends Screen {
                             percent(view.qiResetRatioMin()),
                             percent(view.qiResetRatioMax())));
             lines.add(Component.translatable("gui.strife.panel.rate", format(view.qiPerSecond())));
+            // 05 §2 要求"四项系数可展开"（07 §7 B1-2 的系数分解）：面板把乘数逐项摊开，玩家才可能自己看懂
+            // "为什么这里练得慢"，而不是面对一个孤零零的速率数字。
+            lines.add(
+                    Component.translatable(
+                            "gui.strife.panel.factor_breakdown",
+                            format(view.spiritrootRatio()),
+                            format(view.environmentRatio()),
+                            format(view.techniqueRatio()),
+                            format(view.pillRatio())));
+            lines.add(
+                    view.equippedTechnique().isEmpty()
+                            ? Component.translatable("gui.strife.panel.technique_none")
+                            : Component.translatable(
+                                    "gui.strife.panel.technique_equipped",
+                                    Component.translatable(
+                                            "technique.strife." + view.equippedTechnique())));
             lines.add(stateLine(view));
         } else {
             lines.add(

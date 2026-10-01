@@ -1,5 +1,6 @@
 package com.strife.realm;
 
+import com.strife.core.CultivationFactors;
 import com.strife.core.MeditationState;
 import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
@@ -55,6 +56,7 @@ public final class RealmViewBuilder {
 
         long now = player.server.getTickCount();
         MeditationState meditation = data.meditation();
+        CultivationFactors.Coefficients factors = CultivationFactors.coefficients(player);
         return new StrifeRealmView(
                 realm.id(),
                 realm.ordinal(),
@@ -70,6 +72,11 @@ public final class RealmViewBuilder {
                 meditation.active(),
                 (int) (meditation.cooldownRemaining(now) / StrifeTime.TICKS_PER_SECOND),
                 CultivationHandler.qiPerSecond(player, tables, realm, data),
+                tables.qualityCoefficient(data.spiritrootQuality()),
+                factors.environment(),
+                factors.technique(),
+                factors.pill(),
+                data.techniques().equipped(),
                 core.yearsOf(data.lifespanTicks()));
     }
 }

@@ -25,6 +25,11 @@ import net.minecraft.nbt.CompoundTag;
  * @param meditating 是否正在打坐
  * @param cooldownSeconds 打断后剩余冷却秒数（0 = 无冷却）
  * @param qiPerSecond 当前有效打坐速率（修为/秒，四因子乘积的结果；面板据此解释"为何这么慢/这么快"）
+ * @param spiritrootRatio 四因子之一：灵根品阶系数（NUMBERS §6）
+ * @param environmentRatio 四因子之一：环境系数（world 的灵气浓度场）
+ * @param techniqueRatio 四因子之一：功法倍率（= 功法 {@code qi_rate_ratio} × 五行亲和）
+ * @param pillRatio 四因子之一：丹药加成 {@code (1 + bonus)}
+ * @param equippedTechnique 当前装备的功法内容 ID；空串 = 未装备（面板据此拼 {@code technique.strife.<id>}）
  * @param lifespanYears 剩余寿元年数；负数 = 换算率不可用
  */
 public record StrifeRealmView(
@@ -42,6 +47,11 @@ public record StrifeRealmView(
         boolean meditating,
         int cooldownSeconds,
         double qiPerSecond,
+        double spiritrootRatio,
+        double environmentRatio,
+        double techniqueRatio,
+        double pillRatio,
+        String equippedTechnique,
         long lifespanYears) {
 
     private static final String KEY_REALM_ID = "realm_id";
@@ -58,6 +68,11 @@ public record StrifeRealmView(
     private static final String KEY_MEDITATING = "meditating";
     private static final String KEY_COOLDOWN_SECONDS = "cooldown_seconds";
     private static final String KEY_QI_PER_SECOND = "qi_per_second";
+    private static final String KEY_SPIRITROOT_RATIO = "spiritroot_ratio";
+    private static final String KEY_ENVIRONMENT_RATIO = "environment_ratio";
+    private static final String KEY_TECHNIQUE_RATIO = "technique_ratio";
+    private static final String KEY_PILL_RATIO = "pill_ratio";
+    private static final String KEY_EQUIPPED_TECHNIQUE = "equipped_technique";
     private static final String KEY_LIFESPAN_YEARS = "lifespan_years";
 
     public CompoundTag toTag() {
@@ -76,6 +91,11 @@ public record StrifeRealmView(
         tag.putBoolean(KEY_MEDITATING, meditating);
         tag.putInt(KEY_COOLDOWN_SECONDS, cooldownSeconds);
         tag.putDouble(KEY_QI_PER_SECOND, qiPerSecond);
+        tag.putDouble(KEY_SPIRITROOT_RATIO, spiritrootRatio);
+        tag.putDouble(KEY_ENVIRONMENT_RATIO, environmentRatio);
+        tag.putDouble(KEY_TECHNIQUE_RATIO, techniqueRatio);
+        tag.putDouble(KEY_PILL_RATIO, pillRatio);
+        tag.putString(KEY_EQUIPPED_TECHNIQUE, equippedTechnique);
         tag.putLong(KEY_LIFESPAN_YEARS, lifespanYears);
         return tag;
     }
@@ -96,6 +116,11 @@ public record StrifeRealmView(
                 tag.getBoolean(KEY_MEDITATING),
                 tag.getInt(KEY_COOLDOWN_SECONDS),
                 tag.getDouble(KEY_QI_PER_SECOND),
+                tag.getDouble(KEY_SPIRITROOT_RATIO),
+                tag.getDouble(KEY_ENVIRONMENT_RATIO),
+                tag.getDouble(KEY_TECHNIQUE_RATIO),
+                tag.getDouble(KEY_PILL_RATIO),
+                tag.getString(KEY_EQUIPPED_TECHNIQUE),
                 tag.getLong(KEY_LIFESPAN_YEARS));
     }
 

@@ -2,6 +2,7 @@ package com.strife.quest.engine;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.strife.core.RewardBridges;
 import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
 import com.strife.quest.dsl.ConditionDsl;
@@ -19,6 +20,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -374,9 +376,16 @@ public final class QuestAdapter implements RewardSink {
 
     @Override
     public void grantTechnique(String techniqueId) {
-        player.displayClientMessage(
-                net.minecraft.network.chat.Component.literal("（功法 " + techniqueId + " 待 M1 装备系统）"),
-                false);
+        // 跨模块走 core 的奖励桥（quest 不能 import combat，03 §2）：没接上时明确说出来，不假装发过。
+        if (!RewardBridges.grantTechnique(player, techniqueId)) {
+            player.displayClientMessage(
+                    Component.translatable(
+                            RewardBridges.techniqueWired()
+                                    ? "msg.strife.reward.technique_denied"
+                                    : "msg.strife.reward.technique_unwired",
+                            Component.translatable("technique.strife." + techniqueId)),
+                    false);
+        }
     }
 
     @Override

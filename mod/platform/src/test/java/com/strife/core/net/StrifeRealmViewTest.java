@@ -15,7 +15,26 @@ class StrifeRealmViewTest {
 
     private static StrifeRealmView sample() {
         return new StrifeRealmView(
-                "qili", 1, 3, 9, 180, 230, false, 0.9, 2, 0.6, 0.8, true, 0, 0.8, 120L);
+                "qili",
+                1,
+                3,
+                9,
+                180,
+                230,
+                false,
+                0.9,
+                2,
+                0.6,
+                0.8,
+                true,
+                0,
+                0.8,
+                1.20,
+                1.45,
+                1.15,
+                1.25,
+                "tech_qingxin_jue",
+                120L);
     }
 
     @Test
@@ -34,6 +53,8 @@ class StrifeRealmViewTest {
         assertEquals(0.0, decoded.successRate(), 1e-9);
         assertFalse(decoded.meditating());
         assertEquals(0L, decoded.lifespanYears());
+        assertEquals(0.0, decoded.techniqueRatio(), 1e-9, "老客户端读新包时缺字段应为 0 而不是解析失败");
+        assertEquals("", decoded.equippedTechnique());
     }
 
     @Test
@@ -44,14 +65,15 @@ class StrifeRealmViewTest {
 
         StrifeRealmView full =
                 new StrifeRealmView(
-                        "qili", 1, 9, 9, 230, 230, false, 0.9, 0, 0.6, 0.8, false, 0, 0.8, 120L);
+                        "qili", 1, 9, 9, 230, 230, false, 0.9, 0, 0.6, 0.8, false, 0, 0.8, 1.20,
+                        1.45, 1.15, 1.25, "", 120L);
         assertTrue(full.qiFull());
         assertTrue(full.canBreakthrough());
 
         StrifeRealmView finalRealm =
                 new StrifeRealmView(
                         "dujie", 8, 1, 1, 67000, 67000, true, 0.0, 0, 0.6, 0.8, false, 0, 20.5,
-                        12000L);
+                        1.40, 1.45, 1.0, 1.0, "", 12000L);
         assertTrue(finalRealm.qiFull());
         assertFalse(finalRealm.canBreakthrough(), "最高境界没有下一境可去");
     }
@@ -61,7 +83,8 @@ class StrifeRealmViewTest {
     void qiAboveTheCeilingStillCountsAsFull() {
         StrifeRealmView overCap =
                 new StrifeRealmView(
-                        "qili", 1, 9, 9, 240, 230, false, 0.9, 0, 0.6, 0.8, false, 0, 0.8, 120L);
+                        "qili", 1, 9, 9, 240, 230, false, 0.9, 0, 0.6, 0.8, false, 0, 0.8, 1.20,
+                        1.45, 1.0, 1.0, "", 120L);
 
         assertTrue(overCap.qiFull());
         assertTrue(overCap.canBreakthrough());

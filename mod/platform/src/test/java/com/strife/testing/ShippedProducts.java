@@ -45,6 +45,11 @@ public final class ShippedProducts {
         return json("/data/strife/strife_pills/" + pillId + ".json");
     }
 
+    /** 单部功法产物，如 {@code tech_qingxin_jue}。 */
+    public static JsonObject technique(String techniqueId) {
+        return json("/data/strife/strife_techniques/" + techniqueId + ".json");
+    }
+
     private static JsonObject json(String path) {
         try (InputStream stream = ShippedProducts.class.getResourceAsStream(path)) {
             if (stream == null) {

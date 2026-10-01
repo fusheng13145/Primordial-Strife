@@ -32,6 +32,7 @@ import java.util.Map;
  * @param reputation 势力声望向量 factionId → [-100,100]（H2）
  * @param meditation 打坐会话状态（03 §3 时间片结算的时间戳载体）
  * @param pills 丹药增益状态（NUMBERS §7：在效增益与本境界丹药延寿记账）
+ * @param techniques 功法状态（03 §1 combat 职责：已学清单 + 当前装备）
  */
 public record StrifeData(
         int dataVersion,
@@ -46,7 +47,8 @@ public record StrifeData(
         String affiliation,
         Map<String, Integer> reputation,
         MeditationState meditation,
-        PillState pills) {
+        PillState pills,
+        TechniqueState techniques) {
 
     /**
      * 兼容构造：不关心打坐/丹药状态的调用点（任务奖励、灵根生成等）默认取两条空状态。
@@ -78,7 +80,8 @@ public record StrifeData(
                 affiliation,
                 reputation,
                 MeditationState.IDLE,
-                PillState.EMPTY);
+                PillState.EMPTY,
+                TechniqueState.EMPTY);
     }
 
     public static final int CURRENT_DATA_VERSION = 1;
@@ -138,7 +141,11 @@ public record StrifeData(
                                             PillState.CODEC
                                                     .fieldOf("pills")
                                                     .orElse(PillState.EMPTY)
-                                                    .forGetter(StrifeData::pills))
+                                                    .forGetter(StrifeData::pills),
+                                            TechniqueState.CODEC
+                                                    .fieldOf("techniques")
+                                                    .orElse(TechniqueState.EMPTY)
+                                                    .forGetter(StrifeData::techniques))
                                     .apply(instance, StrifeData::new));
 
     /** 新玩家默认值：凡人、寿元未初始化（0 表示 realm 侧尚未结算，面板需显示"未知"而非 0 岁）。 */
@@ -156,7 +163,8 @@ public record StrifeData(
                 "",
                 Map.of(),
                 MeditationState.IDLE,
-                PillState.EMPTY);
+                PillState.EMPTY,
+                TechniqueState.EMPTY);
     }
 
     /** 该数据的可变性由调用方负责：附件值对象一旦写入即视为不可变，改字段须整体 setData 回写。 */
@@ -174,7 +182,8 @@ public record StrifeData(
                 affiliation,
                 reputation,
                 meditation,
-                pills);
+                pills,
+                techniques);
     }
 
     /** 整体替换打坐状态（时间片结算与打断的唯一入口，避免调用点各自拼字段）。 */
@@ -192,7 +201,8 @@ public record StrifeData(
                 affiliation,
                 reputation,
                 updated,
-                pills);
+                pills,
+                techniques);
     }
 
     /** 累计失败次数（突破失败 +1、成功清零，05 §3 的 fail_step 依据）。 */
@@ -210,7 +220,8 @@ public record StrifeData(
                 affiliation,
                 reputation,
                 meditation,
-                pills);
+                pills,
+                techniques);
     }
 
     /** 整体替换丹药增益状态（production 的丹药路径唯一入口）。 */
@@ -228,7 +239,8 @@ public record StrifeData(
                 affiliation,
                 reputation,
                 meditation,
-                updated);
+                updated,
+                techniques);
     }
 
     /** 改寿元（丹药延长与境界续命共用；调用方负责范围校验）。 */
@@ -246,7 +258,8 @@ public record StrifeData(
                 affiliation,
                 reputation,
                 meditation,
-                pills);
+                pills,
+                techniques);
     }
 
     /**
@@ -269,6 +282,26 @@ public record StrifeData(
                 affiliation,
                 reputation,
                 meditation,
-                pills);
+                pills,
+                techniques);
+    }
+
+    /** 整体替换功法状态（combat 的学法/装备路径唯一入口）。 */
+    public StrifeData withTechniques(TechniqueState updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                meditation,
+                pills,
+                updated);
     }
 }
