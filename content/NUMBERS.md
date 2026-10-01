@@ -47,6 +47,10 @@ lifespan_monotonic: true     # [锚] 寿元随境界单调递增
 attachment_budget_bytes: 2048 # [锚] 单玩家全部附件 ≤2KB（03 §3）
 chunk_gen_budget_ms: 2        # [锚] 灵气场 chunk 生成预算（07 M4 准出）
 spell_latency_budget_ms: 100  # [锚] 法术响应延迟预算（07 M2 准出）
+# --- S2C 同步预算（03 §5/§6，core 同步框架查表用；产物见 JSON_SCHEMA §4.12）---
+sync_packets_per_sec_idle: 5   # [锚] 静止时单玩家发包上限（03 §6 性能红线）；有变更才发，无变更 0 包
+sync_payload_max_bytes: 32768  # [锚] 单网络包上限（03 §5）；超限必须分片或改拉取式
+sync_full_resync_sec: 30       # [拟] 周期性全量重同步间隔，防 delta 漂移（丢包/重连的兜底）
 ```
 
 ## 3. 突破与渡劫成功率（05 分册 §3/§4，ADR-008）

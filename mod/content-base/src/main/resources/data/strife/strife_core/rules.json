@@ -1,0 +1,24 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:a590a08a8d956d9dd1910cbe27dc747a263831a7d4a5b84d619fb8b7b135e65e",
+  "id": "core_rules",
+  "limits": {
+    "growth_ratio_min": 1.8,
+    "growth_ratio_max": 2.5,
+    "success_rate_min": 0.0,
+    "success_rate_max": 1.0,
+    "lifespan_monotonic": "true",
+    "attachment_budget_bytes": 2048,
+    "chunk_gen_budget_ms": 2,
+    "spell_latency_budget_ms": 100,
+    "sync_packets_per_sec_idle": 5,
+    "sync_payload_max_bytes": 32768,
+    "sync_full_resync_sec": 30
+  },
+  "rate_limits": {
+    "cast_per_sec": 5,
+    "sit_per_sec": 2,
+    "quest_per_sec": 2,
+    "artifact_per_sec": 5,
+    "breakthrough_per_min": 6
+  }
+}

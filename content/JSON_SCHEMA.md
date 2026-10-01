@@ -64,6 +64,7 @@
 - 编码 UTF-8（无 BOM）、首行表头、`,` 分隔、字段内换行禁止；`\n` 表示软换行。
 - 以 `_` 开头的列 = 注释列，DataGen 忽略（04 §5 `[锚]`）。
 - 空单元格 = 该字段缺省（`null`），**不等于** 0 或空串；必填列留空即构建失败并指出行号。需要"显式空数组"的列必须写 `()`（空单元格一律按缺省处理，二者不可混用）。
+- **内层对象数组的整体包裹**（`[拟]`，DataGen 已实现）：对象作为更深一层结构的字段值时（如对话节点的 `options`），值必须整体再用 `( )` 包一层——`options=((text_key=a;next=b)|(text_key=c))`。双包裹是让内层 `|` 不与单元格顶层对象分隔符歧义的唯一写法；单选项 `options=(text_key=a;next=b)` 合法。
 - 列表值用 `;` 分隔（`jin;mu`），映射值用 `k=v` 并以 `;` 分隔（`fac_qingshi=10;fac_yuelai=-5`），对象之间用 `|` 分隔（`item_lingshi=20|item_herb=1`），内层嵌套用 `( )` 包裹。`[拟]` 该字面量语法即 DataGen CSV 解析器的实现契约，改动 = 破档。
 - 引用其它表的主键值必须存在（04 §6"引用存在性"）；`[占位]` 键走 Validator 白名单 `tables/known-placeholders.csv`（与源表同目录、同一编辑入口；Validator 已接 `--tables-root` 并用它扫源表 `id`，读白名单本身要等 `V-REF` 实现时一并接上）。白名单必须挂 issue 号，禁止长期驻留。
 - 每表强制列：`id`（主键，全域唯一）、`_note`（注释列，人话备注）。
@@ -201,6 +202,8 @@ DataGen 只从 NUMBERS.md 读以下块，其余键视为未定义：
 
 DAG 完备性（04 §6 `[锚]`）：无环、章节入口可达全部必做节点、每个 `rewards` 引用存在、`fail_goto`/`timer.fail_goto` 不指向已完成节点之外。
 
+产物形态（`[拟]`，DataGen 已实现）：一章一文件 `data/strife/strife_quests/<章>.json`，文件 `id` = 该章 `entry=true` 的任务 ID，全部行按表序进 `quests` 数组；每行字段同上表。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名章段一致——空表合法（章内容未写）。
+
 ### 4.7 `dialog_trees` — 对话树（`tables/dialog_trees_<章>.csv`，一章一文件）
 
 | 字段 | 类型 | 必 | 语义 |
@@ -211,6 +214,8 @@ DAG 完备性（04 §6 `[锚]`）：无环、章节入口可达全部必做节�
 | `nodes` | `{id, speaker, text_key, conditions, next, options}`[] | 必 | `options` = `{text_key, conditions, next, effects}`[] |
 | `effects` | `{type, args}`[] | 可 | type ∈ `set_flag / reputation / give_item / start_quest / complete_node / play_sound / teleport` |
 | `max_depth_levels` | int | 必 | `[拟]` 默认 16；解释器求值深度上限（03 §8 防表写错死循环） |
+
+产物形态（`[拟]`，DataGen 已实现）：一章一文件 `data/strife/dialog_trees/<章>.json`，文件 `id` = 首棵树的 `root` 节点 ID，全部行按表序进 `trees` 数组；节点 `options` 由整体包裹语法展开为 `{text_key, conditions, next, effects}[]`（§2 末条）。
 
 #### 4.7.1 条件 DSL（`[锚]` 语义来自 03 §8，语法在此冻结）
 
@@ -224,6 +229,7 @@ CMP     := '>=' | '<=' | '==' | '!='
 
 - `KEY` 必须是 §5 H3 的合法命名空间键；`ID`/`FAC` 必须存在于内容域；`luck` 为 H6 预留（本期恒 0）。
 - 未知谓词、未知 flag、未知 ID → Validator 直接失败（04 §6"DSL 合法"）。求值步数上限 `[拟]` 1000，超限按 false 处理并记日志。
+- 实现注记（DataGen 同提交口径的对面：解释器已落地 `com.strife.quest.dsl`）：`item(...)` 为 at-least 语义；`realm` 右值收境界 ID 或 ordinal 字面量两种（§4.7.1 与填表指南示例的口径分歧按此收口）；负数字面量仅限贴数字（声望区间 [-100,100]）。
 - 示例：`realm>=qili && flag(fac_qingshi:ch1:met_elder) && item(item_lingshi:10)`。
 
 ### 4.8 `worldgen` — 灵气场与矿石（`tables/spirit_field.csv`、`tables/ores.csv`）
@@ -257,6 +263,18 @@ CMP     := '>=' | '<=' | '==' | '!='
 ### 4.11 表目录占位不填（`[占位]`，04 §2 末 / 09 F）
 
 `strife_talismans`（符箓）、`strife_formations`（阵法）、`strife_spirit_plants`（灵植）：本文件定义目录名与主键前缀（`tal_` / `form_` / `plant_`），字段留 `TODO(EP1)`，DataGen 不生成、Validator 不检查。**目录名与 ID 前缀现在就定**是为了避免 EP1 破档改名。
+
+### 4.12 运行时数值表（config 域，非内容本体，`[拟]` 补登记）
+
+三张由 `NUMBERS.md` `@@块` 直出的运行时参数表，**不是内容**：没有 lang 键、不进 `V-TEXT` 覆盖、玩家不可见，只被代码查表读取——这是 05 §1"代码里出现受管数值字面量即违规"的落地通道。
+
+| 产物 | 来源块 | 消费者 | 承载 |
+|---|---|---|---|
+| `data/strife/strife_realms/rules.json` | `@@breakthrough` `@@breakthrough_cost` `@@meditation` `@@spiritroot` | realm | 突破成功率与失败代价、打坐结算参数、灵根系数 |
+| `data/strife/strife_worldgen/rules.json` | `@@world` | world | 灵气浓度上下限、矿石权重、妖兽掉落、草丛采集概率 |
+| `data/strife/strife_core/rules.json` | `@@limits` `@@rate_limits` | core（S2C 同步框架、C2S 意图限速） | 预算红线、发包上限与重同步间隔、意图限速 |
+
+约定：产物 `id` = `<域>_rules`（V-DUP 台账外的配置单例，非内容 ID）；域目录名 `strife_realms` / `strife_worldgen` / `strife_core` 由生成器固定、不来自任何表；新增 config 域 = 同一 PR 改本表 + DataGen + 消费者。`@@limits` 中的预算与间隔**同为受管数值**，代码不得复制字面量。
 
 ## 5. 七钩子在 schema 中的落点（03 §10，H1–H7 必须从 M0 就存在）
 
