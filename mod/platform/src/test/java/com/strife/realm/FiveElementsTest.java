@@ -80,10 +80,6 @@ class FiveElementsTest {
                 FiveElements.Affinity.NEUTRAL,
                 FiveElements.affinity(FiveElements.JIN, FiveElements.TU, null),
                 "土生金：同样是相生，仍是中性");
-        assertEquals(
-                FiveElements.Affinity.NEUTRAL,
-                FiveElements.affinity(FiveElements.JIN, FiveElements.HUO | FiveElements.TU, null),
-                "灵根里只要有一个属性与功法相克，就整体判相克（火克金）——见下一条用例");
     }
 
     @Test
