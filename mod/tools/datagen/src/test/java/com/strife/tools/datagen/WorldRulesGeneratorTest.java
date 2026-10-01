@@ -28,8 +28,16 @@ class WorldRulesGeneratorTest {
         assertTrue(json.contains("\"@generated\": \"from content/NUMBERS.md @ sha256:"), json);
     }
 
+    /**
+     * The block is what the generator needs, so its absence must be reported by name. The truth
+     * source exists here and simply carries another block — writing no file at all would take the
+     * "file not found" branch instead and this test would assert against the wrong error (which is
+     * exactly what it did before: it never created NUMBERS.md, so the message was always
+     * "content/NUMBERS.md not found …" and the assertion could never hold).
+     */
     @Test
     void failsLoudlyWhenWorldBlockMissing() {
+        writeNumbers("@@meditation\n```yaml\ntick_interval_ticks: 40\n```\n");
         NumbersSource numbers = NumbersSource.at(temp);
         IllegalStateException e =
                 assertThrows(
@@ -38,18 +46,31 @@ class WorldRulesGeneratorTest {
         assertTrue(e.getMessage().contains("@@world"), e.getMessage());
     }
 
+    /** The other half of the same contract: no truth source at all names the file, not a block. */
+    @Test
+    void failsLoudlyWhenTruthSourceIsMissing() {
+        NumbersSource numbers = NumbersSource.at(temp);
+        IllegalStateException e =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> new WorldRulesGenerator().generate(numbers));
+        assertTrue(e.getMessage().contains("NUMBERS.md"), e.getMessage());
+    }
+
     private NumbersSource numbersWithWorldBlock() {
-        Path content = temp;
+        writeNumbers(
+                "@@world\n"
+                        + "```yaml\n"
+                        + "herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }\n"
+                        + "```\n");
+        return NumbersSource.at(temp);
+    }
+
+    private void writeNumbers(String body) {
         try {
-            Files.writeString(
-                    content.resolve("NUMBERS.md"),
-                    "@@world\n"
-                            + "```yaml\n"
-                            + "herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }\n"
-                            + "```\n");
+            Files.writeString(temp.resolve("NUMBERS.md"), body);
         } catch (java.io.IOException e) {
             throw new IllegalStateException(e);
         }
-        return NumbersSource.at(content);
     }
 }
