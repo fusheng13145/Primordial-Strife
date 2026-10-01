@@ -65,15 +65,28 @@ public final class BreakthroughMath {
                     case 3 -> 3;
                     default -> 4 + random.nextInt(2);
                 };
+        return new SpiritRootResult(quality, pickElements(random, elementCount));
+    }
+
+    /**
+     * 从五行里不放回地抽 {@code elementCount} 个，返回位掩码——partial Fisher–Yates，迭代次数恒为抽取个数。
+     *
+     * <p><b>刻意不用"抽到重复就再抽一次"的拒绝采样</b>：那是一个没有迭代上限的 {@code do/while}，碰上退化随机源（定值 RNG、 被外部状态污染的
+     * RandomSource）会把服务端主线程永久钉死，玩家侧表现为服务器卡死而不是任何可诊断的错误。本方法对任意满足 {@code nextInt(bound)}
+     * 契约的随机源都在有限步内返回（回归用例 {@code elementPickingIsBoundedEvenWithADegenerateRng}）。
+     */
+    private static int pickElements(IntRng random, int elementCount) {
+        int[] pool = {0, 1, 2, 3, 4};
+        int count = Math.max(1, Math.min(pool.length, elementCount));
         int mask = 0;
-        for (int picked = 0; picked < elementCount; picked++) {
-            int element;
-            do {
-                element = random.nextInt(5);
-            } while ((mask & (1 << element)) != 0);
-            mask |= 1 << element;
+        for (int i = 0; i < count; i++) {
+            int swap = i + random.nextInt(pool.length - i);
+            int picked = pool[swap];
+            pool[swap] = pool[i];
+            pool[i] = picked;
+            mask |= 1 << picked;
         }
-        return new SpiritRootResult(quality, mask);
+        return mask;
     }
 
     public record SpiritRootResult(int quality, int elementsMask) {}

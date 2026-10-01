@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /** 突破/小境界/灵根纯数学（docs/07 §7 A1-1/A1-4 公式层；数值全部由 RealmTables 注入）。 */
@@ -118,5 +119,45 @@ class BreakthroughMathTest {
                 }
             }
         }
+    }
+
+    /**
+     * 回归：抽五行必须是有限步的。定值 RNG 曾经把服务端主线程钉死在"抽到重复就重抽"的 while 上（本用例当初就是那个
+     * 死循环的现场）；这里用一个调用次数受限的随机源把"拒绝采样又回来了"变成一条失败的断言，而不是一次挂起的 CI。
+     */
+    @Test
+    void elementPickingIsBoundedEvenWithADegenerateRng() {
+        AtomicInteger calls = new AtomicInteger();
+        BreakthroughMath.IntRng bounded =
+                bound -> {
+                    if (calls.incrementAndGet() > 64) {
+                        throw new AssertionError("抽签没有迭代上限：拒绝采样又回来了");
+                    }
+                    return 0;
+                };
+
+        BreakthroughMath.SpiritRootResult result =
+                BreakthroughMath.rollSpiritRoot(bounded, 0, 0, 0, 10);
+
+        assertEquals(4, result.quality());
+        assertEquals(4, Integer.bitCount(result.elementsMask()), "四系仍需抽满 4 个不重复元素");
+    }
+
+    /** 五系杂灵根要抽满全部五行，掩码必须是 31（不接受 4 个就收工的边界错）。 */
+    @Test
+    void allFiveElementsArePickedWhenTheRollAsksForFive() {
+        Random random = new Random(11);
+        boolean sawFive = false;
+        for (int i = 0; i < 200; i++) {
+            BreakthroughMath.SpiritRootResult result =
+                    BreakthroughMath.rollSpiritRoot(random::nextInt, 0, 0, 0, 10);
+            int bits = Integer.bitCount(result.elementsMask());
+            assertTrue(bits == 4 || bits == 5, "四/五灵根只允许 4 或 5 系，实际 " + bits);
+            if (bits == 5) {
+                assertEquals(0b11111, result.elementsMask());
+                sawFive = true;
+            }
+        }
+        assertTrue(sawFive, "200 次里至少应出现一次五系（quality 4 时 50% 概率取 5 系）");
     }
 }
