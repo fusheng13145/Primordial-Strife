@@ -1,6 +1,16 @@
 package com.strife.world;
 
+import com.strife.core.CultivationFactors;
 import com.strife.core.StrifeMod;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.synth.ImprovedNoise;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -9,20 +19,91 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * world 分侧入口（docs/03 §7 模块入口模式，MVP 快速通道——<b>待 A 评审</b>）。
+ * world 分侧入口（docs/03 §7 模块入口模式）。
  *
- * <p>MVP 只编排一件事：草类方块破坏的草药掉落（{@link HerbDrops}）。灵气浓度场/矿石 placement/宗门结构 是 M4
- * 工单，到位后本入口再挂各自的监听器——本类没有业务逻辑。
+ * <p>本入口编排两件事：草类方块破坏的草药掉落（{@link HerbDrops}），以及<b>灵气浓度场</b>——后者通过 {@link
+ * CultivationFactors#registerEnvironment} 把环境系数接进 05 §2 的四因子公式，realm 侧一行不用改。
+ *
+ * <p>场按"世界种子 + 维度"缓存：同一个存档的同一维度共用一个场，换存档（单机切世界）会得到新场；噪声由世界种子决定，因此 同一存档里同一个地方的灵气永远一样。
  */
 @Mod(value = StrifeMod.MOD_ID)
 public final class StrifeWorld {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("strife/world");
 
+    /** 场缓存：键 = 世界种子 + 维度 ID（换存档必须换场，否则新世界会沿用旧世界的灵气分布）。 */
+    private static final Map<String, AmbientQiField> FIELDS = new ConcurrentHashMap<>();
+
+    private static volatile String loggedFailure;
+
     public StrifeWorld(IEventBus modEventBus, ModContainer container) {
         LOGGER.info(
-                "strife world entry constructed (MVP fast-track, pending A's review, version {})",
-                container.getModInfo().getVersion());
+                "strife world entry constructed (version {})", container.getModInfo().getVersion());
         NeoForge.EVENT_BUS.addListener(HerbDrops::onBreakBlock);
+        CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
+        LOGGER.info("strife world wired cultivation factor: environment=ambient qi field");
+    }
+
+    /**
+     * 环境系数（05 §2 公式的第二项）：玩家所在区块的灵气浓度。
+     *
+     * <p>表不可用时返回中性 1.0 并记一次日志——1.0 落在 {@code ambient_qi_min..max} 区间内，因此玩家感知是"此地灵气平平"，
+     * 而不是"修炼坏了"；真正的故障信号是那条 ERROR。
+     */
+    static double environmentCoefficient(ServerPlayer player) {
+        AmbientQiField field = fieldFor(player.serverLevel());
+        if (field == null) {
+            return 1.0;
+        }
+        BlockPos pos = player.blockPosition();
+        return field.ratioAtBlock(pos.getX(), pos.getZ());
+    }
+
+    /** 该维度当前的灵气场；表不可用时返回 null（并只报一次错）。 */
+    static AmbientQiField fieldFor(ServerLevel level) {
+        String key = level.getSeed() + ":" + level.dimension().location();
+        AmbientQiField cached = FIELDS.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        WorldTables tables = WorldTables.getOrNull(level.getServer());
+        if (tables == null) {
+            String message = "world tables unavailable — 灵气场退化为中性系数 1.0";
+            if (!message.equals(loggedFailure)) {
+                loggedFailure = message;
+                LOGGER.error(message);
+            }
+            return null;
+        }
+        AmbientQiField built = build(level.dimension(), level.getSeed(), tables.ambient());
+        FIELDS.put(key, built);
+        LOGGER.info(
+                "ambient qi field ready for {}: [{}, {}], region={} chunks, refine={}",
+                level.dimension().location(),
+                built.min(),
+                built.max(),
+                tables.ambient().regionChunks(),
+                tables.ambient().refineWeight());
+        return built;
+    }
+
+    /** 用世界种子构造两个独立噪声（粗粒度层与细化层各有各的排列，否则两层会同相叠加成一条直线）。 */
+    static AmbientQiField build(
+            ResourceKey<Level> dimension, long worldSeed, WorldTables.Ambient ambient) {
+        long seed = worldSeed ^ dimension.location().toString().hashCode();
+        RandomSource random = RandomSource.create(seed);
+        return new AmbientQiField(
+                new ImprovedNoise(random)::noise,
+                new ImprovedNoise(random)::noise,
+                ambient.min(),
+                ambient.max(),
+                ambient.regionChunks(),
+                ambient.refineWeight());
+    }
+
+    /** 仅测试用：清空场缓存。 */
+    static void clearFieldsForTest() {
+        FIELDS.clear();
+        loggedFailure = null;
     }
 }

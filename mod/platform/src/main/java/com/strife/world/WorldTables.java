@@ -1,5 +1,6 @@
 package com.strife.world;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.InputStream;
@@ -26,6 +27,18 @@ public final class WorldTables {
     /** 草类方块的草药掉落概率：键 = 物品内容 ID 全名（strife:item_x），值 = 0–1 独立掷骰概率。 */
     private final Map<String, Double> herbGrassDropProb = new LinkedHashMap<>();
 
+    private final Ambient ambient;
+
+    /**
+     * 灵气场参数（NUMBERS @@world 的 ambient_* 四项）。
+     *
+     * @param min 环境系数下限（&gt; 0，05 §2）
+     * @param max 环境系数上限
+     * @param regionChunks 粗粒度：多少区块一个区域值（03 §6）
+     * @param refineWeight 细化层权重 [0,1]
+     */
+    public record Ambient(double min, double max, int regionChunks, double refineWeight) {}
+
     private static volatile WorldTables instance;
 
     private WorldTables(ResourceManager resources) {
@@ -46,21 +59,50 @@ public final class WorldTables {
         }
         JsonObject herbs = world.getAsJsonObject("herb_grass_drop_prob");
         if (herbs != null) {
-            herbs.entrySet()
-                    .forEach(
-                            entry -> {
-                                double prob = entry.getValue().getAsDouble();
-                                if (prob < 0.0 || prob > 1.0) {
-                                    throw new IllegalStateException(
-                                            "herb_grass_drop_prob['"
-                                                    + entry.getKey()
-                                                    + "'] = "
-                                                    + prob
-                                                    + " outside [0,1]");
-                                }
-                                herbGrassDropProb.put(entry.getKey(), prob);
-                            });
+            herbGrassDropProb.putAll(parseHerbs(herbs));
         }
+        this.ambient = parseAmbient(world);
+    }
+
+    /**
+     * 解析 NUMBERS @@world 的 ambient_* 四项。包内可见以便用例直接喂<b>真实产物</b>（world 与 realm 同一教训：
+     * 解析器读错块/缺键的缺陷只会在运行时发作，而运行时路径在开服冒烟里未必被走到）。
+     */
+    static Ambient parseAmbient(JsonObject world) {
+        return new Ambient(
+                require(world, "ambient_qi_min").getAsDouble(),
+                require(world, "ambient_qi_max").getAsDouble(),
+                require(world, "ambient_region_chunks").getAsInt(),
+                require(world, "ambient_refine_weight").getAsDouble());
+    }
+
+    /** 解析草药掉落概率表，并逐项校验落在 [0,1]（概率越界是内容错误，必须在加载期红掉）。 */
+    static Map<String, Double> parseHerbs(JsonObject herbs) {
+        Map<String, Double> parsed = new LinkedHashMap<>();
+        herbs.entrySet()
+                .forEach(
+                        entry -> {
+                            double prob = entry.getValue().getAsDouble();
+                            if (prob < 0.0 || prob > 1.0) {
+                                throw new IllegalStateException(
+                                        "herb_grass_drop_prob['"
+                                                + entry.getKey()
+                                                + "'] = "
+                                                + prob
+                                                + " outside [0,1]");
+                            }
+                            parsed.put(entry.getKey(), prob);
+                        });
+        return parsed;
+    }
+
+    /** 取键；缺键时报出块名与键名（02 §5：内容加载失败必须报具体路径），而不是让后续 get 抛裸 NPE。 */
+    private static JsonElement require(JsonObject block, String key) {
+        if (!block.has(key)) {
+            throw new IllegalStateException(
+                    "strife_worldgen/rules.json 的 world 块缺键 '" + key + "'（NUMBERS @@world 改了键名？）");
+        }
+        return block.get(key);
     }
 
     /** 掉落路径的容错形态：表加载失败时返回空表（无掉落），并记日志。 */
@@ -100,6 +142,11 @@ public final class WorldTables {
 
     public Map<String, Double> herbGrassDropProb() {
         return Map.copyOf(herbGrassDropProb);
+    }
+
+    /** 灵气场参数（NUMBERS @@world）。 */
+    public Ambient ambient() {
+        return ambient;
     }
 
     private static JsonObject read(Resource resource) {

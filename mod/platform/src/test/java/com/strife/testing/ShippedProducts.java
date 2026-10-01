@@ -1,4 +1,4 @@
-package com.strife.realm;
+package com.strife.testing;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -11,24 +11,32 @@ import java.nio.charset.StandardCharsets;
 /**
  * 测试用的"真实产物"入口：读 {@code content-base} 生成并随 jar 分发的那份 JSON。
  *
- * <p>为什么反复强调"真实"：这一层的缺陷形态是"解析器与产物对不上"，而夹具（手写的假 JSON）永远与解析器同步演进，
- * 于是这类缺陷在夹具下不可能出现。只有拿产物本身当输入，才能把"产物/解析器/真相源"三者的漂移变成一条红用例。
+ * <p>为什么反复强调"真实"：这一层的缺陷形态是"解析器与产物对不上"，而手写的夹具永远与解析器同步演进，于是这类缺陷在夹具下 不可能出现。只有拿产物本身当输入，才能把"产物 / 解析器 /
+ * 真相源"三者的漂移变成一条红用例。
  *
- * <p>产物在测试 classpath 上是因为 platform 把 content-base 的 resources 挂进了 main srcDir（04 §1 的"进 jar"通道）。
+ * <p>产物在测试 classpath 上，是因为 platform 把 content-base 的 resources 挂进了 main srcDir（04 §1 的"进 jar"通道）。
  */
-final class ShippedProducts {
+public final class ShippedProducts {
 
     private ShippedProducts() {}
 
-    static JsonObject realmRules() {
+    /** {@code data/strife/strife_realms/rules.json}（realm 运行时参数）。 */
+    public static JsonObject realmRules() {
         return json("/data/strife/strife_realms/rules.json");
     }
 
-    static JsonObject realm(String realmId) {
+    /** 单个境界产物，如 {@code yuanying}。 */
+    public static JsonObject realm(String realmId) {
         return json("/data/strife/strife_realms/" + realmId + ".json");
     }
 
-    static JsonObject coreRules() {
+    /** {@code data/strife/strife_worldgen/rules.json}（world 运行时参数）。 */
+    public static JsonObject worldRules() {
+        return json("/data/strife/strife_worldgen/rules.json");
+    }
+
+    /** {@code data/strife/strife_core/rules.json}（core 运行时参数与派生值）。 */
+    public static JsonObject coreRules() {
         return json("/data/strife/strife_core/rules.json");
     }
 
