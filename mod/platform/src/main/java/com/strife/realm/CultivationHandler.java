@@ -1,126 +1,189 @@
 package com.strife.realm;
 
+import com.strife.core.CultivationFactors;
+import com.strife.core.MeditationState;
 import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
+import com.strife.core.StrifeTime;
 import com.strife.core.net.StrifeCoreRules;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 
 /**
- * 修炼主链的每刻结算（docs/07 §7 A1-2/A1-3/A1-4 的 MVP 快速通道）： 寿元流动 → 打坐积修为（打断惩罚）→ 修为滴满自动尝试突破（MVP 简化，见下）→ 大限结算。
+ * 修炼主链的服务端结算：寿元流动 → 打坐（时间片结算 + 打断惩罚 + 冷却）→ 大限结算；突破改为玩家主动押注（{@link #attemptBreakthrough}）。
  *
- * <p>速率口径（05 §2 公式，MVP 版）：sit_rate × 灵根品阶系数；环境/功法/丹药三系数本期恒 1.0 （灵气场是 M4、功法装备属筑基解锁、丹药是 M2——中性 1.0
- * 面板可解释，05 §2"任一系数必须 可解释"）。sit_rate 单位按 NUMBERS §1 设计口径（分钟时长反推）为"修为/秒"，与该节注释 "修为/刻"矛盾——按设计口径落地，待
- * A/C 定（已挂账）。
+ * <p>与旧版的三处实质差别（旧版自陈为"MVP 快速通道"）：
  *
- * <p>MVP 简化清单（正式实现待 A 评审排期）：突破为修为滴满后自动尝试（无主动押注动作）； 大限只做寿元按比例重置（05 §4 的境界回退与虚弱 debuff 待排期）；打坐判定 = 潜行
- * + 站地。
+ * <ol>
+ *   <li><b>打坐不再是"潜行即打坐"</b>：状态由 03 §4 的 {@code sit} 意图显式起止，入档为 {@link MeditationState}，结算按时间戳 做差（03
+ *       §3），打断有惩罚与冷却，主动出定不吃惩罚。
+ *   <li><b>突破不再自动触发</b>：修为满只是"可以押注"的前提；是否突破由玩家决定（NUMBERS §10 因此才需要 breakthrough 限速）。
+ *   <li><b>四因子公式写全</b>：环境/功法/丹药三项经 {@link CultivationFactors} 取（来源模块尚未落地时取中性 1.0）， 不再把 1.0
+ *       内联进公式里假装它们不存在。
+ * </ol>
+ *
+ * <p>数值全部来自 DataGen 产物（{@link RealmTables} + {@code strife_core/rules.json}），代码零受管字面量。
  */
 public final class CultivationHandler {
 
-    /** 每玩家瞬态结算状态（pendingQi 浮点累加器；重启重算无损——qi 本体在附件里）。 */
-    private record Ticking(double pendingQi, int crouchTicks, boolean wasMeditating) {}
+    /** 每玩家的位移基准（判断"打坐中是否移动"）；纯瞬态，不入档。 */
+    private static final Map<UUID, Position> POSITIONS = new ConcurrentHashMap<>();
 
-    private static final Map<UUID, Ticking> TICKING = new ConcurrentHashMap<>();
+    private record Position(double x, double y, double z) {}
 
     private CultivationHandler() {}
 
+    /** 每刻结算（{@link StrifeRealm} 在 PlayerTickEvent.Post 上调用）。 */
     static void tick(ServerPlayer player) {
         RealmTables tables = RealmTables.getOrNull(player.server);
         if (tables == null) {
             return;
         }
+        long now = player.server.getTickCount();
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         if (data.spiritrootQuality() == 0) {
             data = SpiritRootGenerator.ensureGenerated(player, data, tables);
         }
         RealmTables.RealmEntry realm =
                 tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
-        if (data.lifespanTicks() <= 0) {
-            // 新玩家寿元未结算（core 默认 0）：按当前境界初始化（NUMBERS §1 lifespan_years）
+
+        // 1. 寿元：新玩家先按当前境界初始化，随后按秒结算（每刻回写附件 = 20 次/s 的无谓写档，秒级精度足够）
+        if (data.lifespanTicks() <= 0L) {
             data =
                     write(
                             player,
                             data,
                             d -> withLifespan(d, yearsToTicks(player, realm.lifespanYears())));
+        } else if (now % StrifeTime.TICKS_PER_SECOND == 0L) {
+            long remaining = data.lifespanTicks() - StrifeTime.TICKS_PER_SECOND;
+            data =
+                    remaining <= 0L
+                            ? write(
+                                    player,
+                                    data,
+                                    d -> withLifespan(d, greatLimit(player, realm, tables)))
+                            : write(player, data, d -> withLifespan(d, remaining));
         }
 
-        // 1. 寿元流动（打坐期间同样流逝，NUMBERS §4）
-        long lifespan = data.lifespanTicks() - 1;
-        if (lifespan <= 0) {
-            data = write(player, data, d -> withLifespan(d, greatLimit(player, realm, tables)));
-        } else {
-            data = write(player, data, d -> withLifespan(d, lifespan));
-        }
-
-        // 2. 打坐（潜行 + 站地 + 非水中）
-        boolean meditating = player.isCrouching() && player.onGround() && !player.isInWater();
-        UUID id = player.getUUID();
-        Ticking ticking = TICKING.computeIfAbsent(id, k -> new Ticking(0.0, 0, false));
-        if (meditating) {
-            int crouchTicks = ticking.crouchTicks() + 1;
-            double pending = ticking.pendingQi();
-            if (crouchTicks % tables.rules().meditationTickIntervalTicks() == 0) {
-                double gain =
-                        realm.sitRate()
-                                * (tables.rules().meditationTickIntervalTicks() / 20.0)
-                                * tables.qualityCoefficient(data.spiritrootQuality());
-                pending += gain;
-            }
-            if (crouchTicks % tables.rules().meditationTickIntervalTicks() == 0) {
+        // 2. 打坐：先判打断（每刻都要判），再按 tick_interval_ticks 降频结算（03 §6 单玩家附加逻辑预算）
+        boolean moved = movedBeyond(player, tables.rules().meditationInterruptMoveSqr());
+        if (data.meditation().active()) {
+            if (interrupted(player, moved)) {
+                data = interrupt(player, data, realm, tables, now);
+            } else if (data.qi() >= realm.qiMax()) {
+                data = settle(player, data, realm, tables, now);
+                data = write(player, data, d -> d.withMeditation(d.meditation().stop()));
+                tell(player, Component.translatable("msg.strife.sit.qi_full"));
+            } else if (now % tables.rules().meditationTickIntervalTicks() == 0L) {
                 RealmEvents.postSit(player, tables.rules().meditationTickIntervalTicks());
+                data = settle(player, data, realm, tables, now);
             }
-            int whole = (int) pending;
-            if (whole >= 1 && data.qi() < realm.qiMax()) {
-                pending -= whole;
-                data =
-                        write(
-                                player,
-                                data,
-                                d ->
-                                        withStage(
-                                                d.withQi(Math.min(realm.qiMax(), d.qi() + whole)),
-                                                realm));
-            }
-            TICKING.put(id, new Ticking(pending, crouchTicks, true));
-        } else {
-            if (ticking.wasMeditating()) {
-                int kept = (int) (data.qi() * tables.rules().interruptProgressKeep());
-                if (kept != data.qi()) {
-                    write(player, data, d -> d.withQi(kept));
-                    player.displayClientMessage(
-                            Component.literal("出定。气息回落，修为保住大半。").withStyle(ChatFormatting.GRAY),
-                            true);
-                }
-            }
-            TICKING.put(id, new Ticking(0.0, 0, false));
-        }
-
-        // 3. 修为滴满 → 自动尝试突破（MVP 简化：无主动押注动作）
-        data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
-        if (data.qi() >= realm.qiMax() && realm.ordinal() < tables.realmCount() - 1) {
-            attemptBreakthrough(player, data, realm, tables);
         }
     }
 
-    private static void attemptBreakthrough(
-            ServerPlayer player,
-            StrifeData data,
-            RealmTables.RealmEntry realm,
-            RealmTables tables) {
+    /**
+     * 登录：NUMBERS §5 {@code offline_gain_allowed: false} → 离线时段不计修为，残留会话一律收尾（不结算、不清冷却）。
+     *
+     * <p>这段代码存在的意义是"断线不算挂机"：崩溃或强杀时不会有登出事件，会话会留在档里，如果登录时不收尾，下一次结算就会把 离线时长乘上速率发给玩家。
+     */
+    public static void onLogin(ServerPlayer player) {
+        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+        if (data.meditation().active()) {
+            write(player, data, d -> d.withMeditation(d.meditation().stop()));
+        }
+        POSITIONS.remove(player.getUUID());
+    }
+
+    /** 退出：在线时段照常结算，然后收尾（冷却保留在档里，重连后仍生效）。 */
+    public static void onLogout(ServerPlayer player) {
+        RealmTables tables = RealmTables.getOrNull(player.server);
+        if (tables != null) {
+            StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+            RealmTables.RealmEntry realm =
+                    tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
+            if (data.meditation().active()) {
+                data = settle(player, data, realm, tables, player.server.getTickCount());
+                write(player, data, d -> d.withMeditation(d.meditation().stop()));
+            }
+        }
+        POSITIONS.remove(player.getUUID());
+    }
+
+    /** 打坐起止意图（03 §4）。处境不允许时给可读的原因，而不是静默失败。 */
+    public static void toggleSit(ServerPlayer player) {
+        RealmTables tables = RealmTables.getOrNull(player.server);
+        if (tables == null) {
+            return;
+        }
+        long now = player.server.getTickCount();
+        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+        RealmTables.RealmEntry realm =
+                tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
+        MeditationState meditation = data.meditation();
+
+        if (meditation.active()) {
+            data = settle(player, data, realm, tables, now);
+            write(player, data, d -> d.withMeditation(d.meditation().stop()));
+            tell(player, Component.translatable("msg.strife.sit.stop"));
+            RealmViewBuilder.pushTo(player);
+            return;
+        }
+        if (meditation.onCooldown(now)) {
+            tell(
+                    player,
+                    Component.translatable(
+                            "msg.strife.sit.cooldown",
+                            secondsOf(meditation.cooldownRemaining(now))));
+            return;
+        }
+        if (!player.onGround() || player.isInWater() || player.isDeadOrDying()) {
+            tell(player, Component.translatable("msg.strife.sit.blocked"));
+            return;
+        }
+        write(player, data, d -> d.withMeditation(meditation.start(now)));
+        tell(player, Component.translatable("msg.strife.sit.start"));
+        RealmViewBuilder.pushTo(player);
+    }
+
+    /** 主动押注突破（03 §4 / NUMBERS §10）。修为满只是前提，不再自动触发——"押注"是 05 §4 的核心体验，也是失败代价 （回退区间）能被玩家读懂的前提。 */
+    public static void attemptBreakthrough(ServerPlayer player) {
+        RealmTables tables = RealmTables.getOrNull(player.server);
+        if (tables == null) {
+            return;
+        }
+        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+        RealmTables.RealmEntry realm =
+                tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
+        if (realm.ordinal() >= tables.realmCount() - 1) {
+            tell(player, Component.translatable("msg.strife.breakthrough.no_next"));
+            return;
+        }
+        if (data.qi() < realm.qiMax()) {
+            tell(
+                    player,
+                    Component.translatable(
+                            "msg.strife.breakthrough.not_ready", data.qi(), realm.qiMax()));
+            return;
+        }
+        // 突破即出定：押注时不能还挂在打坐状态上（否则失败回退后立刻又被自动结算，惩罚变得不可读）。
+        data = write(player, data, d -> d.withMeditation(d.meditation().stop()));
+
         RealmTables.BreakthroughRate rate = tables.rate(realm.breakthroughKey());
         double probability =
                 BreakthroughMath.successProbability(
                         rate.base(), rate.failStep(), data.breakthroughAttempts(), rate.floor());
         RandomSource random = player.getRandom();
-        if (random.nextDouble() < probability) {
+        boolean success = random.nextDouble() < probability;
+
+        if (success) {
             RealmTables.RealmEntry next = tables.realm(realm.ordinal() + 1);
-            StrifeData updated =
+            StrifeData advanced =
                     new StrifeData(
                             data.dataVersion(),
                             next.ordinal(),
@@ -132,15 +195,17 @@ public final class CultivationHandler {
                             data.spiritrootElements(),
                             0,
                             data.affiliation(),
-                            data.reputation());
-            player.setData(StrifeAttachmentTypes.PLAYER_DATA, updated);
+                            data.reputation(),
+                            data.meditation());
+            write(player, data, d -> advanced);
             player.displayClientMessage(
-                    Component.literal("突破成功——你踏入了")
-                            .append(Component.translatable("realm.strife." + next.id()))
-                            .append(Component.literal("。寿元续至 " + next.lifespanYears() + " 年。"))
+                    Component.translatable(
+                                    "msg.strife.breakthrough.success",
+                                    Component.translatable("realm.strife." + next.id()),
+                                    next.lifespanYears())
                             .withStyle(ChatFormatting.GOLD),
                     false);
-            RealmEvents.postBreakthrough(player, realm.breakthroughKey());
+            RealmEvents.postBreakthrough(player, realm.breakthroughKey(), true, 0);
         } else {
             double ratio =
                     tables.rules().qiResetRatioMin()
@@ -148,29 +213,120 @@ public final class CultivationHandler {
                                     * (tables.rules().qiResetRatioMax()
                                             - tables.rules().qiResetRatioMin());
             int reset = BreakthroughMath.resetQi(realm.qiMax(), ratio);
-            StrifeData updated =
-                    new StrifeData(
-                            data.dataVersion(),
-                            data.realmOrdinal(),
-                            BreakthroughMath.stageFor(reset, realm.qiMax(), realm.stageCount()),
-                            reset,
-                            data.lifespanTicks(),
-                            data.flags(),
-                            data.spiritrootQuality(),
-                            data.spiritrootElements(),
-                            data.breakthroughAttempts() + 1,
-                            data.affiliation(),
-                            data.reputation());
-            player.setData(StrifeAttachmentTypes.PLAYER_DATA, updated);
+            StrifeData failed =
+                    withQiAndStage(data, reset, realm)
+                            .withMeditation(data.meditation())
+                            .withAttempts(data.breakthroughAttempts() + 1);
+            write(player, data, d -> failed);
             player.displayClientMessage(
-                    Component.literal("突破失败——气息紊乱，修为回落至 ")
-                            .append(Component.literal(reset + " / " + realm.qiMax() + "。"))
+                    Component.translatable("msg.strife.breakthrough.failure", reset, realm.qiMax())
                             .withStyle(ChatFormatting.RED),
                     false);
+            RealmEvents.postBreakthrough(
+                    player, realm.breakthroughKey(), false, data.breakthroughAttempts() + 1);
         }
+        RealmViewBuilder.pushTo(player);
     }
 
-    /** 大限（05 §4，ADR-008 非破坏性）：MVP 只做寿元按比例重置；境界回退与虚弱 debuff 待 A 排期。 */
+    /** 每秒修为速率：05 §2 四因子公式（基础速率 × 灵根 × 环境 × 功法 × 丹药）。 */
+    static double qiPerSecond(
+            ServerPlayer player,
+            RealmTables tables,
+            RealmTables.RealmEntry realm,
+            StrifeData data) {
+        return realm.sitRate()
+                * tables.qualityCoefficient(data.spiritrootQuality())
+                * CultivationFactors.coefficients(player).product();
+    }
+
+    /** 单刻速率（结算用；换算集中在 {@link StrifeTime}）。 */
+    static double qiPerTick(
+            ServerPlayer player,
+            RealmTables tables,
+            RealmTables.RealmEntry realm,
+            StrifeData data) {
+        return StrifeTime.perSecondToPerTick(qiPerSecond(player, tables, realm, data));
+    }
+
+    /** 把会话结算到当前刻：只补发"应得 − 已发"的差额（时间片结算的核心，见 {@link MeditationMath}）。 */
+    private static StrifeData settle(
+            ServerPlayer player,
+            StrifeData data,
+            RealmTables.RealmEntry realm,
+            RealmTables tables,
+            long now) {
+        MeditationState meditation = data.meditation();
+        double qiPerTick = qiPerTick(player, tables, realm, data);
+        int earned = MeditationMath.earnedSince(meditation.startTick(), now, qiPerTick);
+        int delta = MeditationMath.settlementDelta(earned, meditation.creditedQi());
+        if (delta == 0) {
+            return data;
+        }
+        MeditationMath.Applied applied = MeditationMath.apply(data.qi(), delta, realm.qiMax());
+        int credited = meditation.creditedQi() + Math.max(0, applied.applied());
+        return write(
+                player,
+                data,
+                d ->
+                        withQiAndStage(d, applied.qi(), realm)
+                                .withMeditation(meditation.withCreditedQi(credited)));
+    }
+
+    /** 打断：本次会话所得按 NUMBERS §5 比例保留（不足则收回已发部分），并写入再入定冷却。 */
+    private static StrifeData interrupt(
+            ServerPlayer player,
+            StrifeData data,
+            RealmTables.RealmEntry realm,
+            RealmTables tables,
+            long now) {
+        MeditationState meditation = data.meditation();
+        double qiPerTick = qiPerTick(player, tables, realm, data);
+        int keptEarned =
+                MeditationMath.earnedAfterInterrupt(
+                        meditation.startTick(),
+                        now,
+                        qiPerTick,
+                        tables.rules().interruptProgressKeep());
+        int delta = MeditationMath.settlementDelta(keptEarned, meditation.creditedQi());
+        MeditationMath.Applied applied = MeditationMath.apply(data.qi(), delta, realm.qiMax());
+        long cooldownTicks = tables.rules().interruptCooldownTicks();
+        StrifeData updated =
+                withQiAndStage(data, applied.qi(), realm)
+                        .withMeditation(meditation.interrupt(now, cooldownTicks));
+        write(player, data, d -> updated);
+        tell(
+                player,
+                Component.translatable("msg.strife.sit.interrupted", secondsOf(cooldownTicks))
+                        .withStyle(ChatFormatting.GRAY));
+        RealmViewBuilder.pushTo(player);
+        return updated;
+    }
+
+    /** 打断判定：离地/入水/垂死/受伤/位移超阈值，任一成立即打断。 */
+    private static boolean interrupted(ServerPlayer player, boolean moved) {
+        return moved
+                || !player.onGround()
+                || player.isInWater()
+                || player.isDeadOrDying()
+                || player.hurtTime > 0;
+    }
+
+    /** 与上一刻的位置比较（首刻没有基准，视为未移动）。 */
+    private static boolean movedBeyond(ServerPlayer player, double thresholdSqr) {
+        Position previous =
+                POSITIONS.put(
+                        player.getUUID(),
+                        new Position(player.getX(), player.getY(), player.getZ()));
+        if (previous == null) {
+            return false;
+        }
+        double dx = player.getX() - previous.x();
+        double dy = player.getY() - previous.y();
+        double dz = player.getZ() - previous.z();
+        return dx * dx + dy * dy + dz * dz > thresholdSqr;
+    }
+
+    /** 大限（05 §4，ADR-008 非破坏性）：本步只做寿元按比例重置；境界回退与虚弱 debuff 在后续迭代补齐。 */
     private static long greatLimit(
             ServerPlayer player, RealmTables.RealmEntry realm, RealmTables tables) {
         long years =
@@ -178,7 +334,7 @@ public final class CultivationHandler {
                         1,
                         (long) (realm.lifespanYears() * tables.rules().dashengResetYearsRatio()));
         player.displayClientMessage(
-                Component.literal("大限已至。劫数加身，你侥幸续得 " + years + " 年阳寿……")
+                Component.translatable("msg.strife.lifespan.limit", years)
                         .withStyle(ChatFormatting.DARK_RED),
                 false);
         return yearsToTicks(player, years);
@@ -186,10 +342,18 @@ public final class CultivationHandler {
 
     /**
      * 修行年 → 游戏刻。换算率取自 NUMBERS §4（经 DataGen 产物 {@code strife_core/rules.json} 的 {@code
-     * derived.ticks_per_year}）， 代码里零字面量——这也是 realm 唯一需要向 core 取数的场景（realm → core 是允许方向，03 §2）。
+     * derived.ticks_per_year}），代码零字面量——这也是 realm 向 core 取数的少数场景之一（realm → core 是允许方向，03 §2）。
      */
     private static long yearsToTicks(ServerPlayer player, long years) {
         return years * StrifeCoreRules.get(player.server).ticksPerYear();
+    }
+
+    private static void tell(ServerPlayer player, Component message) {
+        player.displayClientMessage(message, true);
+    }
+
+    private static String secondsOf(long ticks) {
+        return Long.toString(Math.max(0L, ticks) / StrifeTime.TICKS_PER_SECOND);
     }
 
     private static StrifeData withLifespan(StrifeData data, long lifespan) {
@@ -204,30 +368,31 @@ public final class CultivationHandler {
                 data.spiritrootElements(),
                 data.breakthroughAttempts(),
                 data.affiliation(),
-                data.reputation());
+                data.reputation(),
+                data.meditation());
     }
 
-    /** 小境界由 qi 阈值等分推导（NUMBERS §1：阈值不入表）。 */
-    private static StrifeData withStage(StrifeData data, RealmTables.RealmEntry realm) {
+    /** 改 qi 并同步推导小境界（NUMBERS §1：阈值不入表）。 */
+    private static StrifeData withQiAndStage(
+            StrifeData data, int qi, RealmTables.RealmEntry realm) {
         return new StrifeData(
                 data.dataVersion(),
                 data.realmOrdinal(),
-                BreakthroughMath.stageFor(data.qi(), realm.qiMax(), realm.stageCount()),
-                data.qi(),
+                BreakthroughMath.stageFor(qi, realm.qiMax(), realm.stageCount()),
+                qi,
                 data.lifespanTicks(),
                 data.flags(),
                 data.spiritrootQuality(),
                 data.spiritrootElements(),
                 data.breakthroughAttempts(),
                 data.affiliation(),
-                data.reputation());
+                data.reputation(),
+                data.meditation());
     }
 
     /** 附件值对象不可变：改字段 = 构造新记录整体 setData 回写（core 契约）；未变则不写。 */
     private static StrifeData write(
-            ServerPlayer player,
-            StrifeData current,
-            java.util.function.Function<StrifeData, StrifeData> mutator) {
+            ServerPlayer player, StrifeData current, Function<StrifeData, StrifeData> mutator) {
         StrifeData updated = mutator.apply(current);
         if (updated != current) {
             player.setData(StrifeAttachmentTypes.PLAYER_DATA, updated);

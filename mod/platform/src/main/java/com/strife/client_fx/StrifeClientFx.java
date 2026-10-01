@@ -2,7 +2,9 @@ package com.strife.client_fx;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.strife.core.StrifeMod;
+import com.strife.core.net.IntentRateLimiter;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -23,9 +25,8 @@ import org.slf4j.LoggerFactory;
  * <p>{@code dist = CLIENT} 让专用服务端根本不构造本类；serverJar 又整体剔除 {@code com/strife/client_fx/**}（platform
  * build.gradle 的 exclude 规则先于本包落地）——两道隔离由 CI 的 headless 开服冒烟验证：若 client 类被服务端加载，冒烟当场红。
  *
- * <p>本类只做客户端注册编排：HUD 层进 {@link RegisterGuiLayersEvent}，面板按键进 {@link RegisterKeyMappingsEvent}（默认
- * K，冲突上下文限游戏内），开屏动作挂在客户端 tick。数据读取与显示规则在 {@link ClientDataBridge}（服务端权威：单机读 integrated server
- * 的权威附件，专用服上不显示）。
+ * <p>本类只做客户端注册编排：HUD 层进 {@link RegisterGuiLayersEvent}，按键进 {@link RegisterKeyMappingsEvent}，动作挂在客户端
+ * tick。 键位与界面只负责<b>发起意图</b>（打坐起止、突破押注、面板拉取），判定与数值一律在服务端（03 §4 服务端权威）。
  */
 @Mod(value = StrifeMod.MOD_ID, dist = Dist.CLIENT)
 public final class StrifeClientFx {
@@ -39,6 +40,24 @@ public final class StrifeClientFx {
                     KeyConflictContext.IN_GAME,
                     InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_K,
+                    "key.categories.strife");
+
+    /** 打坐 / 出定（03 §4 sit 意图）。 */
+    private static final KeyMapping TOGGLE_SIT =
+            new KeyMapping(
+                    "key.strife.sit",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_V,
+                    "key.categories.strife");
+
+    /** 主动押注突破（03 §4 breakthrough 意图，NUMBERS §10 限速 6 次/分钟）。 */
+    private static final KeyMapping BREAKTHROUGH =
+            new KeyMapping(
+                    "key.strife.breakthrough",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_B,
                     "key.categories.strife");
 
     public StrifeClientFx(IEventBus modEventBus, ModContainer container) {
@@ -58,14 +77,34 @@ public final class StrifeClientFx {
 
     private void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(OPEN_PANEL);
+        event.register(TOGGLE_SIT);
+        event.register(BREAKTHROUGH);
     }
 
     private void onClientTick(ClientTickEvent.Post event) {
+        Minecraft minecraft = Minecraft.getInstance();
         while (OPEN_PANEL.consumeClick()) {
-            var minecraft = net.minecraft.client.Minecraft.getInstance();
             if (minecraft.screen == null && minecraft.player != null) {
                 minecraft.setScreen(new StrifePanelScreen());
             }
+        }
+        if (minecraft.player == null || minecraft.screen != null) {
+            // 有界面开着时不清队列会导致"关掉界面后一次性触发好几次"，所以这里照样把点击吃干净。
+            drain(TOGGLE_SIT);
+            drain(BREAKTHROUGH);
+            return;
+        }
+        while (TOGGLE_SIT.consumeClick()) {
+            ClientIntents.send(IntentRateLimiter.SIT);
+        }
+        while (BREAKTHROUGH.consumeClick()) {
+            ClientIntents.send(IntentRateLimiter.BREAKTHROUGH);
+        }
+    }
+
+    private static void drain(KeyMapping mapping) {
+        while (mapping.consumeClick()) {
+            // 丢弃：界面打开期间不触发世界内动作
         }
     }
 }

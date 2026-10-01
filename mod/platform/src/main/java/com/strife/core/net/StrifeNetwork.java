@@ -36,10 +36,19 @@ public final class StrifeNetwork {
                 StrifeNetwork::onSnapshot);
         registrar.playToClient(
                 StrifeDeltaPayload.TYPE, StrifeDeltaPayload.STREAM_CODEC, StrifeNetwork::onDelta);
+        registrar.playToClient(
+                StrifeRealmViewPayload.TYPE,
+                StrifeRealmViewPayload.STREAM_CODEC,
+                StrifeNetwork::onRealmView);
         registrar.playToServer(
                 StrifeIntentPayload.TYPE,
                 StrifeIntentPayload.STREAM_CODEC,
                 StrifeNetwork::onIntent);
+    }
+
+    /** 客户端收到面板视图（拉取式响应）：整体替换镜像里的视图。 */
+    private static void onRealmView(StrifeRealmViewPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> StrifeClientMirror.accept(payload.view()));
     }
 
     /** 客户端收到全量快照：整体替换镜像。 */

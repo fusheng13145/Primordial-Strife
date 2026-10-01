@@ -16,6 +16,7 @@ import com.strife.core.StrifeData;
 public final class StrifeClientMirror {
 
     private static volatile StrifeData snapshot;
+    private static volatile StrifeRealmView realmView;
     private static volatile long revision;
 
     private StrifeClientMirror() {}
@@ -39,6 +40,20 @@ public final class StrifeClientMirror {
         revision++;
     }
 
+    /** 收到面板视图（拉取式响应）：整体替换。 */
+    public static void accept(StrifeRealmView updatedView) {
+        if (updatedView == null) {
+            return;
+        }
+        realmView = updatedView;
+        revision++;
+    }
+
+    /** 当前面板视图；没拉取过时为 null。 */
+    public static StrifeRealmView realmView() {
+        return realmView;
+    }
+
     /** 当前镜像；未同步时 null。 */
     public static StrifeData getOrNull() {
         return snapshot;
@@ -57,6 +72,7 @@ public final class StrifeClientMirror {
     /** 退出世界/断开连接时清空：留着旧镜像会让下一个世界的面板先显示上一个角色的数据。 */
     public static void clear() {
         snapshot = null;
+        realmView = null;
         revision++;
     }
 }

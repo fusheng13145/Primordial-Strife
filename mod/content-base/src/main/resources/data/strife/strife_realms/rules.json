@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:b20cf059864bc9e1beb5a49c504c8d066a6d9d6e6130fefb7581a64c0a148450",
+  "@generated": "from content/NUMBERS.md @ sha256:0ec718b37a3c57496e838524c0b924b268ac1de57e19a89ceadd6a6ccf4611a6",
   "id": "realm_rules",
   "breakthrough": {
     "bs_fanren_qili": {
@@ -60,7 +60,8 @@
     "interrupt_progress_keep": 0.9,
     "interrupt_cooldown_sec": 30,
     "tick_interval_ticks": 40,
-    "offline_gain_allowed": "false"
+    "offline_gain_allowed": "false",
+    "interrupt_move_sqr": 4.0E-4
   },
   "spiritroot": {
     "quality_tier_1": 1.4,

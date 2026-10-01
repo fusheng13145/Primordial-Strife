@@ -73,7 +73,8 @@ public final class QuestAdapter implements RewardSink {
     }
 
     private static void onRealmBreakthrough(RealmEvents.Breakthrough event) {
-        if (!event.player().level().isClientSide) {
+        // 只有成功的突破才算任务进度：事件现在显式携带 success（旧口径"收到事件=突破成功"会把失败也记成完成）。
+        if (!event.player().level().isClientSide && event.success()) {
             adapter(event.player())
                     .report(QuestBook.ObjectiveType.BREAKTHROUGH, event.breakthroughKey(), 1);
         }

@@ -23,10 +23,13 @@ public enum StrifeSyncField {
     SPIRITROOT_ELEMENTS,
     BREAKTHROUGH_ATTEMPTS,
     AFFILIATION,
-    REPUTATION;
+    REPUTATION,
+    MEDITATION_START_TICK,
+    MEDITATION_CREDITED_QI,
+    MEDITATION_COOLDOWN_UNTIL_TICK;
 
     /** 字段总数；掩码用 long，故上限 64（03 §3 flags 用 bitset 的同一取舍）。 */
-    public static final int COUNT = 10;
+    public static final int COUNT = 13;
 
     public static final long ALL_BITS = (1L << COUNT) - 1;
 
@@ -54,6 +57,9 @@ public enum StrifeSyncField {
             case SPIRITROOT_QUALITY -> data.spiritrootQuality();
             case SPIRITROOT_ELEMENTS -> data.spiritrootElements();
             case BREAKTHROUGH_ATTEMPTS -> data.breakthroughAttempts();
+            case MEDITATION_START_TICK -> data.meditation().startTick();
+            case MEDITATION_CREDITED_QI -> data.meditation().creditedQi();
+            case MEDITATION_COOLDOWN_UNTIL_TICK -> data.meditation().cooldownUntilTick();
             case AFFILIATION, REPUTATION -> 0L;
         };
     }

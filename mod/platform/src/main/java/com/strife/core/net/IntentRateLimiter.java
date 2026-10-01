@@ -22,6 +22,9 @@ public final class IntentRateLimiter {
     public static final String ARTIFACT = "artifact";
     public static final String BREAKTHROUGH = "breakthrough";
 
+    /** 面板视图拉取（03 §5"改拉取式：C2S 请求 → S2C 响应"）：读操作同样要有配额，否则它就是一个无限量的服务端计算入口。 */
+    public static final String PANEL = "panel";
+
     private final Map<String, TokenBucket> buckets;
     private final Set<String> unknown = new LinkedHashSet<>();
 

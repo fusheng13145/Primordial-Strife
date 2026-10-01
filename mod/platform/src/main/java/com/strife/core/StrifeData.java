@@ -30,6 +30,7 @@ import java.util.Map;
  * @param breakthroughAttempts 当前境界已失败次数，用于成功率累计修正（05 分册 §3）
  * @param affiliation 所属势力内容 ID，空串 = 散修（H2）
  * @param reputation 势力声望向量 factionId → [-100,100]（H2）
+ * @param meditation 打坐会话状态（03 §3 时间片结算的时间戳载体）
  */
 public record StrifeData(
         int dataVersion,
@@ -42,7 +43,40 @@ public record StrifeData(
         int spiritrootElements,
         int breakthroughAttempts,
         String affiliation,
-        Map<String, Integer> reputation) {
+        Map<String, Integer> reputation,
+        MeditationState meditation) {
+
+    /**
+     * 兼容构造：不关心打坐状态的调用点（任务奖励、灵根生成等）默认 {@link MeditationState#IDLE}。
+     *
+     * <p>刻意保留这个重载而不是让所有调用点补第 12 个参数：打坐是 realm 单点拥有的状态，让它渗透到每个构造点只会增加 "某处顺手重置了会话"的机会。
+     */
+    public StrifeData(
+            int dataVersion,
+            int realmOrdinal,
+            int stage,
+            int qi,
+            long lifespanTicks,
+            long flags,
+            int spiritrootQuality,
+            int spiritrootElements,
+            int breakthroughAttempts,
+            String affiliation,
+            Map<String, Integer> reputation) {
+        this(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                MeditationState.IDLE);
+    }
 
     public static final int CURRENT_DATA_VERSION = 1;
 
@@ -93,12 +127,17 @@ public record StrifeData(
                                             Codec.unboundedMap(Codec.STRING, Codec.INT)
                                                     .fieldOf("reputation")
                                                     .orElse(Map.of())
-                                                    .forGetter(StrifeData::reputation))
+                                                    .forGetter(StrifeData::reputation),
+                                            MeditationState.CODEC
+                                                    .fieldOf("meditation")
+                                                    .orElse(MeditationState.IDLE)
+                                                    .forGetter(StrifeData::meditation))
                                     .apply(instance, StrifeData::new));
 
     /** 新玩家默认值：凡人、寿元未初始化（0 表示 realm 侧尚未结算，面板需显示"未知"而非 0 岁）。 */
     public static StrifeData newPlayer() {
-        return new StrifeData(CURRENT_DATA_VERSION, 0, 1, 0, 0L, 0L, 0, 0, 0, "", Map.of());
+        return new StrifeData(
+                CURRENT_DATA_VERSION, 0, 1, 0, 0L, 0L, 0, 0, 0, "", Map.of(), MeditationState.IDLE);
     }
 
     /** 该数据的可变性由调用方负责：附件值对象一旦写入即视为不可变，改字段须整体 setData 回写。 */
@@ -114,6 +153,41 @@ public record StrifeData(
                 spiritrootElements,
                 breakthroughAttempts,
                 affiliation,
-                reputation);
+                reputation,
+                meditation);
+    }
+
+    /** 整体替换打坐状态（时间片结算与打断的唯一入口，避免调用点各自拼字段）。 */
+    public StrifeData withMeditation(MeditationState updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                updated);
+    }
+
+    /** 累计失败次数（突破失败 +1、成功清零，05 §3 的 fail_step 依据）。 */
+    public StrifeData withAttempts(int attempts) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                Math.max(0, attempts),
+                affiliation,
+                reputation,
+                meditation);
     }
 }

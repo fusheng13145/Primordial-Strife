@@ -22,6 +22,7 @@
 # stage_count = 小境界（层/段）数；小境界阈值按 qi_max × i / stage_count 等分，不入表
 # unlocks = 该境界解锁的功能/内容清单键（04 §2 strife_realms 必填字段）
 # growth_ratio = qi_max(n) / qi_max(n-1)，Validator 硬校验区间见 §2
+# sit_rate 单位 = 修为/秒（与 §5 的 tick_interval_ticks 配合；结算按"秒 × 刻/秒"折算成每刻速率）
 fanren:   { qi_max: 100,   stage_count: 1, lifespan_years: 80,    sit_rate: 0.50,  unlocks: [], breakthrough_success_key: bs_fanren_qili } # [拟]
 qili:     { qi_max: 230,   stage_count: 9, lifespan_years: 120,   sit_rate: 0.80,  unlocks: [meditation, spiritroot_panel, cultivation_panel], breakthrough_success_key: bs_qili_zhuji } # [拟]
 zhuji:    { qi_max: 520,   stage_count: 4, lifespan_years: 200,   sit_rate: 1.25,  unlocks: [technique_equip, spell_cast, pill_crafting], breakthrough_success_key: bs_zhuji_jindan } # [拟]
@@ -97,10 +98,11 @@ dasheng_debuff_key: debuff_weak  # [拟] 大限附加虚弱状态
 
 @@meditation
 ```yaml
-interrupt_progress_keep: 0.90  # [拟] 打断后已积累修为保留比例（惩罚 10%）
+interrupt_progress_keep: 0.90  # [拟] 打断后本次会话所得保留比例（惩罚 10%）
 interrupt_cooldown_sec: 30     # [拟] 打断后重新入定冷却
 tick_interval_ticks: 40        # [拟] 打坐结算降频（07 M1"降频+打断惩罚"），每 2 秒结算一次
 offline_gain_allowed: false    # [拟] 离线不产出修为（服务端权威 + 反滥用）
+interrupt_move_sqr: 0.0004     # [拟] 位移打断阈值（格²）：0.02 格 = 2cm，只为滤掉浮点噪声，任何真实移动都算打断
 ```
 
 实际修炼速率（05 分册 §2 锁定公式，四项系数全部来自表）：
@@ -166,6 +168,7 @@ sit_per_sec: 2       # [锚] 打坐起止
 quest_per_sec: 2     # [锚] 任务交互/交付
 artifact_per_sec: 5  # [锚] 法宝主动使用
 breakthrough_per_min: 6  # [拟] 突破请求（防连点刷 fail_step）
+panel_per_sec: 4     # [拟] 面板视图拉取（03 §5 拉取式：C2S 请求 → S2C 视图包）
 ```
 
 ## 11. 待审项（A0-7 交审清单）

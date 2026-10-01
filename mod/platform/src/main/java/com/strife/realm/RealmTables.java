@@ -3,6 +3,7 @@ package com.strife.realm;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.strife.core.StrifeTime;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +46,8 @@ public final class RealmTables {
             double dashengResetYearsRatio,
             double interruptProgressKeep,
             int meditationTickIntervalTicks,
+            long interruptCooldownTicks,
+            double meditationInterruptMoveSqr,
             double qualityTier1,
             double qualityTier2,
             double qualityTier3,
@@ -194,6 +197,9 @@ public final class RealmTables {
                 cost.get("dasheng_reset_years_ratio").getAsDouble(),
                 meditation.get("interrupt_progress_keep").getAsDouble(),
                 meditation.get("tick_interval_ticks").getAsInt(),
+                // NUMBERS 的冷却以秒计，结算在刻上：换算集中在这里，调用方不再各乘一次 20。
+                StrifeTime.secondsToTicks(meditation.get("interrupt_cooldown_sec").getAsDouble()),
+                meditation.get("interrupt_move_sqr").getAsDouble(),
                 spiritroot.get("quality_tier_1").getAsDouble(),
                 spiritroot.get("quality_tier_2").getAsDouble(),
                 spiritroot.get("quality_tier_3").getAsDouble(),

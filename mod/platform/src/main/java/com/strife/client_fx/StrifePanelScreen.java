@@ -1,25 +1,44 @@
 package com.strife.client_fx;
 
 import com.strife.core.StrifeData;
+import com.strife.core.net.IntentRateLimiter;
+import com.strife.core.net.StrifeClientMirror;
+import com.strife.core.net.StrifeRealmView;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * 修炼面板（docs/07 §7 B1-1 的详情壳）：默认 K 键打开，展示 HUD 之外的完整玩家侧数据—— 境界与小境界、修为、寿元、灵根五行与品阶、突破失败累计、所属势力与 H2
- * 声望向量。
+ * 修炼面板（docs/07 §7 B1-1）：默认 K 键打开，展示 HUD 之外的完整玩家侧数据，并给出两个动作入口（打坐起止、押注突破）。
  *
- * <p>数据来源与降级同 {@link ClientDataBridge}：单机读权威附件；无镜像时面板打开但只给 一行说明，不显示编造数值。打坐打断表现与实时刷新依赖 M1 的结算与同步，属于
- * B1-1 后半。
+ * <p>数据来源分工明确：
+ *
+ * <ul>
+ *   <li>身份类数据（境界名/修为/寿元/灵根/声望）来自 {@link StrifeClientMirror} 的权威镜像（03 §5 同步包）；
+ *   <li>处境类数据（修为上限、本次成功率、失败回退区间、当前速率、打坐与冷却状态）来自服务端计算的 {@link StrifeRealmView} （03 §5 拉取式）——客户端不复制任何
+ *       realm 的表与公式。
+ * </ul>
+ *
+ * <p>打开面板即发一次 {@code panel} 意图拉取视图；按钮只发意图，判定在服务端（03 §4）。无镜像时只显示一行说明，不显示编造数值。
  */
-public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Screen {
+public final class StrifePanelScreen extends Screen {
 
     private static final int COLOR = 0xFFFFFFFF;
     private static final int TITLE_COLOR = 0xFF9ADCC8;
     private static final int BACKGROUND = 0xF00E1016;
     private static final int BORDER = 0xFF2E4A40;
+    private static final int MIN_WIDTH = 260;
+    private static final int LINE_HEIGHT = 12;
+    private static final int BUTTON_HEIGHT = 20;
+
+    private Button sitButton;
+    private Button breakthroughButton;
+    private boolean viewRequested;
 
     public StrifePanelScreen() {
         super(Component.translatable("gui.strife.panel.title"));
@@ -31,13 +50,37 @@ public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Sc
     }
 
     @Override
+    protected void init() {
+        sitButton =
+                Button.builder(
+                                Component.translatable("key.strife.sit"),
+                                button -> ClientIntents.send(IntentRateLimiter.SIT))
+                        .bounds(0, 0, 120, BUTTON_HEIGHT)
+                        .build();
+        breakthroughButton =
+                Button.builder(
+                                Component.translatable("key.strife.breakthrough"),
+                                button -> ClientIntents.send(IntentRateLimiter.BREAKTHROUGH))
+                        .bounds(0, 0, 120, BUTTON_HEIGHT)
+                        .build();
+        addRenderableWidget(sitButton);
+        addRenderableWidget(breakthroughButton);
+        if (!viewRequested) {
+            viewRequested = true;
+            ClientIntents.send(IntentRateLimiter.PANEL);
+        }
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         Minecraft minecraft = this.minecraft;
-        List<Component> lines = new ArrayList<>(panelLines(minecraft));
+        if (minecraft == null) {
+            return;
+        }
+        List<Component> lines = panelLines();
         int textWidth = lines.stream().mapToInt(line -> minecraft.font.width(line)).max().orElse(0);
-        int titleWidth = minecraft.font.width(title);
-        int boxWidth = Math.max(textWidth, titleWidth) + 20;
-        int boxHeight = lines.size() * 12 + 34;
+        int boxWidth = Math.max(MIN_WIDTH, Math.max(textWidth, minecraft.font.width(title)) + 20);
+        int boxHeight = lines.size() * LINE_HEIGHT + 34 + BUTTON_HEIGHT + 12;
         int left = (this.width - boxWidth) / 2;
         int top = (this.height - boxHeight) / 2;
 
@@ -47,11 +90,27 @@ public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Sc
         int y = top + 24;
         for (Component line : lines) {
             graphics.drawString(minecraft.font, line, left + 10, y, COLOR);
-            y += 12;
+            y += LINE_HEIGHT;
         }
+
+        layoutButtons(left, boxWidth, top + boxHeight - BUTTON_HEIGHT - 8);
+        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private static List<Component> panelLines(Minecraft minecraft) {
+    private void layoutButtons(int left, int boxWidth, int buttonY) {
+        int gap = 6;
+        int buttonWidth = (boxWidth - 20 - gap) / 2;
+        sitButton.setPosition(left + 10, buttonY);
+        sitButton.setWidth(buttonWidth);
+        breakthroughButton.setPosition(left + 10 + buttonWidth + gap, buttonY);
+        breakthroughButton.setWidth(buttonWidth);
+
+        StrifeRealmView view = StrifeClientMirror.realmView();
+        // 修为未满时按钮置灰，但服务端仍会校验——界面只是提前把"按了也没用"告诉玩家。
+        breakthroughButton.active = view != null && view.canBreakthrough();
+    }
+
+    private static List<Component> panelLines() {
         StrifeData data = ClientDataBridge.mirror();
         List<Component> lines = new ArrayList<>();
         if (data == null) {
@@ -60,8 +119,19 @@ public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Sc
         }
         lines.add(
                 Component.translatable("gui.strife.panel.realm", ClientDataBridge.realmName(data)));
-        lines.add(Component.translatable("gui.strife.panel.stage", data.stage()));
-        lines.add(Component.translatable("gui.strife.hud.qi", data.qi()));
+
+        StrifeRealmView view = StrifeClientMirror.realmView();
+        if (view == null) {
+            lines.add(Component.translatable("gui.strife.panel.view_pending"));
+        } else {
+            lines.add(
+                    Component.translatable(
+                            "gui.strife.panel.stage_progress", view.stage(), view.stageCount()));
+            lines.add(
+                    Component.translatable(
+                            "gui.strife.panel.qi_progress", view.qi(), view.qiMax()));
+        }
+
         long lifespanYears = ClientDataBridge.lifespanYears(data);
         lines.add(
                 lifespanYears < 0L
@@ -72,9 +142,26 @@ public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Sc
         lines.add(
                 Component.translatable(
                         "gui.strife.panel.spiritroot_full", ClientDataBridge.spiritroot(data)));
-        lines.add(
-                Component.translatable(
-                        "gui.strife.panel.breakthrough_attempts", data.breakthroughAttempts()));
+
+        if (view != null) {
+            lines.add(
+                    Component.translatable(
+                            "gui.strife.panel.success_rate",
+                            percent(view.successRate()),
+                            view.attempts()));
+            lines.add(
+                    Component.translatable(
+                            "gui.strife.panel.failure_cost",
+                            percent(view.qiResetRatioMin()),
+                            percent(view.qiResetRatioMax())));
+            lines.add(Component.translatable("gui.strife.panel.rate", format(view.qiPerSecond())));
+            lines.add(stateLine(view));
+        } else {
+            lines.add(
+                    Component.translatable(
+                            "gui.strife.panel.breakthrough_attempts", data.breakthroughAttempts()));
+        }
+
         lines.add(
                 Component.translatable(
                         "gui.strife.panel.affiliation", ClientDataBridge.affiliation(data)));
@@ -84,5 +171,32 @@ public final class StrifePanelScreen extends net.minecraft.client.gui.screens.Sc
                         ? List.of(Component.translatable("gui.strife.panel.reputation.none"))
                         : reputation);
         return lines;
+    }
+
+    private static Component stateLine(StrifeRealmView view) {
+        if (view.meditating()) {
+            return Component.translatable("gui.strife.panel.state_sitting");
+        }
+        if (view.cooldownSeconds() > 0) {
+            return Component.translatable(
+                    "gui.strife.panel.state_cooldown", view.cooldownSeconds());
+        }
+        if (view.finalRealm()) {
+            return Component.translatable("gui.strife.panel.final_realm");
+        }
+        if (view.canBreakthrough()) {
+            return Component.translatable(
+                    "gui.strife.panel.can_breakthrough",
+                    Component.translatable("key.strife.breakthrough"));
+        }
+        return Component.translatable("gui.strife.panel.cannot_breakthrough");
+    }
+
+    private static String percent(double ratio) {
+        return String.format(Locale.ROOT, "%.0f%%", ratio * 100.0);
+    }
+
+    private static String format(double value) {
+        return String.format(Locale.ROOT, "%.2f", value);
     }
 }

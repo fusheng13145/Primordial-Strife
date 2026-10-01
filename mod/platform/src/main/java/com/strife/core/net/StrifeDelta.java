@@ -1,5 +1,6 @@
 package com.strife.core.net;
 
+import com.strife.core.MeditationState;
 import com.strife.core.StrifeData;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -151,6 +152,11 @@ public record StrifeDelta(
                         has(field) ? scalarValues[field.ordinal()] : field.read(base);
             }
         }
+        MeditationState meditation =
+                new MeditationState(
+                        values[StrifeSyncField.MEDITATION_START_TICK.ordinal()],
+                        (int) values[StrifeSyncField.MEDITATION_CREDITED_QI.ordinal()],
+                        values[StrifeSyncField.MEDITATION_COOLDOWN_UNTIL_TICK.ordinal()]);
         return new StrifeData(
                 base.dataVersion(),
                 (int) values[StrifeSyncField.REALM_ORDINAL.ordinal()],
@@ -162,7 +168,8 @@ public record StrifeDelta(
                 (int) values[StrifeSyncField.SPIRITROOT_ELEMENTS.ordinal()],
                 (int) values[StrifeSyncField.BREAKTHROUGH_ATTEMPTS.ordinal()],
                 has(StrifeSyncField.AFFILIATION) ? affiliation : base.affiliation(),
-                mergedReputation(base));
+                mergedReputation(base),
+                meditation);
     }
 
     private Map<String, Integer> mergedReputation(StrifeData base) {

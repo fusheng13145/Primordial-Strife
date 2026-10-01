@@ -61,6 +61,7 @@ public final class StrifeCoreRules {
         rates.put(
                 IntentRateLimiter.BREAKTHROUGH,
                 rateLimits.get("breakthrough_per_min").getAsDouble() / SECONDS_PER_MINUTE);
+        rates.put(IntentRateLimiter.PANEL, rateLimits.get("panel_per_sec").getAsDouble());
         return rates;
     }
 
