@@ -10,26 +10,29 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.synth.ImprovedNoise;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * world 分侧入口（docs/03 §7 模块入口模式）。
  *
- * <p>本入口编排三件事：
+ * <p>本入口编排四件事：
  *
  * <ol>
  *   <li>草类方块破坏的草药掉落（{@link HerbDrops}）；
  *   <li><b>灵气浓度场</b>——通过 {@link CultivationFactors#registerEnvironment} 把环境系数接进 05 §2 的四因子公式， realm
  *       侧一行不用改；
  *   <li><b>矿石方块注册与自检命令</b>——注册 {@link StrifeOreBlocks} 的方块/物品，并挂 {@code /strife world ore
- *       status}（{@link OreCommand}）把已加载的矿石表与已注册方块并排打出来。
+ *       status}（{@link OreCommand}）把已加载的矿石表与已注册方块并排打出来；
+ *   <li><b>矿石进创造物品栏</b>——挂原版「自然方块」标签页，见 {@link #addCreativeTabEntries}。
  * </ol>
  *
  * <p>场按"世界种子 + 维度"缓存：同一个存档的同一维度共用一个场，换存档（单机切世界）会得到新场；噪声由世界种子决定，因此 同一存档里同一个地方的灵气永远一样。
@@ -52,6 +55,7 @@ public final class StrifeWorld {
                 "strife world entry constructed (version {})", container.getModInfo().getVersion());
         StrifeOreBlocks.BLOCKS.register(modEventBus);
         StrifeOreBlocks.ITEMS.register(modEventBus);
+        modEventBus.addListener(StrifeWorld::addCreativeTabEntries);
         NeoForge.EVENT_BUS.addListener(HerbDrops::onBreakBlock);
         NeoForge.EVENT_BUS.addListener(AmbientQiWarmup::onChunkLoad);
         CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
@@ -61,6 +65,22 @@ public final class StrifeWorld {
                 "strife world registered ore blocks: {}",
                 String.join(", ", StrifeOreBlocks.registeredIds()));
         LOGGER.info("strife world commands: /strife world ore status");
+    }
+
+    /**
+     * 把矿石物品挂进原版「自然方块」创造标签页（与煤矿/铁矿同栏）。
+     *
+     * <p>NeoForge 1.13+ 起，注册 {@link net.minecraft.world.item.BlockItem} 不会自动出现在创造物品栏——不挂 tab，
+     * 玩家在创造模式搜「灵玉」「block_ore」都搜不到（2026-10-02 真机实证的真实缺口）。搜索走物品的翻译键， {@code block.strife.block_ore_*}
+     * 已配中文（矿石表状态命令 lang 齐备 3 实证），挂进 tab 后按中文名即可搜到。
+     */
+    private static void addCreativeTabEntries(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() != CreativeModeTabs.NATURAL_BLOCKS) {
+            return;
+        }
+        event.accept(StrifeOreBlocks.ORE_LINGYU.get());
+        event.accept(StrifeOreBlocks.ORE_CHIYAN.get());
+        event.accept(StrifeOreBlocks.ORE_HANYU.get());
     }
 
     /**
