@@ -170,9 +170,10 @@ public record StrifeDelta(
                 has(StrifeSyncField.AFFILIATION) ? affiliation : base.affiliation(),
                 mergedReputation(base),
                 meditation,
-                // 丹药与功法状态不在同步清单里（客户端不读原始状态，面板读服务端算好的四因子分解）：镜像保留原值。
+                // 丹药/功法/任务状态不在同步清单里（客户端不读原始状态，面板读服务端算好的四因子分解与视图）：镜像保留原值。
                 base.pills(),
-                base.techniques());
+                base.techniques(),
+                base.quests());
     }
 
     private Map<String, Integer> mergedReputation(StrifeData base) {

@@ -102,6 +102,7 @@ class StrifeDataTest {
         assertEquals("", migrated.affiliation());
         assertEquals(Map.of(), migrated.reputation());
         assertEquals(0L, migrated.lifespanTicks());
+        assertEquals(QuestProgress.EMPTY, migrated.quests(), "缺 quests 字段必须回落到空进度");
     }
 
     @Test
@@ -131,5 +132,25 @@ class StrifeDataTest {
         assertEquals(base.dataVersion(), updated.dataVersion());
         assertEquals(base.flags(), updated.flags());
         assertEquals(base.reputation(), updated.reputation());
+    }
+
+    @Test
+    @DisplayName("任务进度随聚合对象完整往返，withQi/withReputation 均不得碰它")
+    void questProgressSurvivesUnrelatedWithers() {
+        QuestProgress progress =
+                new QuestProgress(
+                        java.util.Set.of("quest_prologue_herb_pick_01"),
+                        Map.of("quest_prologue_herb_pick_01", Map.of("collect", 3L)),
+                        java.util.Set.of("quest_scaffold_talk_done"));
+        StrifeData base = saturated().withQuests(progress);
+
+        // 带 quest 进度的聚合对象完整往返（07 §4"做完的任务登录后回来又要重做"是这条用例要绝杀的故障）
+        assertEquals(progress, decode(encode(base)).quests());
+
+        // 无关 wither 不得清空任务进度：奖励发放（grantQi→withQi、addReputation→withReputation）
+        // 都发生在一个有进度的玩家身上，清空即玩家任务白做
+        assertEquals(progress, base.withQi(1).quests());
+        assertEquals(progress, base.withReputation(Map.of("faction_sect_qingxin", 5)).quests());
+        assertEquals(progress, base.withFlags(0L).quests());
     }
 }

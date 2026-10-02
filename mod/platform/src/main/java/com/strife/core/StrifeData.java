@@ -33,6 +33,7 @@ import java.util.Map;
  * @param meditation 打坐会话状态（03 §3 时间片结算的时间戳载体）
  * @param pills 丹药增益状态（NUMBERS §7：在效增益与本境界丹药延寿记账）
  * @param techniques 功法状态（03 §1 combat 职责：已学清单 + 当前装备）
+ * @param quests 任务进度与 H3 因果标记（03 §3：玩家数据一律走附件，死亡随角色走）
  */
 public record StrifeData(
         int dataVersion,
@@ -48,7 +49,8 @@ public record StrifeData(
         Map<String, Integer> reputation,
         MeditationState meditation,
         PillState pills,
-        TechniqueState techniques) {
+        TechniqueState techniques,
+        QuestProgress quests) {
 
     /**
      * 兼容构造：不关心打坐/丹药状态的调用点（任务奖励、灵根生成等）默认取两条空状态。
@@ -81,7 +83,8 @@ public record StrifeData(
                 reputation,
                 MeditationState.IDLE,
                 PillState.EMPTY,
-                TechniqueState.EMPTY);
+                TechniqueState.EMPTY,
+                QuestProgress.EMPTY);
     }
 
     public static final int CURRENT_DATA_VERSION = 1;
@@ -145,7 +148,11 @@ public record StrifeData(
                                             TechniqueState.CODEC
                                                     .fieldOf("techniques")
                                                     .orElse(TechniqueState.EMPTY)
-                                                    .forGetter(StrifeData::techniques))
+                                                    .forGetter(StrifeData::techniques),
+                                            QuestProgress.CODEC
+                                                    .fieldOf("quests")
+                                                    .orElse(QuestProgress.EMPTY)
+                                                    .forGetter(StrifeData::quests))
                                     .apply(instance, StrifeData::new));
 
     /** 新玩家默认值：凡人、寿元未初始化（0 表示 realm 侧尚未结算，面板需显示"未知"而非 0 岁）。 */
@@ -164,7 +171,8 @@ public record StrifeData(
                 Map.of(),
                 MeditationState.IDLE,
                 PillState.EMPTY,
-                TechniqueState.EMPTY);
+                TechniqueState.EMPTY,
+                QuestProgress.EMPTY);
     }
 
     /** 该数据的可变性由调用方负责：附件值对象一旦写入即视为不可变，改字段须整体 setData 回写。 */
@@ -183,7 +191,8 @@ public record StrifeData(
                 reputation,
                 meditation,
                 pills,
-                techniques);
+                techniques,
+                quests);
     }
 
     /** 整体替换打坐状态（时间片结算与打断的唯一入口，避免调用点各自拼字段）。 */
@@ -202,7 +211,8 @@ public record StrifeData(
                 reputation,
                 updated,
                 pills,
-                techniques);
+                techniques,
+                quests);
     }
 
     /** 累计失败次数（突破失败 +1、成功清零，05 §3 的 fail_step 依据）。 */
@@ -221,7 +231,8 @@ public record StrifeData(
                 reputation,
                 meditation,
                 pills,
-                techniques);
+                techniques,
+                quests);
     }
 
     /** 整体替换丹药增益状态（production 的丹药路径唯一入口）。 */
@@ -240,7 +251,8 @@ public record StrifeData(
                 reputation,
                 meditation,
                 updated,
-                techniques);
+                techniques,
+                quests);
     }
 
     /** 改寿元（丹药延长与境界续命共用；调用方负责范围校验）。 */
@@ -259,7 +271,8 @@ public record StrifeData(
                 reputation,
                 meditation,
                 pills,
-                techniques);
+                techniques,
+                quests);
     }
 
     /**
@@ -283,7 +296,8 @@ public record StrifeData(
                 reputation,
                 meditation,
                 pills,
-                techniques);
+                techniques,
+                quests);
     }
 
     /** 整体替换功法状态（combat 的学法/装备路径唯一入口）。 */
@@ -302,6 +316,67 @@ public record StrifeData(
                 reputation,
                 meditation,
                 pills,
+                updated,
+                quests);
+    }
+
+    /** 整体替换位域标记（unlock 奖励与 H3 玩家级 flag 的唯一写入入口）。 */
+    public StrifeData withFlags(long updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                updated,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                meditation,
+                pills,
+                techniques,
+                quests);
+    }
+
+    /** 整体替换声望向量（跨势力增减声望的唯一入口；调用方负责算好新值，不在此做增量语义）。 */
+    public StrifeData withReputation(Map<String, Integer> updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                updated,
+                meditation,
+                pills,
+                techniques,
+                quests);
+    }
+
+    /** 整体替换任务进度（quest 的推进/奖励路径唯一入口）。 */
+    public StrifeData withQuests(QuestProgress updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                spiritrootQuality,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                meditation,
+                pills,
+                techniques,
                 updated);
     }
 }

@@ -6,8 +6,9 @@ import java.util.Map;
 /**
  * 单个玩家的任务进度（docs/07 §7 M3"进度入档"的纯数据核）。
  *
- * <p>持久化是装配层的事：玩家附件（NeoForge AttachmentType）由 core 侧接线落地后，把 {@link #snapshot()} / {@link
- * #restore(Map)} 接进 Codec——引擎本身不认识 Minecraft。键位约定： 任务/目标一律用内容 ID，进度值已按目标 count 封顶（引擎保证，存档里不会出现超量值）。
+ * <p>持久化已由装配层接入玩家附件：{@link #completedIds()} / {@link #progressMap()} 供写入 {@code
+ * com.strife.core.QuestProgress}（Codec 落 NBT 随 StrifeData 走），{@link #of(Set, Map)} 做反向恢复。 引擎本身不认识
+ * Minecraft。键位约定： 任务/目标一律用内容 ID，进度值已按目标 count 封顶（引擎保证，存档里不会出现超量值）。
  */
 public final class QuestState {
 
@@ -41,6 +42,43 @@ public final class QuestState {
                 (questId, byObjective) -> progress.put(questId, new HashMap<>(byObjective)));
         snapshot.put("objective_progress", progress);
         return snapshot;
+    }
+
+    /** 已完成任务的 ID 集合（附件持久化用；{@code snapshot()} 的强类型视图）。 */
+    public java.util.Set<String> completedIds() {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        completed.forEach(
+                (questId, done) -> {
+                    if (Boolean.TRUE.equals(done)) {
+                        ids.add(questId);
+                    }
+                });
+        return ids;
+    }
+
+    /** 目标进度表（附件持久化用；{@code snapshot()} 的强类型视图）。 */
+    public Map<String, Map<String, Long>> progressMap() {
+        Map<String, Map<String, Long>> copy = new HashMap<>();
+        objectiveProgress.forEach(
+                (questId, byObjective) -> copy.put(questId, Map.copyOf(byObjective)));
+        return Map.copyOf(copy);
+    }
+
+    /** 从附件的强类型视图恢复（比 {@link #restore(Map)} 少一层装箱）。 */
+    public static QuestState of(
+            java.util.Set<String> completedIds, Map<String, Map<String, Long>> progress) {
+        QuestState state = new QuestState();
+        if (completedIds != null) {
+            completedIds.forEach(questId -> state.completed.put(questId, true));
+        }
+        if (progress != null) {
+            progress.forEach(
+                    (questId, byObjective) ->
+                            state.objectiveProgress
+                                    .computeIfAbsent(questId, k -> new HashMap<>())
+                                    .putAll(byObjective));
+        }
+        return state;
     }
 
     /** 从持久化快照恢复；键型不符在装配层被 Codec 挡住，这里只做最小防御。 */

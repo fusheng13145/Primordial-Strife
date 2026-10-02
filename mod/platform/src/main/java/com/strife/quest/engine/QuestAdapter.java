@@ -2,6 +2,7 @@ package com.strife.quest.engine;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.strife.core.QuestProgress;
 import com.strife.core.RewardBridges;
 import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
@@ -15,46 +16,38 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.saveddata.SavedData;
 
 /**
- * QuestEngine 的 realm 装配层（docs/07 §7 M3 事件订阅 + 进度入档的 MVP 快速通道）： 把登录 / 打坐 / 突破 / 击杀 / 拾取 /
+ * QuestEngine 的 realm 装配层（docs/07 §7 M3 事件订阅 + 进度入档）： 把登录 / 打坐 / 突破 / 击杀 / 拾取 /
  * 命令交互（talk/deliver）喂进 {@link QuestBook#report}，奖励经 {@link RewardSink} 落地，COLLECT 目标经库存对账（{@link
  * QuestBook#collectDeltas}）推进。
  *
- * <p>持久化：MVP 用世界级 SavedData 挂 per-玩家快照（正式实现应换成玩家附件， 待 core 接线后排期——SavedData 不走
- * copyOnDeath，死亡后任务进度保留是 MVP 的已知取舍）。
+ * <p>持久化：任务进度（已完成集合 + 目标进度 + H3 因果标记）随 {@link StrifeData} 玩家附件走（03 §3：玩家数据一律走附件， copyOnDeath
+ * 让进度随角色生死）。装配层<b>无跨事件缓存</b>——每个事件入口从附件重建 {@link QuestState}，改动经 {@link #save()}
+ * 整体写回；这条"读-改-写"链对玩家是串行的（服务端主线程），不存在并发写丢。
  *
  * <p>MVP 脚手架：序章节点 1（talk npc_qingshi_zhizhi）没有 NPC 实体，登录即自动推进； 其余 talk/deliver 节点用 {@code /strife
  * quest talk|deliver <npc>} 交互（正式实现换成 NPC 对话事件与交付 UI，M3/M4）。 击杀口径：任意生物（妖兽实体与专属掉落是 M2）。
  */
 public final class QuestAdapter implements RewardSink {
 
-    private static final String DATA_NAME = "strife_quest_progress";
     private static final String SCAFFOLD_FLAG = "quest_scaffold_talk_done";
 
     private final ServerPlayer player;
     private final QuestState state;
     private final Set<String> h3Flags;
-    private final ProgressSavedData saved;
 
-    private QuestAdapter(
-            ServerPlayer player, QuestState state, Set<String> h3Flags, ProgressSavedData saved) {
+    private QuestAdapter(ServerPlayer player, QuestState state, Set<String> h3Flags) {
         this.player = player;
         this.state = state;
         this.h3Flags = h3Flags;
-        this.saved = saved;
     }
 
     // ===== 事件入口（StrifeQuest 入口构造时注册；realm 事件经 RealmEvents 下游订阅） =====
@@ -118,27 +111,22 @@ public final class QuestAdapter implements RewardSink {
     }
 
     static void onLogin(ServerPlayer player) {
-        ProgressSavedData saved = ProgressSavedData.get(player.server);
-        QuestAdapter adapter =
-                new QuestAdapter(
-                        player,
-                        saved.stateOf(player.getUUID()),
-                        saved.flagsOf(player.getUUID()),
-                        saved);
-        if (!saved.marked(player.getUUID(), SCAFFOLD_FLAG)) {
+        QuestAdapter adapter = adapter(player);
+        if (!adapter.h3Flags.contains(SCAFFOLD_FLAG)) {
             // MVP 脚手架：登录自动完成序章节点 1（教面板读法），正式 NPC 到位后撤掉
             adapter.report(QuestBook.ObjectiveType.TALK, "npc_qingshi_zhizhi", 1);
-            saved.mark(player.getUUID(), SCAFFOLD_FLAG);
+            adapter.h3Flags.add(SCAFFOLD_FLAG);
             adapter.save();
         }
         // 登录即对账一轮：离线间拿到/被奖励的物品可能正好补齐 COLLECT 目标
         adapter.syncCollect();
     }
 
+    /** 每个事件入口都从附件重建装配层：任务进度现在是玩家数据（03 §3），不再有世界级缓存可复用。 */
     private static QuestAdapter adapter(ServerPlayer player) {
-        ProgressSavedData saved = ProgressSavedData.get(player.server);
-        return new QuestAdapter(
-                player, saved.stateOf(player.getUUID()), saved.flagsOf(player.getUUID()), saved);
+        QuestProgress progress = player.getData(StrifeAttachmentTypes.PLAYER_DATA).quests();
+        QuestState state = QuestState.of(progress.completed(), progress.objectiveProgress());
+        return new QuestAdapter(player, state, new HashSet<>(progress.flags()));
     }
 
     /** {@code /strife quest talk|deliver} 的落地：一次面向目标 NPC 的交互事件（target 按内容 ID 全等匹配）。 */
@@ -253,11 +241,14 @@ public final class QuestAdapter implements RewardSink {
     private static volatile QuestBook PROLOGUE;
 
     private void save() {
-        saved.store(player.getUUID(), state.snapshot(), h3Flags);
-        saved.setDirty();
+        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+        player.setData(
+                StrifeAttachmentTypes.PLAYER_DATA,
+                data.withQuests(
+                        new QuestProgress(state.completedIds(), state.progressMap(), h3Flags)));
     }
 
-    /** 条件 DSL 的玩家侧上下文：realm/灵根亲和读附件，flag 读 SavedData，物品 MVP 恒 0。 */
+    /** 条件 DSL 的玩家侧上下文：realm/灵根亲和/flag 全部读玩家附件，物品走库存实时计数。 */
     private ConditionExpression.Context dslContext() {
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         QuestState questState = state;
@@ -344,21 +335,12 @@ public final class QuestAdapter implements RewardSink {
 
     @Override
     public void grantQi(long amount) {
+        // 必须 wither 链：11 参兼容构造会把打坐/丹药/功法/任务四块状态静默清空——
+        // 玩家正在打坐时交付任务奖励，修为涨了但整个打坐会话连同任务进度一起蒸发。
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         player.setData(
                 StrifeAttachmentTypes.PLAYER_DATA,
-                new StrifeData(
-                        data.dataVersion(),
-                        data.realmOrdinal(),
-                        data.stage(),
-                        (int) Math.min(Integer.MAX_VALUE, data.qi() + amount),
-                        data.lifespanTicks(),
-                        data.flags(),
-                        data.spiritrootQuality(),
-                        data.spiritrootElements(),
-                        data.breakthroughAttempts(),
-                        data.affiliation(),
-                        data.reputation()));
+                data.withQi((int) Math.min(Integer.MAX_VALUE, (long) data.qi() + amount)));
     }
 
     @Override
@@ -398,18 +380,7 @@ public final class QuestAdapter implements RewardSink {
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         player.setData(
                 StrifeAttachmentTypes.PLAYER_DATA,
-                new StrifeData(
-                        data.dataVersion(),
-                        data.realmOrdinal(),
-                        data.stage(),
-                        data.qi(),
-                        data.lifespanTicks(),
-                        UnlockBits.with(data.flags(), unlockKey),
-                        data.spiritrootQuality(),
-                        data.spiritrootElements(),
-                        data.breakthroughAttempts(),
-                        data.affiliation(),
-                        data.reputation()));
+                data.withFlags(UnlockBits.with(data.flags(), unlockKey)));
     }
 
     @Override
@@ -418,153 +389,9 @@ public final class QuestAdapter implements RewardSink {
         Map<String, Integer> reputation = new HashMap<>(data.reputation());
         reputation.merge(factionId, delta, Integer::sum);
         player.setData(
-                StrifeAttachmentTypes.PLAYER_DATA,
-                new StrifeData(
-                        data.dataVersion(),
-                        data.realmOrdinal(),
-                        data.stage(),
-                        data.qi(),
-                        data.lifespanTicks(),
-                        data.flags(),
-                        data.spiritrootQuality(),
-                        data.spiritrootElements(),
-                        data.breakthroughAttempts(),
-                        data.affiliation(),
-                        reputation));
+                StrifeAttachmentTypes.PLAYER_DATA, data.withReputation(Map.copyOf(reputation)));
     }
 
-    // ===== 世界级 SavedData（MVP 持久化；正式实现换玩家附件，见类注） =====
-
-    public static final class ProgressSavedData extends SavedData {
-
-        private final Map<UUID, Map<String, Object>> snapshots = new HashMap<>();
-        private final Map<UUID, Set<String>> flags = new HashMap<>();
-        private final Set<String> marks = new HashSet<>();
-
-        public static ProgressSavedData get(MinecraftServer server) {
-            return server.overworld()
-                    .getDataStorage()
-                    .computeIfAbsent(
-                            new SavedData.Factory<>(
-                                    ProgressSavedData::new, ProgressSavedData::load, null),
-                            DATA_NAME);
-        }
-
-        QuestState stateOf(UUID playerId) {
-            return QuestState.restore(snapshots.get(playerId));
-        }
-
-        Set<String> flagsOf(UUID playerId) {
-            return flags.computeIfAbsent(playerId, k -> new HashSet<>());
-        }
-
-        boolean marked(UUID playerId, String mark) {
-            return marks.contains(playerId + ":" + mark);
-        }
-
-        void mark(UUID playerId, String mark) {
-            marks.add(playerId + ":" + mark);
-        }
-
-        void store(UUID playerId, Map<String, Object> snapshot, Set<String> h3Flags) {
-            snapshots.put(playerId, snapshot);
-            flags.put(playerId, h3Flags);
-        }
-
-        @Override
-        public CompoundTag save(
-                CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-            snapshots.forEach(
-                    (playerId, snapshot) -> {
-                        CompoundTag playerTag = new CompoundTag();
-                        @SuppressWarnings("unchecked")
-                        Map<String, Boolean> completed =
-                                (Map<String, Boolean>) snapshot.getOrDefault("completed", Map.of());
-                        CompoundTag completedTag = new CompoundTag();
-                        completed.forEach(completedTag::putBoolean);
-                        playerTag.put("completed", completedTag);
-                        @SuppressWarnings("unchecked")
-                        Map<String, Map<String, Long>> progress =
-                                (Map<String, Map<String, Long>>)
-                                        snapshot.getOrDefault("objective_progress", Map.of());
-                        CompoundTag progressTag = new CompoundTag();
-                        progress.forEach(
-                                (questId, byObjective) -> {
-                                    CompoundTag questTag = new CompoundTag();
-                                    byObjective.forEach(
-                                            (objectiveId, value) ->
-                                                    questTag.putLong(objectiveId, value));
-                                    progressTag.put(questId, questTag);
-                                });
-                        playerTag.put("progress", progressTag);
-                        tag.put(playerId.toString(), playerTag);
-                    });
-            CompoundTag flagTags = new CompoundTag();
-            flags.forEach(
-                    (playerId, set) -> {
-                        ListTag list = new ListTag();
-                        set.forEach(
-                                key -> {
-                                    CompoundTag keyTag = new CompoundTag();
-                                    keyTag.putString("key", key);
-                                    list.add(keyTag);
-                                });
-                        flagTags.put(playerId.toString(), list);
-                    });
-            tag.put("flags", flagTags);
-            ListTag markList = new ListTag();
-            marks.forEach(
-                    mark -> {
-                        CompoundTag markTag = new CompoundTag();
-                        markTag.putString("mark", mark);
-                        markList.add(markTag);
-                    });
-            tag.put("marks", markList);
-            return tag;
-        }
-
-        private static ProgressSavedData load(
-                CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-            ProgressSavedData data = new ProgressSavedData();
-            for (String playerId : tag.getAllKeys()) {
-                if (playerId.equals("flags") || playerId.equals("marks")) {
-                    continue;
-                }
-                CompoundTag playerTag = tag.getCompound(playerId);
-                Map<String, Object> snapshot = new HashMap<>();
-                Map<String, Boolean> completed = new HashMap<>();
-                CompoundTag completedTag = playerTag.getCompound("completed");
-                for (String questId : completedTag.getAllKeys()) {
-                    completed.put(questId, completedTag.getBoolean(questId));
-                }
-                snapshot.put("completed", completed);
-                Map<String, Map<String, Long>> progress = new HashMap<>();
-                CompoundTag progressTag = playerTag.getCompound("progress");
-                for (String questId : progressTag.getAllKeys()) {
-                    Map<String, Long> byObjective = new HashMap<>();
-                    CompoundTag questTag = progressTag.getCompound(questId);
-                    for (String objectiveId : questTag.getAllKeys()) {
-                        byObjective.put(objectiveId, questTag.getLong(objectiveId));
-                    }
-                    progress.put(questId, byObjective);
-                }
-                snapshot.put("objective_progress", progress);
-                data.snapshots.put(UUID.fromString(playerId), snapshot);
-            }
-            CompoundTag flagTags = tag.getCompound("flags");
-            for (String playerId : flagTags.getAllKeys()) {
-                Set<String> set = new HashSet<>();
-                ListTag list = flagTags.getList(playerId, Tag.TAG_COMPOUND);
-                for (int i = 0; i < list.size(); i++) {
-                    set.add(list.getCompound(i).getString("key"));
-                }
-                data.flags.put(UUID.fromString(playerId), set);
-            }
-            ListTag markList = tag.getList("marks", Tag.TAG_COMPOUND);
-            for (int i = 0; i < markList.size(); i++) {
-                data.marks.add(markList.getCompound(i).getString("mark"));
-            }
-            return data;
-        }
-    }
+    // 旧的 ProgressSavedData（世界级 SavedData）已删除：任务进度是玩家数据，现在随 StrifeData 附件走
+    // （03 §3 的 copyOnDeath 与"同一聚合对象"两条口径由此同时满足）。
 }
