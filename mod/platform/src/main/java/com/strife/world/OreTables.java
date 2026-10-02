@@ -106,10 +106,12 @@ public final class OreTables {
      */
     private static List<String> listProductFiles(ResourceManager resources) {
         List<String> paths = new ArrayList<>();
-        // listResources 收的是命名空间前缀字符串（不是 ResourceLocation），第二个参数是路径过滤器。
+        // 1.21.1 的 listResources 收的是 data/<命名空间>/ 之下的**相对路径**（纯 "strife_ores"），不是
+        // "命名空间:路径"——带冒号会被每个资源包判 Invalid path（真机 2026-10-02 18:46 日志实证：5 条
+        // "Invalid path strife:strife_ores"），返回空表。命名空间限定交给下面的过滤器做。
         resources
                 .listResources(
-                        "strife:" + PRODUCT_DIR,
+                        PRODUCT_DIR,
                         location ->
                                 location.getNamespace().equals("strife")
                                         && location.getPath().startsWith(PRODUCT_DIR + "/")
