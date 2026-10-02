@@ -87,7 +87,7 @@ class DialogBookTest {
     private static final String TWO_TREES =
             """
             {
-              "id": "node_elder_open",
+              "id": "dlg_prologue_elder",
               "chapter": "prologue",
               "trees": [
                 {"id": "dlg_prologue_elder", "npc": "npc_qingshi_zhizhi", "root": "node_elder_open",

@@ -214,11 +214,23 @@ public final class DialogRunner {
                 sink.completeNode(key);
             }
             case PLAY_SOUND -> {
-                // args=<sound_id>[:<volume>:<pitch>]
-                String[] parts = requireArgs(effect, args).split(":");
-                float volume = parts.length > 1 ? Float.parseFloat(parts[1]) : 1.0f;
-                float pitch = parts.length > 2 ? Float.parseFloat(parts[2]) : 1.0f;
-                sink.playSound(parts[0], volume, pitch);
+                // args=<sound_id>[:<volume>:<pitch>]；sound_id 自带命名空间冒号（strife:ui.coin），
+                // 所以从右往左收集最多两个纯数字段，剩下的整体作为 id。
+                String[] parts = requireArgs(effect, args).trim().split(":");
+                float volume = 1.0f;
+                float pitch = 1.0f;
+                int end = parts.length;
+                if (end >= 3
+                        && parts[end - 1].matches("\\d+(\\.\\d+)?")
+                        && parts[end - 2].matches("\\d+(\\.\\d+)?")) {
+                    pitch = Float.parseFloat(parts[--end]);
+                    volume = Float.parseFloat(parts[--end]);
+                }
+                String soundId = String.join(":", java.util.Arrays.copyOfRange(parts, 0, end));
+                if (soundId.isBlank()) {
+                    throw badArgs(effect, "sound id is empty");
+                }
+                sink.playSound(soundId, volume, pitch);
             }
             case TELEPORT -> {
                 // args=<x>,<y>,<z>[,<dimension>]

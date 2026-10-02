@@ -1235,7 +1235,9 @@ public final class ValidatorMain {
         Set<String> factionIds = tableIdSet(options, "factions.csv");
         Set<String> itemIds = langItemIds(options);
         itemIds.addAll(pillIds);
-        Set<String> npcIds = loreNpcIds(options, problems);
+        java.util.Optional<Set<String>> npcIdsOptional = loreNpcIds(options);
+        boolean checkNpc = npcIdsOptional.isPresent();
+        Set<String> npcIds = npcIdsOptional.orElse(Set.of());
         Set<String> questIds = questIds(options);
 
         for (Path file : jsonFiles(options.dataRoot())) {
@@ -1318,7 +1320,8 @@ public final class ValidatorMain {
                                         value,
                                         itemIds,
                                         whitelist);
-                            } else if (("talk".equals(type) || "deliver".equals(type))
+                            } else if (checkNpc
+                                    && ("talk".equals(type) || "deliver".equals(type))
                                     && value.startsWith("npc_")) {
                                 checkId(
                                         problems,
@@ -1339,7 +1342,7 @@ public final class ValidatorMain {
                         JsonObject tree = treeElement.getAsJsonObject();
                         String treeId = stringOrNull(tree.get("id"));
                         String npc = stringOrNull(tree.get("npc"));
-                        if (npc != null) {
+                        if (npc != null && checkNpc) {
                             checkId(
                                     problems,
                                     file + " tree '" + treeId + "'",
@@ -1475,19 +1478,19 @@ public final class ValidatorMain {
         return ids;
     }
 
-    /** LORE.md §6 NPC 卡的 {@code npc_} id 集合（真相源合入前同样是"唯一依据"）。 */
-    private static Set<String> loreNpcIds(Options options, List<String> problems) {
-        Set<String> ids = new LinkedHashSet<>();
+    /**
+     * LORE.md §6 NPC 卡的 {@code npc_} id 集合。返回语义：absent = LORE 未在库（npc 引用校验随之跳过—— 此时报"全部 npc
+     * 引用无主"是误导）；present（可能为空集）= LORE 在库，npc 引用必须逐个落到卡上或白名单。
+     */
+    private static java.util.Optional<Set<String>> loreNpcIds(Options options) {
         Path lore = options.contentRoot() == null ? null : options.contentRoot().resolve("LORE.md");
         if (lore == null || !Files.isRegularFile(lore)) {
-            problems.add(
-                    "V-REF phase 2: content/LORE.md not present — npc references unchecked this run");
-            return ids;
+            return java.util.Optional.empty();
         }
+        Set<String> ids = new LinkedHashSet<>();
         for (String line : readLines(lore)) {
-            if (!line.startsWith("| `npc_")
-                    && !line.startsWith("|npc_")
-                    && !line.startsWith("| npc_")) {
+            String trimmed = line.stripLeading();
+            if (!trimmed.startsWith("|") || !trimmed.contains("npc_")) {
                 continue;
             }
             String[] cells = line.split("\\|");
@@ -1499,7 +1502,7 @@ public final class ValidatorMain {
                 }
             }
         }
-        return ids;
+        return java.util.Optional.of(ids);
     }
 
     /** 全部任务产物里的任务 id 集合（start_quest 引用的落点）。 */
