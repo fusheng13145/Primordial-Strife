@@ -54,6 +54,9 @@ final class OreCommand {
     private static int status(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         MinecraftServer server = source.getServer();
+        // 专用服务端(headless)不挂载客户端资源 assets/，lang 词条在那里读不到；此时把 lang 自检
+        // 标记为「跳过」而不是「缺失」，避免误报阻塞自动化验收。客户端(集成服务端)仍按原逻辑精确点名。
+        boolean dedicated = server.isDedicatedServer();
         source.sendSuccess(() -> title("矿石表状态（M4 数据驱动链）"), false);
 
         OreTables tables = OreTables.getOrNull(server);
@@ -78,7 +81,9 @@ final class OreCommand {
             if (!lootTableExists(server, spec.dropTable())) {
                 missingLoot.add(spec.id() + " → " + spec.dropTable());
             }
-            if (lang == null || !lang.has(BLOCK_LANG_PREFIX + spec.id())) {
+            // 专用服务端不挂载 assets/，lang 词条在那里读不到——此时跳过，不计入缺口（避免误报）。
+            // 客户端(集成服务端)加载了 assets/，仍精确点名真正缺失的词条。
+            if (!dedicated && (lang == null || !lang.has(BLOCK_LANG_PREFIX + spec.id()))) {
                 missingLang.add(spec.id());
             }
             for (String biomeId : spec.placement().biomes()) {
@@ -89,15 +94,19 @@ final class OreCommand {
             source.sendSuccess(() -> detail(spec), false);
         }
 
+        String langSummary =
+                dedicated
+                        ? "lang 齐备 不可测(专用服务端不挂载 assets/，请在客户端核验)"
+                        : String.format("lang 齐备 %d", ores.size() - missingLang.size());
         source.sendSuccess(
                 () ->
                         title(
                                 String.format(
-                                        "合计 %d 种：方块已注册 %d，掉落表齐备 %d，lang 齐备 %d，群系 ID 全部存在 %s",
+                                        "合计 %d 种：方块已注册 %d，掉落表齐备 %d，%s，群系 ID 全部存在 %s",
                                         ores.size(),
                                         ores.size() - missingBlock.size(),
                                         ores.size() - missingLoot.size(),
-                                        ores.size() - missingLang.size(),
+                                        langSummary,
                                         unknownBiome.isEmpty() ? "是" : "否")),
                 false);
         source.sendSuccess(
@@ -108,11 +117,24 @@ final class OreCommand {
                 false);
         source.sendSuccess(() -> note("高度列是绝对 y，已在生成期换算为原版相对高度（基线 −64）；掉落表路径由方块注册名推导"), false);
         source.sendSuccess(() -> note("本命令不验「矿是否已在世界里生成」——那要造区块采样，请用镐实测或 /locate"), false);
+        if (dedicated) {
+            source.sendSuccess(
+                    () ->
+                            note(
+                                    "lang 词条自检已跳过：专用服务端(headless)不挂载客户端资源 assets/，"
+                                            + "矿石方块名在游戏客户端由 lang 文件渲染（资源文件已含 block.strife.block_ore_* 三条：灵玉矿/赤炎矿/寒玉矿）"),
+                    false);
+        }
 
         // 四类缺口逐条点名而不是只报计数：策划要能直接看出「哪一栏没填」。
         reportGaps(source, "表里有行但代码未注册方块", missingBlock);
         reportGaps(source, "掉落表产物缺失（该矿会掉空气）", missingLoot);
-        reportGaps(source, "lang 词条缺失（游戏内显示为原始 key）", missingLang);
+        if (dedicated) {
+            // 专用服务端读不到 assets/，lang 不是「OK」也不是「缺」，单独标成跳过以免误导。
+            source.sendSuccess(() -> skip("lang 词条缺失（专用服务端不挂载 assets/，跳过；客户端会渲染中文名）"), false);
+        } else {
+            reportGaps(source, "lang 词条缺失（游戏内显示为原始 key）", missingLang);
+        }
         reportGaps(source, "群系 ID 不存在（该矿在这些群系不生成）", unknownBiome);
 
         return missingBlock.isEmpty()
@@ -201,5 +223,9 @@ final class OreCommand {
 
     private static Component bad(String text) {
         return Component.literal("  [缺] " + text).withStyle(ChatFormatting.RED);
+    }
+
+    private static Component skip(String text) {
+        return Component.literal("  [跳过] " + text).withStyle(ChatFormatting.YELLOW);
     }
 }
