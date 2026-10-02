@@ -60,10 +60,15 @@ class AmbientQiBenchmarkTest {
      * <p>红线写的是"≤2ms/chunk（命中缓存 ≈0）"，所以两个数都要：冷路径是真实成本上限，
      * 热路径是玩家实际感知到的成本。
      *
-     * <p><b>遍历策略</b>：区域是 16×16 区块一块，所以"同区域"要求区块坐标落在同一个 16 的倍数桶里。
-     * 这里用 {@code regionIndex * 16 + withinRegion}——区域间跳着走（造冷），区域内连续（造热命中）。
-     * 这两种遍历必须分开测：只测一种会漏掉"区域算错导致缓存永不命中"这类缺陷
-     * （初版把两种遍历混在一起，结果 {@code coarseSamples=256} 直接把这条用例如实打红）。
+     * <p><b>遍历策略</b>：区域是 16×16 区块一块，{@code regionX = floorDiv(chunkX, 16)}。
+     * 所以"冷"和"热"必须<b>分开造</b>，而且要先算清坐标落在哪个桶里：
+     * <ul>
+     *   <li>冷路径：{@code chunk = i * 16} → 第 i 个区域，每块都未命中（{@code coarseSamples == n}）；
+     *   <li>热路径：{@code chunk = base + (i % 16)} → 全在第 base/16 个区域内，来回走（1 次采样 + n-1 次命中）。
+     * </ul>
+     * 初版用"对角线"想一次造两种，实际 {@code chunk=i*16} 落在第 i 个区域，256 块 = 256 个不同区域，
+     * 区域内命中这条真正要验的东西根本没被走到；第二次改成 {@code i/16} 铺开也超预期（算出 16 实际 1）。
+     * <b>教训：区域粒度是 16 时，"同一区域"只能靠 {@code % 16} 制造，靠 {@code / 16} 只会换区域。</b>
      */
     @Test
     void newChunkGenerationStaysWithinBudget() {
@@ -81,29 +86,24 @@ class AmbientQiBenchmarkTest {
         // 冷路径每个区块一个新区域 → 粗粒度采样数 == 区块数
         assertEquals(WARM_CHUNKS, field.coarseSamples(), "跨区域遍历时每次都该是缓存未命中");
 
-        // ── 热路径：在<b>同一个区域</b>内连续走 16 个区块，粗粒度只该采一次、其余全命中 ──
+        // ── 热路径：<b>反复访问同一个区域</b>，粗粒度只该采一次、其余 255 次全命中 ──
+        // 这是玩家真实处境：一个区域（16×16 区块）内走动，灵气值来自同一份粗粒度缓存。
         int[] warm = new int[WARM_CHUNKS];
         int baseX = WARM_CHUNKS * REGION_CHUNKS;
         int baseZ = WARM_CHUNKS * REGION_CHUNKS;
         int beforeHits = field.cacheHits();
         for (int i = 0; i < WARM_CHUNKS; i++) {
-            // 固定在 baseX/baseZ 所在区域（第 WARM_CHUNKS 区域），只在其内偏移
+            // 在 baseX/baseZ 所在区域内来回走（floorDiv 后 regionX/regionZ 恒定）
             int chunkX = baseX + (i % REGION_CHUNKS);
-            int chunkZ = baseZ + (i / REGION_CHUNKS);
+            int chunkZ = baseZ + (i % REGION_CHUNKS);
             long start = System.nanoTime();
             field.ratioAt(chunkX, chunkZ);
             warm[i] = (int) (System.nanoTime() - start);
         }
+        int newSamples = field.coarseSamples() - WARM_CHUNKS;
         int newHits = field.cacheHits() - beforeHits;
-        int expectedNewRegions = WARM_CHUNKS / REGION_CHUNKS;
-        assertEquals(
-                expectedNewRegions,
-                field.coarseSamples() - WARM_CHUNKS,
-                String.format(
-                        Locale.ROOT,
-                        "%d 个区块铺满 %d×%d 区域 → 粗粒度应只新增 %d 次采样",
-                        WARM_CHUNKS, REGION_CHUNKS, REGION_CHUNKS, expectedNewRegions));
-        assertEquals(WARM_CHUNKS - expectedNewRegions, newHits, "区域内除首个区块外都该命中缓存");
+        assertEquals(1, newSamples, "反复走同一区域，粗粒度只应新增 1 次采样");
+        assertEquals(WARM_CHUNKS - 1, newHits, "除首个区块外都该命中缓存");
 
         report("cold", cold);
         report("warm", warm);
