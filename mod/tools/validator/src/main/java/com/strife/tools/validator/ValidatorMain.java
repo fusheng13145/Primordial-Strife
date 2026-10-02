@@ -34,8 +34,8 @@ import java.util.Set;
  * implementations.
  *
  * <p>V-NAME ({@link NameConventions}) enforces the docs/11 split — machine identifiers stay ASCII
- * pinyin, player-visible text must be Chinese — because Minecraft's {@code ResourceLocation} makes a
- * Chinese ID a load-time crash rather than a style choice.
+ * pinyin, player-visible text must be Chinese — because Minecraft's {@code ResourceLocation} makes
+ * a Chinese ID a load-time crash rather than a style choice.
  */
 public final class ValidatorMain {
 
@@ -46,9 +46,7 @@ public final class ValidatorMain {
     private static final List<String> NON_CONTENT_TABLES =
             List.of("known-placeholders.csv", "id_migration.csv");
 
-    /**
-     * 台账表的第一列是记录号而非内容 ID（docs/04 §6），命名门禁对它们只查"不含非 ASCII 字母"，不套内容 ID 形状规则。
-     */
+    /** 台账表的第一列是记录号而非内容 ID（docs/04 §6），命名门禁对它们只查"不含非 ASCII 字母"，不套内容 ID 形状规则。 */
     static boolean isLedgerTable(String fileName) {
         return NON_CONTENT_TABLES.contains(fileName);
     }

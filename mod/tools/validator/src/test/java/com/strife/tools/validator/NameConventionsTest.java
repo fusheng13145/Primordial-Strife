@@ -14,8 +14,8 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * V-NAME（docs/11 §2）用例。
  *
- * <p>本类的重点不是"合规产物能过"，而是<b>每条规则都有一张红脸</b>——一个永远返回空的门禁比没有门禁更危险，因为它看起来在工作。
- * 所以每条 {@code assertTrue(...contains(...))} 都在钉住"这个坏形态必须被抓到，且报错文本要说清怎么改"。
+ * <p>本类的重点不是"合规产物能过"，而是<b>每条规则都有一张红脸</b>——一个永远返回空的门禁比没有门禁更危险，因为它看起来在工作。 所以每条 {@code
+ * assertTrue(...contains(...))} 都在钉住"这个坏形态必须被抓到，且报错文本要说清怎么改"。
  */
 class NameConventionsTest {
 
@@ -29,6 +29,7 @@ class NameConventionsTest {
         write(root.resolve("data/strife/thing/x.json"), "{\"id\": \"" + id + "\"}");
         return root.resolve("data");
     }
+
     private static Path table(Path root, String name, String... ids) throws IOException {
         StringBuilder csv = new StringBuilder("id,note\n");
         for (String id : ids) {
@@ -48,17 +49,25 @@ class NameConventionsTest {
 
     @Test
     void lowercaseUnderscoreIdPasses(@TempDir Path root) throws IOException {
-        assertEquals(List.of(), NameConventions.check(new Options(product(root, "block_ore_lingyu"), null, null, null)));
+        assertEquals(
+                List.of(),
+                NameConventions.check(
+                        new Options(product(root, "block_ore_lingyu"), null, null, null)));
     }
 
     /**
-     * 产物 {@code id} 字段是<b>内容 ID</b>，不点分——点分只属于 lang key（{@code dialog.strife.nd_...}）。
-     * 内容 ID 是 lang key 去掉 {@code <类别>.strife.} 前缀后的那一段，所以它自己必然是单段下划线形态。
+     * 产物 {@code id} 字段是<b>内容 ID</b>，不点分——点分只属于 lang key（{@code dialog.strife.nd_...}）。 内容 ID 是 lang
+     * key 去掉 {@code <类别>.strife.} 前缀后的那一段，所以它自己必然是单段下划线形态。
      */
     @Test
     void contentIdWithDotsIsRejected(@TempDir Path root) throws IOException {
         List<String> problems =
-                NameConventions.check(new Options(product(root, "dialog.strife.nd_elder_gate_met"), null, null, null));
+                NameConventions.check(
+                        new Options(
+                                product(root, "dialog.strife.nd_elder_gate_met"),
+                                null,
+                                null,
+                                null));
         assertEquals(1, problems.size(), problems.toString());
         assertTrue(problems.get(0).contains("全小写"), problems.toString());
     }
@@ -182,7 +191,11 @@ class NameConventionsTest {
 
     @Test
     void zhValueWithoutChineseIsRejected(@TempDir Path root) throws IOException {
-        Path assets = langs(root, "{\"realm.strife.qili\": \"Qi Condensation\"}", "{\"realm.strife.qili\": \"Qi\"}");
+        Path assets =
+                langs(
+                        root,
+                        "{\"realm.strife.qili\": \"Qi Condensation\"}",
+                        "{\"realm.strife.qili\": \"Qi\"}");
         List<String> problems = NameConventions.check(new Options(null, null, null, assets));
         assertEquals(1, problems.size(), problems.toString());
         assertTrue(problems.get(0).contains("不含任何汉字"), problems.toString());
@@ -191,14 +204,19 @@ class NameConventionsTest {
     /** en_us 是占位语言（ADR-009 允许占位过 CI），不能因为没有汉字就红。 */
     @Test
     void enValueWithoutChineseIsAccepted(@TempDir Path root) throws IOException {
-        Path assets = langs(root, "{\"realm.strife.qili\": \"练气\"}", "{\"realm.strife.qili\": \"Qi Condensation\"}");
+        Path assets =
+                langs(
+                        root,
+                        "{\"realm.strife.qili\": \"练气\"}",
+                        "{\"realm.strife.qili\": \"Qi Condensation\"}");
         assertEquals(List.of(), NameConventions.check(new Options(null, null, null, assets)));
     }
 
     @Test
     void blankZhValueIsLeftToTextGate(@TempDir Path root) throws IOException {
         // 空串由 V-TEXT 报；V-NAME 的职责是"非空却没中文"
-        Path assets = langs(root, "{\"realm.strife.qili\": \"\"}", "{\"realm.strife.qili\": \"Qi\"}");
+        Path assets =
+                langs(root, "{\"realm.strife.qili\": \"\"}", "{\"realm.strife.qili\": \"Qi\"}");
         assertEquals(List.of(), NameConventions.check(new Options(null, null, null, assets)));
     }
 
@@ -208,5 +226,4 @@ class NameConventionsTest {
     void missingRootsAreNoOps() {
         assertEquals(List.of(), NameConventions.check(new Options(null, null, null, null)));
     }
-
 }

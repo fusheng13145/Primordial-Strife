@@ -15,9 +15,10 @@ import java.util.regex.Pattern;
  * <p>docs/11 划了一条红线：**机器标识符用 ASCII 拼音，人类可读文本用中文**。靠人记会漏，所以本门禁把它变成机器判定：
  *
  * <ol>
- *   <li><b>ID 形状</b>：全小写、下划线分词、无连字符、无驼峰（{@code block_ore_lingyu} ✓ / {@code blockOreLingyu} ✗ / {@code ore-lingyu} ✗）。
- *   <li><b>ID 语言</b>：不得含汉字或其他非 ASCII 字母——原版 {@code ResourceLocation} 只允许 {@code [a-z0-9_.]}，写成中文会**加载期直接崩**，
- *       这不是风格问题而是物理约束（docs/11 §1）。
+ *   <li><b>ID 形状</b>：全小写、下划线分词、无连字符、无驼峰（{@code block_ore_lingyu} ✓ / {@code blockOreLingyu} ✗ /
+ *       {@code ore-lingyu} ✗）。
+ *   <li><b>ID 语言</b>：不得含汉字或其他非 ASCII 字母——原版 {@code ResourceLocation} 只允许 {@code
+ *       [a-z0-9_.]}，写成中文会**加载期直接崩**， 这不是风格问题而是物理约束（docs/11 §1）。
  *   <li><b>显示文本语言</b>：{@code zh_cn.json} 的每个非空值必须含汉字。缺了就是"该中文的地方没中文"，比 ID 形状错更该红。
  *   <li><b>lang key 形状</b>：{@code <类别>.strife.<id>} 三段齐全。
  * </ol>
@@ -40,17 +41,18 @@ final class NameConventions {
     /**
      * lang key 三段式：{@code <类别>.strife.<id>}，命名空间固定 {@code strife}（ADR-017）。
      *
-     * <p>id 段允许再点分（{@code gui.strife.hud.realm}、{@code gui.strife.panel.affiliation.none}）——这与原版 lang key 惯例一致，
-     * {@code gui}/{@code msg} 两大类天然带二级分组。单段内容 ID（{@code realm.strife.qili}）是它的特例。
+     * <p>id 段允许再点分（{@code gui.strife.hud.realm}、{@code gui.strife.panel.affiliation.none}）——这与原版
+     * lang key 惯例一致， {@code gui}/{@code msg} 两大类天然带二级分组。单段内容 ID（{@code realm.strife.qili}）是它的特例。
      */
     private static final Pattern LANG_KEY =
             Pattern.compile("^[a-z][a-z0-9_]*\\.strife\\.[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$");
 
     /**
-     * 原版强制的键位分类 key：{@code key.categories.<命名空间>}。它由 Minecraft 自己按命名空间查找，形态不归本项目管，
-     * 写成 {@code key.strife.categories.strife} 会让原版找不到分类名。
+     * 原版强制的键位分类 key：{@code key.categories.<命名空间>}。它由 Minecraft 自己按命名空间查找，形态不归本项目管， 写成 {@code
+     * key.strife.categories.strife} 会让原版找不到分类名。
      */
-    private static final Pattern VANILLA_CATEGORY_KEY = Pattern.compile("^[a-z][a-z0-9_]*\\.categories\\.strife$");
+    private static final Pattern VANILLA_CATEGORY_KEY =
+            Pattern.compile("^[a-z][a-z0-9_]*\\.categories\\.strife$");
 
     /** 至少一个汉字（统一表意文字基本区）。 */
     private static final Pattern HAS_HAN = Pattern.compile("[\\u4e00-\\u9fff]");
@@ -107,7 +109,10 @@ final class NameConventions {
                 if (ledger) {
                     if (hasNonAsciiLetter(cells.get(0))) {
                         problems.add(
-                                where + ": ledger key '" + cells.get(0) + "' must stay ASCII — 它是记录号，"
+                                where
+                                        + ": ledger key '"
+                                        + cells.get(0)
+                                        + "' must stay ASCII — 它是记录号，"
                                         + "不是内容 ID；中文显示名写进 lang (docs/11 §2)");
                     }
                 } else {
@@ -118,8 +123,8 @@ final class NameConventions {
     }
 
     /**
-     * lang 侧：key 形状两侧都查（两侧一起写错 key 会一起通过，所以不能只查一边）；只有 {@code zh_cn} 查"含汉字"，
-     * 因为 {@code en_us} 是占位语言，ADR-009 明确允许占位过 CI。
+     * lang 侧：key 形状两侧都查（两侧一起写错 key 会一起通过，所以不能只查一边）；只有 {@code zh_cn} 查"含汉字"， 因为 {@code en_us}
+     * 是占位语言，ADR-009 明确允许占位过 CI。
      */
     private static void checkLangFiles(Path assetsRoot, List<String> problems) {
         if (assetsRoot == null || !Files.isDirectory(assetsRoot)) {
@@ -132,15 +137,24 @@ final class NameConventions {
             }
             for (Map.Entry<String, Object> entry : ValidatorMain.langEntries(lang).entrySet()) {
                 String key = entry.getKey();
-                if (!LANG_KEY.matcher(key).matches() && !VANILLA_CATEGORY_KEY.matcher(key).matches()) {
+                if (!LANG_KEY.matcher(key).matches()
+                        && !VANILLA_CATEGORY_KEY.matcher(key).matches()) {
                     problems.add(
-                            lang + ": lang key '" + key + "' 必须形如 <类别>.strife.<id>"
+                            lang
+                                    + ": lang key '"
+                                    + key
+                                    + "' 必须形如 <类别>.strife.<id>"
                                     + "（类别前缀需先在 JSON_SCHEMA.md 登记，docs/11 §2.1）");
                 }
                 String value = String.valueOf(entry.getValue());
                 if ("zh_cn".equals(locale) && !value.isBlank() && !HAS_HAN.matcher(value).find()) {
                     problems.add(
-                            lang + ": '" + key + "' = \"" + value + "\" 不含任何汉字 — 玩家可见文本必须是中文"
+                            lang
+                                    + ": '"
+                                    + key
+                                    + "' = \""
+                                    + value
+                                    + "\" 不含任何汉字 — 玩家可见文本必须是中文"
                                     + "（docs/11 §1：ID 用拼音，文本用中文）");
                 }
             }
@@ -153,13 +167,19 @@ final class NameConventions {
         }
         if (hasNonAsciiLetter(id)) {
             problems.add(
-                    where + ": id '" + id + "' 含非 ASCII 字母 — Minecraft ResourceLocation 只允许"
+                    where
+                            + ": id '"
+                            + id
+                            + "' 含非 ASCII 字母 — Minecraft ResourceLocation 只允许"
                             + " [a-z0-9_.]，中文 ID 会在加载期直接崩。ID 用拼音、中文写进 lang (docs/11 §1)");
             return;
         }
         if (!ID_SHAPE.matcher(id).matches()) {
             problems.add(
-                    where + ": id '" + id + "' 不符 [a-z][a-z0-9]*(_[a-z0-9]+)* — 全小写、下划线分词，"
+                    where
+                            + ": id '"
+                            + id
+                            + "' 不符 [a-z][a-z0-9]*(_[a-z0-9]+)* — 全小写、下划线分词，"
                             + "禁连字符与驼峰 (docs/11 §2)");
         }
     }
