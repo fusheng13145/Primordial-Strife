@@ -50,6 +50,11 @@ public final class ShippedProducts {
         return json("/data/strife/strife_techniques/" + techniqueId + ".json");
     }
 
+    /** 序章任务簿产物（{@code data/strife/strife_quests/prologue.json}，与运行时同一份）。 */
+    public static JsonObject prologueQuests() {
+        return json("/data/strife/strife_quests/prologue.json");
+    }
+
     private static JsonObject json(String path) {
         try (InputStream stream = ShippedProducts.class.getResourceAsStream(path)) {
             if (stream == null) {

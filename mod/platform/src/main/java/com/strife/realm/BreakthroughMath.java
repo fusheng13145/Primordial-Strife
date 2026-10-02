@@ -31,6 +31,18 @@ public final class BreakthroughMath {
         return Math.max(1, Math.min(stageCount, stage));
     }
 
+    /**
+     * realm_step 奖励（小境界推进一档）的目标修为：第 {@code stage + 1} 段的起点阈值 {@code qi_max × stage / stage_count}（与
+     * {@link #stageFor} 同一等分口径）；已在满段时给到 {@code qi_max}——满段后的"下一档"就是境界圆满， 玩家由此获得主动押注突破的资格（押注本身仍由
+     * breakthrough 意图显式发起，不自动突破）。
+     */
+    public static int stageStepQi(int stage, int qiMax, int stageCount) {
+        if (stageCount <= 1 || stage >= stageCount) {
+            return qiMax;
+        }
+        return (int) Math.floor((double) qiMax * stage / stageCount);
+    }
+
     /** 灵根种子：UUID × 世界种子（docs/03 §8"UUID+seed 种子化，一次成型"）。 */
     public static long spiritRootSeed(java.util.UUID uuid, long worldSeed) {
         return uuid.getMostSignificantBits() ^ uuid.getLeastSignificantBits() ^ worldSeed;

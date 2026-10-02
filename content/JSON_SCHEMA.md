@@ -202,6 +202,8 @@ DataGen 只从 NUMBERS.md 读以下块，其余键视为未定义：
 
 DAG 完备性（04 §6 `[锚]`）：无环、章节入口可达全部必做节点、每个 `rewards` 引用存在、`fail_goto`/`timer.fail_goto` 不指向已完成节点之外。
 
+`rewards.type` 语义补注（`[拟]`，待 C 审定）：`realm_step` = 小境界推进一档——修为直接置为下一档阈值（与 §4.1 `stage_count` 的等分口径一致，`qi_max × stage / stage_count`）；已在满段时给到 `qi_max`（境界圆满，获得主动押注突破资格，不自动突破）。境界序号、寿元、突破失败计数均不变。
+
 产物形态（`[拟]`，DataGen 已实现）：一章一文件 `data/strife/strife_quests/<章>.json`，文件 `id` = 该章 `entry=true` 的任务 ID，全部行按表序进 `quests` 数组；每行字段同上表。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名章段一致——空表合法（章内容未写）。
 
 ### 4.7 `dialog_trees` — 对话树（`tables/dialog_trees_<章>.csv`，一章一文件）

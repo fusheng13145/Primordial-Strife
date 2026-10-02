@@ -8,6 +8,7 @@ import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
 import com.strife.quest.dsl.ConditionDsl;
 import com.strife.quest.dsl.ConditionExpression;
+import com.strife.realm.BreakthroughMath;
 import com.strife.realm.RealmEvents;
 import com.strife.realm.RealmTables;
 import com.strife.realm.UnlockBits;
@@ -345,7 +346,29 @@ public final class QuestAdapter implements RewardSink {
 
     @Override
     public void advanceRealmStep() {
-        throw new UnsupportedOperationException("realm_step 奖励待 realm 大限/闭关细则（05 §4）落地");
+        // realm_step 奖励语义（JSON_SCHEMA §4.6 [拟] 草案）：小境界推进一档——修为直接置为
+        // 下一档阈值（与 stageFor 同一等分口径）；满段时给到境界圆满（qi_max，获得押注突破资格，
+        // 不自动突破）。境界/寿元/失败计数均不动（这不是突破，只是修行进度跳段）。
+        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+        RealmTables.RealmEntry realm = RealmTables.get(player.server).realm(data.realmOrdinal());
+        int nextQi = BreakthroughMath.stageStepQi(data.stage(), realm.qiMax(), realm.stageCount());
+        player.setData(
+                StrifeAttachmentTypes.PLAYER_DATA,
+                data.withRealm(
+                        data.realmOrdinal(),
+                        BreakthroughMath.stageFor(nextQi, realm.qiMax(), realm.stageCount()),
+                        nextQi,
+                        data.lifespanTicks(),
+                        data.breakthroughAttempts()));
+        player.displayClientMessage(
+                net.minecraft.network.chat.Component.literal(
+                        "✦ 境界感悟：修行进度跃进（小境界 "
+                                + data.stage()
+                                + " → "
+                                + BreakthroughMath.stageFor(
+                                        nextQi, realm.qiMax(), realm.stageCount())
+                                + "）"),
+                false);
     }
 
     @Override

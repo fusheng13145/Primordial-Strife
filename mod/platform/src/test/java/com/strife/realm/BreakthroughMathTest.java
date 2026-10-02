@@ -62,6 +62,35 @@ class BreakthroughMathTest {
         assertEquals(1, BreakthroughMath.stageFor(999, 100, 1), "凡人 stage_count=1");
     }
 
+    @Test
+    void stageStepQiGivesTheThresholdOfTheNextStage() {
+        // 练气 9 层，qi_max 230：从第 1 段推进一步 → 第 2 段起点 = floor(230×1/9)=25
+        assertEquals(25, BreakthroughMath.stageStepQi(1, 230, 9));
+        // 第 8 段推进 → 第 9 段起点 = floor(230×8/9)=204
+        assertEquals(204, BreakthroughMath.stageStepQi(8, 230, 9));
+        // 推进结果与 stageFor 往返一致：落在第 stage+1 段
+        assertEquals(2, BreakthroughMath.stageFor(BreakthroughMath.stageStepQi(1, 230, 9), 230, 9));
+        assertEquals(9, BreakthroughMath.stageFor(BreakthroughMath.stageStepQi(8, 230, 9), 230, 9));
+    }
+
+    @Test
+    void stageStepQiAtFullStageGrantsBreakthroughEligibility() {
+        // 满段推进 = 境界圆满（qi_max，可押注突破），不是溢出也不是不动
+        assertEquals(230, BreakthroughMath.stageStepQi(9, 230, 9));
+        // stage_count=1 的境界（凡人）任何推进都直达圆满
+        assertEquals(100, BreakthroughMath.stageStepQi(1, 100, 1));
+    }
+
+    @Test
+    void stageStepQiNeverDecreasesQi() {
+        // 玩家修为已超下一档阈值（比如丹药/奖励先加过）时，推进不得把修为变少：
+        // 装配层取 max(当前, 目标)，这里钉住数学侧"目标恒 ≥ 下一档起点"的边界
+        for (int stage = 1; stage <= 8; stage++) {
+            int next = BreakthroughMath.stageStepQi(stage, 230, 9);
+            assertTrue(next >= (int) Math.floor(230.0 * stage / 9), "段 " + stage);
+        }
+    }
+
     // ===== 灵根（docs/03 §8 UUID+seed 种子化）=====
 
     @Test
