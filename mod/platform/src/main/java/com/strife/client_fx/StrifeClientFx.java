@@ -3,6 +3,9 @@ package com.strife.client_fx;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.strife.core.StrifeMod;
 import com.strife.core.net.IntentRateLimiter;
+import com.strife.quest.StrifeEntities;
+import com.strife.quest.dialog.DialogClientMirror;
+import com.strife.quest.dialog.DialogPayloads;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -11,6 +14,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
@@ -66,6 +70,7 @@ public final class StrifeClientFx {
                 container.getModInfo().getVersion());
         modEventBus.addListener(this::onRegisterGuiLayers);
         modEventBus.addListener(this::onRegisterKeyMappings);
+        modEventBus.addListener(this::onRegisterRenderers);
         NeoForge.EVENT_BUS.addListener(this::onClientTick);
     }
 
@@ -81,8 +86,28 @@ public final class StrifeClientFx {
         event.register(BREAKTHROUGH);
     }
 
+    private void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(StrifeEntities.NPC.get(), StrifeNpcRenderer::new);
+    }
+
+    /** 对话镜像的已处理版本号（tick 轮询，镜像惯例）。 */
+    private long handledDialogRevision = -1L;
+
     private void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        // 对话推进（03 §4：UI 只显示服务端求值结果）：镜像有新节点且当前没有对话界面 → 开界面。
+        // 已开着时由 DialogScreen.tick() 自己刷新，这里只负责"开"。
+        long revision = DialogClientMirror.revision();
+        if (revision != handledDialogRevision) {
+            handledDialogRevision = revision;
+            DialogPayloads.Open current = DialogClientMirror.current();
+            if (current != null
+                    && !current.terminated()
+                    && !(minecraft.screen instanceof DialogScreen)
+                    && minecraft.player != null) {
+                minecraft.setScreen(new DialogScreen(revision));
+            }
+        }
         while (OPEN_PANEL.consumeClick()) {
             if (minecraft.screen == null && minecraft.player != null) {
                 minecraft.setScreen(new StrifePanelScreen());

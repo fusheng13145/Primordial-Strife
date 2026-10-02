@@ -64,6 +64,10 @@ public final class DialogRunner {
             return tree;
         }
 
+        public DialogBook book() {
+            return book;
+        }
+
         public String nodeId() {
             return nodeId;
         }

@@ -46,6 +46,11 @@ public final class QuestAdapter implements RewardSink {
     private final Set<String> activated;
     private final Set<String> h3Flags;
 
+    /** 本会话绑定的玩家（effects 落地缝里 playSound/teleport 等需要实体上下文）。 */
+    public ServerPlayer player() {
+        return player;
+    }
+
     private QuestAdapter(
             ServerPlayer player, QuestState state, Set<String> activated, Set<String> h3Flags) {
         this.player = player;
@@ -126,8 +131,8 @@ public final class QuestAdapter implements RewardSink {
         adapter.syncCollect();
     }
 
-    /** 每个事件入口都从附件重建装配层：任务进度现在是玩家数据（03 §3），不再有世界级缓存可复用。 */
-    private static QuestAdapter adapter(ServerPlayer player) {
+    /** 装配层入口（对话适配层等兄弟装配层复用 RewardSink 能力的唯一途径）。 */
+    public static QuestAdapter adapter(ServerPlayer player) {
         QuestProgress progress = player.getData(StrifeAttachmentTypes.PLAYER_DATA).quests();
         QuestState state =
                 QuestState.of(
@@ -267,7 +272,13 @@ public final class QuestAdapter implements RewardSink {
     }
 
     /** 条件 DSL 的玩家侧上下文：realm/灵根亲和/flag 全部读玩家附件，物品走库存实时计数。 */
-    private ConditionExpression.Context dslContext() {
+    /** 把本次内存改动落盘（对话 effects 等不走 report 保存链的调用点的收尾动作）。 */
+    public void flush() {
+        save();
+    }
+
+    /** 条件 DSL 的玩家侧上下文（对话树 conditions 与任务同一解释器、同一取数）。 */
+    public ConditionExpression.Context dslContext() {
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         QuestState questState = state;
         Set<String> flags = h3Flags;

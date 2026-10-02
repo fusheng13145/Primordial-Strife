@@ -103,5 +103,6 @@
   "gui.strife.panel.affiliation.none": "None (Maverick)",
   "gui.strife.panel.reputation": "Reputation · %s: %s",
   "gui.strife.panel.reputation.none": "Reputation: none",
-  "gui.strife.panel.no_data": "Waiting for authoritative server data (synced on join)"
+  "gui.strife.panel.no_data": "Waiting for authoritative server data (synced on join)",
+  "entity.strife.npc": "Chixue Cultivator"
 }

@@ -103,5 +103,6 @@
   "gui.strife.panel.affiliation.none": "散修",
   "gui.strife.panel.reputation": "声望 · %s：%s",
   "gui.strife.panel.reputation.none": "声望：无记录",
-  "gui.strife.panel.no_data": "等待服务端权威数据（登录后自动同步）"
+  "gui.strife.panel.no_data": "等待服务端权威数据（登录后自动同步）",
+  "entity.strife.npc": "初雪宗修士"
 }

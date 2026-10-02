@@ -27,5 +27,6 @@ public final class StrifeQuest {
         QuestAdapter.register(modEventBus);
         // 兜底命令随模块进表（03 §9）：经 core 挂载点并入 /strife 根
         com.strife.core.StrifeCommands.MODULE_SUBTREES.add(QuestCommands.subtree());
+        com.strife.core.StrifeCommands.MODULE_SUBTREES.add(NpcCommands.subtree());
     }
 }
