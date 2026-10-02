@@ -58,40 +58,52 @@ class AmbientQiBenchmarkTest {
      * 主用例：分别测"冷"（缓存全空，逐块算）与"热"（缓存已命中）两条路径。
      *
      * <p>红线写的是"≤2ms/chunk（命中缓存 ≈0）"，所以两个数都要：冷路径是真实成本上限，
-     * 热路径是玩家实际感知到的成本。区域按 16×16 分组，所以遍历顺序决定了冷/热的比例——
-     * 这里<b>刻意用对角线顺序</b>（而非行优先），让相邻区块落在同一区域内，把"命中"这条路真正走到。
+     * 热路径是玩家实际感知到的成本。
+     *
+     * <p><b>遍历策略</b>：区域是 16×16 区块一块，所以"同区域"要求区块坐标落在同一个 16 的倍数桶里。
+     * 这里用 {@code regionIndex * 16 + withinRegion}——区域间跳着走（造冷），区域内连续（造热命中）。
+     * 这两种遍历必须分开测：只测一种会漏掉"区域算错导致缓存永不命中"这类缺陷
+     * （初版把两种遍历混在一起，结果 {@code coarseSamples=256} 直接把这条用例如实打红）。
      */
     @Test
     void newChunkGenerationStaysWithinBudget() {
         AmbientQiField field = productionField();
 
-        // ── 冷路径：缓存全空，每个区块付一次粗粒度 + 一次细化层采样 ──
+        // ── 冷路径：每次都跳到新区域，粗粒度缓存必然未命中 ──
         int[] cold = new int[WARM_CHUNKS];
         for (int i = 0; i < WARM_CHUNKS; i++) {
-            // 对角线：x 与 z 同增，让 16 个区块共享一个粗粒度区域
-            int chunkX = i * 16;
-            int chunkZ = i * 16;
+            int chunkX = i * REGION_CHUNKS; // 区域 i
+            int chunkZ = i * REGION_CHUNKS;
             long start = System.nanoTime();
             field.ratioAt(chunkX, chunkZ);
             cold[i] = (int) (System.nanoTime() - start);
         }
+        // 冷路径每个区块一个新区域 → 粗粒度采样数 == 区块数
+        assertEquals(WARM_CHUNKS, field.coarseSamples(), "跨区域遍历时每次都该是缓存未命中");
 
-        // ── 热路径：再访问一遍同样的区块，应全部命中粗粒度缓存 ──
+        // ── 热路径：在<b>同一个区域</b>内连续走 16 个区块，粗粒度只该采一次、其余全命中 ──
         int[] warm = new int[WARM_CHUNKS];
+        int baseX = WARM_CHUNKS * REGION_CHUNKS;
+        int baseZ = WARM_CHUNKS * REGION_CHUNKS;
+        int beforeHits = field.cacheHits();
         for (int i = 0; i < WARM_CHUNKS; i++) {
-            int chunkX = i * 16;
-            int chunkZ = i * 16;
+            // 固定在 baseX/baseZ 所在区域（第 WARM_CHUNKS 区域），只在其内偏移
+            int chunkX = baseX + (i % REGION_CHUNKS);
+            int chunkZ = baseZ + (i / REGION_CHUNKS);
             long start = System.nanoTime();
             field.ratioAt(chunkX, chunkZ);
             warm[i] = (int) (System.nanoTime() - start);
         }
-
-        // 区域粒度 16 → 256 个对角区块全部落在 1×1 个区域内，粗粒度只该采样一次
+        int newHits = field.cacheHits() - beforeHits;
+        int expectedNewRegions = WARM_CHUNKS / REGION_CHUNKS;
         assertEquals(
-                1,
-                field.coarseSamples(),
-                "对角线遍历下 256 个区块应只采一次粗粒度噪声（区域 16×16）");
-        assertEquals(WARM_CHUNKS, field.cacheHits(), "第二遍全部应命中缓存");
+                expectedNewRegions,
+                field.coarseSamples() - WARM_CHUNKS,
+                String.format(
+                        Locale.ROOT,
+                        "%d 个区块铺满 %d×%d 区域 → 粗粒度应只新增 %d 次采样",
+                        WARM_CHUNKS, REGION_CHUNKS, REGION_CHUNKS, expectedNewRegions));
+        assertEquals(WARM_CHUNKS - expectedNewRegions, newHits, "区域内除首个区块外都该命中缓存");
 
         report("cold", cold);
         report("warm", warm);
@@ -134,13 +146,15 @@ class AmbientQiBenchmarkTest {
     @Test
     void blockQueryPathIsAlsoWithinBudget() {
         AmbientQiField field = productionField();
-        for (int i = 0; i < 2000; i++) {
-            field.ratioAtBlock(i * 16 * 16, i * 16 * 16); // 预热
+        // 预热：跨区域铺一遍，让缓存进入"大部分命中"的状态（模拟玩家已在该区域活动过）
+        for (int region = 0; region < 2000; region++) {
+            field.ratioAtBlock(region * REGION_CHUNKS * 16, region * REGION_CHUNKS * 16);
         }
         int[] samples = new int[WARM_CHUNKS];
         for (int i = 0; i < WARM_CHUNKS; i++) {
             long start = System.nanoTime();
-            field.ratioAtBlock(i * 16 * 16, i * 16 * 16);
+            // 传入方块坐标（×16 换成方块），再回到同一批区域上查询 → 应全部命中粗粒度缓存
+            field.ratioAtBlock(i * REGION_CHUNKS * 16, i * REGION_CHUNKS * 16);
             samples[i] = (int) (System.nanoTime() - start);
         }
         report("blockQuery", samples);
