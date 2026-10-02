@@ -62,7 +62,7 @@ M0–M3 主链已闭环，M2 战斗域与 M4 world 域部分交付。
 - **战斗域**：法术弹道（同屏 ≤64、超距回收、穿透/AOE 半伤）、妖兽实体 AI、限速令牌桶与统一意图信封（fail-closed 校验）、`/strife spell cast`。
 - **生产域**：统一配方机（炼丹）——材料校验 → 扣除 → 区间抽签（Σprob<1 差额判废丹）、`/strife recipe list|show`。
 - **世界域**：灵气浓度场（`ImprovedNoise` 双层，粗粒度 16×16 区块一值 + 细化层，按世界种子+维度缓存）、草类方块草药掉落。
-- **内容管线**：30 个 DataGen 产物（见上手节），`*_key` 列从 NUMBERS `@@块` 内联展开，zh_cn/en_us lang 在库；11 项 Validator 门禁全绿（`checks=11 problems=0`），含 V-DSL 与 V-REF 二期。
+- **内容管线**：30 个 DataGen 产物（见上手节），`*_key` 列从 NUMBERS `@@块` 内联展开，zh_cn/en_us lang 在库；12 项 Validator 门禁全绿（`checks=12 problems=0`），含 V-DSL、V-REF 二期与 V-NAME（ID 用拼音、文本用中文，见 [docs/11](docs/11-命名与目录规范.md)）。
 - **质量基线**：单测 368 例全绿（platform 229 / buildSrc 7 / tools 132），`spotlessCheck build validator` 全绿，纯净服务端 jar 无头冒烟通过；`runClient` 客户端实测进世界、ERROR=0。
 - **资产**：8 张物品贴图 + 通用 NPC/妖兽贴图 + 全部模型 JSON 入库，生成方式与替换流程见 [CREDITS.md](CREDITS.md)。
 
