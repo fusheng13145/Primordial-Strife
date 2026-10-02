@@ -91,14 +91,35 @@ public final class StrifeClientFx {
         event.register(BREAKTHROUGH);
     }
 
-    /** NPC 渲染器注册：strife:npc 从注册表按资源 ID 取（注册期已完成，此处只读），不 import quest 类型。 */
+    /**
+     * 实体渲染器注册（NPC/妖兽/法术弹道）：实体类型从注册表按资源 ID 取（注册期已完成，此处只读）， 不 import quest/combat 类型（03 §2 client_fx
+     * 只依赖 core）。弹道缺失渲染器 = 进世界施法即崩客户端， 因此弹道（ThrownItemRenderer，渲染物 = 实体的 ItemSupplier）与 NPC 同为必注册项。
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        EntityType<?> npcType =
+        for (String type : new String[] {"npc", "monster"}) {
+            EntityType<?> entityType =
+                    BuiltInRegistries.ENTITY_TYPE.get(
+                            ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, type));
+            if (entityType == null) {
+                continue;
+            }
+            if ("npc".equals(type)) {
+                event.registerEntityRenderer((EntityType) entityType, StrifeNpcRenderer::new);
+            } else {
+                event.registerEntityRenderer((EntityType) entityType, StrifeMonsterRenderer::new);
+            }
+        }
+        EntityType<?> projectile =
                 BuiltInRegistries.ENTITY_TYPE.get(
-                        ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, "npc"));
-        if (npcType != null) {
-            event.registerEntityRenderer((EntityType) npcType, StrifeNpcRenderer::new);
+                        ResourceLocation.fromNamespaceAndPath(
+                                StrifeMod.MOD_ID, "spell_projectile"));
+        if (projectile != null) {
+            event.registerEntityRenderer(
+                    (EntityType) projectile,
+                    context ->
+                            new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(
+                                    context, 1.5f, true));
         }
     }
 

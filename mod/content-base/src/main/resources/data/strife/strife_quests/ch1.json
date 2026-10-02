@@ -1,0 +1,255 @@
+{
+  "@generated": "from tables/quests_ch1.csv @ sha256:9bd548a07357bba73690c04d918fc473ac72a39c9c187b5d872f72be4a6d5031",
+  "id": "quest_ch1_pingcang_survey_01",
+  "chapter": "ch1",
+  "quests": [
+    {
+    "id": "quest_ch1_pingcang_survey_01",
+    "entry": true,
+    "prerequisites": [],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "reach",
+    "target": "qi_wenjiang",
+    "count": 1,
+    "optional": false
+  },
+    {
+    "id": "2",
+    "type": "collect",
+    "target": "item_yaocai",
+    "count": 3,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "qi",
+    "id": null,
+    "count": 80,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_qingshi:ch1:survey_done",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ch1_pingcang_offer_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ch1_pingcang_survey_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_yuelai_deng",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "qi",
+    "id": null,
+    "count": 120,
+    "unlock_key": null
+  },
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "quest_line_ch1"
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ch1_pingcang_debt_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ch1_pingcang_offer_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "deliver",
+    "target": "npc_yaonong_su",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 10,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_qingshi",
+    "delta": 5
+  }
+  ],
+    "causality": [
+    {
+    "kind": "debt",
+    "subject_id": "npc_yaonong_su",
+    "note_key": "ch1_yaonong_debt"
+  }
+  ],
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ch1_pingcang_raid_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ch1_pingcang_debt_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "kill",
+    "target": "",
+    "count": 5,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_duanxue",
+    "count": 3,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ch1_pingcang_reckon_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ch1_pingcang_raid_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "survive",
+    "target": "",
+    "count": 180,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "qi",
+    "id": null,
+    "count": 200,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_qingshi:ch1:war_rumor",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": {
+    "sec": 180,
+    "fail_goto": "quest_ch1_pingcang_reckon_01"
+  },
+    "fail_goto": "quest_ch1_pingcang_reckon_01",
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ch1_jindan_gate_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ch1_pingcang_reckon_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "breakthrough",
+    "target": "bs_zhuji_jindan",
+    "count": 1,
+    "optional": false
+  },
+    {
+    "id": "2",
+    "type": "collect",
+    "target": "item_lingshi",
+    "count": 20,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "tribulation"
+  },
+    {
+    "type": "flag",
+    "id": "fac_qingshi:ch1:war_rumor",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  }
+  ]
+}

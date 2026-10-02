@@ -163,6 +163,51 @@ public final class DataGenMain {
                 throw new UncheckedIOException("cannot write product " + target, e);
             }
         }
+        cleanOrphans(products, resourcesRoot);
+    }
+
+    /**
+     * 孤儿产物清理（W4 演练的真实发现）：某源表的行被清空后，其旧产物仍留在 resources 里——内容凭空残留， 且 V-FRESH
+     * 会把它误报为"源表变了没重新生成"（噪声）。删除规则刻意保守：只删<b>带 {@code @generated} 头且不在本次预期集合内</b>的
+     * .json——手种资产（lang）与无头文件永不触碰。
+     */
+    static void cleanOrphans(List<Product> products, Path resourcesRoot) {
+        if (resourcesRoot == null || !Files.isDirectory(resourcesRoot)) {
+            return;
+        }
+        var expected =
+                products.stream()
+                        .map(Product::relativePath)
+                        .collect(java.util.stream.Collectors.toSet());
+        try (var files = Files.walk(resourcesRoot)) {
+            files.filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".json"))
+                    .filter(
+                            p -> {
+                                try {
+                                    return Files.readString(p).contains("\"@generated\"");
+                                } catch (IOException e) {
+                                    return false;
+                                }
+                            })
+                    .filter(
+                            p -> {
+                                String relative =
+                                        resourcesRoot.relativize(p).toString().replace('\\', '/');
+                                return !expected.contains(relative);
+                            })
+                    .forEach(
+                            p -> {
+                                try {
+                                    Files.delete(p);
+                                    System.out.println("datagen: removed orphan product " + p);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException("cannot delete orphan " + p, e);
+                                }
+                            });
+        } catch (IOException e) {
+            throw new UncheckedIOException("orphan scan failed", e);
+        }
     }
 
     static Options parse(String[] args) {

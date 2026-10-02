@@ -31,7 +31,8 @@ import net.minecraft.world.phys.Vec3;
  *       一次性结算（半伤）。伤害源挂施法者，击杀进标准击杀事件链（妖兽/任务 kill 共用）。
  * </ul>
  */
-public class SpellProjectile extends Projectile {
+public class SpellProjectile extends Projectile
+        implements net.minecraft.world.entity.projectile.ItemSupplier {
 
     /** 同屏上限（docs/07 §7"≤64 同屏"——施法入口强制）。 */
     public static final int MAX_ALIVE = 64;
@@ -153,5 +154,11 @@ public class SpellProjectile extends Projectile {
     @Override
     public boolean shouldBeSaved() {
         return false;
+    }
+
+    /** 弹道的客户端渲染物：原版火焰弹（04 §7 占位资产策略——借原版贴图，火球术视觉；per-法术贴图 属美术管线迭代）。只影响显示，不影响服务端判定。 */
+    @Override
+    public net.minecraft.world.item.ItemStack getItem() {
+        return new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.FIRE_CHARGE);
     }
 }
