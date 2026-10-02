@@ -57,7 +57,9 @@ public final class DataGenMain {
                 new QuestGenerator("quests_prologue.csv"),
                 new QuestGenerator("quests_ch1.csv"),
                 new DialogTreeGenerator("dialog_trees_prologue.csv"),
-                new DialogTreeGenerator("dialog_trees_ch1.csv"));
+                new DialogTreeGenerator("dialog_trees_ch1.csv"),
+                new DialogTextGenerator("prologue"),
+                new DialogTextGenerator("ch1"));
     }
 
     /** Registered NUMBERS-driven generators (domains with no CSV table, JSON_SCHEMA §4.1). */

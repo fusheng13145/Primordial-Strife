@@ -5,6 +5,7 @@ import com.strife.quest.dialog.DialogBook.TreeSpec;
 import com.strife.quest.dialog.DialogPayloads.Open;
 import com.strife.quest.dialog.DialogRunner.EffectSink;
 import com.strife.quest.engine.QuestAdapter;
+import com.strife.quest.engine.QuestBook;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,10 @@ public final class DialogSessions {
         adapter.flush();
         if (outcome.ended()) {
             SESSIONS.remove(player.getUUID());
+            // 与 NPC 说完一段对话 = 任务语义的 talk；同报 deliver（report 只对真正有 deliver 目标的
+            // 任务生效，无匹配是 no-op）——"带齐东西来对话"即交付完成，物品流转由对话树 take_item 声明。
+            QuestAdapter.interact(player, QuestBook.ObjectiveType.TALK, session.tree().npc());
+            QuestAdapter.interact(player, QuestBook.ObjectiveType.DELIVER, session.tree().npc());
             StrifeNetwork.sendTo(player, Open.TERMINATED);
         } else {
             push(player, session);
@@ -123,6 +128,20 @@ public final class DialogSessions {
             @Override
             public void giveItem(String itemId, long count) {
                 adapter.giveItem(itemId, count);
+            }
+
+            @Override
+            public boolean takeItem(String itemId, long count) {
+                if (countOwned(player(), itemId) < count) {
+                    return false;
+                }
+                long remaining = count;
+                // 先主背包后末影箱（与 COLLECT 对账的 countOwned 同一覆盖面）
+                remaining -= removeFrom(player().getInventory(), itemId, remaining);
+                if (remaining > 0) {
+                    remaining -= removeFrom(player().getEnderChestInventory(), itemId, remaining);
+                }
+                return remaining <= 0;
             }
 
             @Override
@@ -198,5 +217,55 @@ public final class DialogSessions {
     private static String text(
             MinecraftServer server, DialogRunner.Session session, String textKey) {
         return DialogLibrary.text(server, session.book().chapter(), textKey);
+    }
+
+    /** 某物品在容器里的持有量（与 QuestAdapter 的对账口径一致：主背包 + 末影箱）。 */
+    private static long countOwned(ServerPlayer player, String itemId) {
+        net.minecraft.world.item.Item item = resolveItem(itemId);
+        if (item == null) {
+            return 0;
+        }
+        return countIn(player.getInventory(), item)
+                + countIn(player.getEnderChestInventory(), item);
+    }
+
+    private static net.minecraft.world.item.Item resolveItem(String itemId) {
+        return net.minecraft.core.registries.BuiltInRegistries.ITEM
+                .getOptional(
+                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                "strife", itemId))
+                .orElse(null);
+    }
+
+    private static long countIn(
+            net.minecraft.world.Container container, net.minecraft.world.item.Item item) {
+        long count = 0;
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            net.minecraft.world.item.ItemStack stack = container.getItem(i);
+            if (stack.getItem() == item) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    /** 从容器扣除至多 amount 个指定物品；返回实际扣除数（物品未注册按 0——热更内容不炸运行时）。 */
+    private static long removeFrom(
+            net.minecraft.world.Container container, String itemId, long amount) {
+        net.minecraft.world.item.Item item = resolveItem(itemId);
+        if (item == null) {
+            return 0;
+        }
+        long removed = 0;
+        for (int i = 0; i < container.getContainerSize() && removed < amount; i++) {
+            net.minecraft.world.item.ItemStack stack = container.getItem(i);
+            if (stack.getItem() != item) {
+                continue;
+            }
+            int take = (int) Math.min(stack.getCount(), amount - removed);
+            stack.shrink(take);
+            removed += take;
+        }
+        return removed;
     }
 }

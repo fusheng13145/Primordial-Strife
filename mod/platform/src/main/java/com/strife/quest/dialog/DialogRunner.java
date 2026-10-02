@@ -19,10 +19,11 @@ import java.util.List;
  * <p>遍历模型（`[拟]` 语义，已登记 JSON_SCHEMA §4.7）：
  *
  * <ol>
- *   <li>进入树从 {@code root} 开始；节点带 {@code conditions} 且不满足 → 沿 {@code next} 旁路（线性条件链）；
- *   <li>决策节点（有 options）停下等玩家选择；无选项但有 next 的节点在进入时自动前进；两者皆无 = 终端；
- *   <li>选项执行自身 effects 后跳 {@code next}；next 为空 = 对话结束，随后执行树级 {@code effects} 一次；
- *   <li>跳转累计深度不得超过 {@code max_depth_levels}（防表写错成环）；回环同样被深度拦住——表写错是内容 bug， 不是运行时特征，必须炸出来而不是转圈。
+ *   <li>进入树从 {@code root} 开始；带 conditions 的节点是<b>门</b>——条件不满足沿 {@code next} 旁路（看下一个门
+ *       或兜底节点），满足则停（决策节点等玩家选）；
+ *   <li>无条件的顺序节点（只有 next）进入时自动前进；选项执行自身 effects 后跳 {@code next}；next 为空 = 对话结束，随后执行树级 {@code
+ *       effects} 一次；
+ *   <li>选项跳转重置深度计数（玩家驱动的循环叙事合法）；门链推进累计深度，超过 {@code max_depth_levels} 即炸（门写成环是内容 bug，不是运行时特征）。
  * </ol>
  */
 public final class DialogRunner {
@@ -35,6 +36,9 @@ public final class DialogRunner {
         void addReputation(String factionId, int delta);
 
         void giveItem(String itemId, long count);
+
+        /** {@code take_item}：从玩家库存扣物品；持有不足返回 false（交付选项必须配 item() 条件兜底）。 */
+        boolean takeItem(String itemId, long count);
 
         void startQuest(String questId);
 
@@ -145,7 +149,9 @@ public final class DialogRunner {
             return end(session, context, sink);
         }
         session.nodeId = option.next();
-        session.depth++;
+        // 深度计数重置：选项跳转是玩家驱动的（"回上一级""再打听一件事"这类循环叙事是合法设计），
+        // max_depth 防的是条件链 next 成环（无输入的自动流转，见 advanceToStop）。
+        session.depth = 0;
         advanceToStop(session, context);
         return new ChooseOutcome(false, session.nodeId);
     }
@@ -184,6 +190,19 @@ public final class DialogRunner {
                     throw badArgs(effect, "expected <item_id>:<count>");
                 }
                 sink.giveItem(parts[0], Long.parseLong(parts[1].trim()));
+            }
+            case TAKE_ITEM -> {
+                // args=<item_id>:<count>；持有不足 = 内容错误（选项条件应已兜底），fail-fast 不静默
+                String[] parts = requireArgs(effect, args).split(":", 2);
+                if (parts.length != 2) {
+                    throw badArgs(effect, "expected <item_id>:<count>");
+                }
+                if (!sink.takeItem(parts[0], Long.parseLong(parts[1].trim()))) {
+                    throw new IllegalStateException(
+                            "take_item "
+                                    + args
+                                    + " but player does not hold enough（交付选项必须配 item() 条件兜底）");
+                }
             }
             case START_QUEST -> sink.startQuest(requireArgs(effect, args));
             case COMPLETE_NODE -> {
@@ -224,7 +243,10 @@ public final class DialogRunner {
         return new ChooseOutcome(true, null);
     }
 
-    /** 条件链前进：conditions 不满足的节点沿 next 旁路，直到停下点（决策节点 / 满足条件的节点 / 终端）。 */
+    /**
+     * 条件门链推进（docs/03 §10 语义）：带 conditions 的节点是<b>门</b>——条件不满足沿 {@code next} 旁路
+     * （"没话对你说"，链条走到下一个门或兜底节点）；满足则停下（决策节点等玩家选，纯终端就是没话说）。 无条件的顺序节点（只有 next）自动前进。深度只在门链上累计，防表把门写成了环。
+     */
     private static void advanceToStop(Session session, ConditionExpression.Context context) {
         while (true) {
             session.depth++;
@@ -236,24 +258,21 @@ public final class DialogRunner {
                                 + session.tree.maxDepthLevels()
                                 + " at node '"
                                 + session.nodeId
-                                + "'（§4.7 求值上限——表大概率写成了环）");
+                                + "'（§4.7 求值上限——门链大概率写成了环）");
             }
             NodeSpec node = session.node();
             boolean conditionsMet =
                     node.conditions() == null || ConditionDsl.satisfies(node.conditions(), context);
             if (!conditionsMet) {
-                // 条件旁路：条件不满足的节点直接跳过；无 next 可跳 = 没话可说（终端）
+                // 门未开：沿 next 旁路本节点；无 next = 没话可说（终端）
                 if (node.next() == null) {
                     return;
                 }
                 session.nodeId = node.next();
                 continue;
             }
-            // 条件满足：决策节点（有选项）停下；顺序流转节点（无选项有 next）自动前进；终端停下
-            if (node.options() != null) {
-                return;
-            }
-            if (node.next() == null) {
+            // 门已开（或本就无条件）：决策节点停下；顺序流转节点自动前进；纯终端停下
+            if (node.options() != null || node.next() == null) {
                 return;
             }
             session.nodeId = node.next();

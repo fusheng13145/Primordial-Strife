@@ -204,6 +204,23 @@ DAG 完备性（04 §6 `[锚]`）：无环、章节入口可达全部必做节�
 
 `rewards.type` 语义补注（`[拟]`，待 C 审定）：`realm_step` = 小境界推进一档——修为直接置为下一档阈值（与 §4.1 `stage_count` 的等分口径一致，`qi_max × stage / stage_count`）；已在满段时给到 `qi_max`（境界圆满，获得主动押注突破资格，不自动突破）。境界序号、寿元、突破失败计数均不变。
 
+对话树 effects 语义补注（`[拟]`，待 C 审定；§4.7 `effects` 八型，args 语法逐型冻结）：
+
+| type | args 语法 | 语义 |
+|---|---|---|
+| `set_flag` | `<flag键>` | 落玩家 H3 flag |
+| `reputation` | `<fac_id>:<delta>` | 声望向量增减，delta ∈ [-100,100] |
+| `give_item` | `<item_id>:<count>` | 发放物品（注册名 = 内容 ID 全名） |
+| `take_item` | `<item_id>:<count>` | **交付闭合面**：从玩家库存扣物品（先主背包后末影箱）；持有不足 = 内容错误（选项必须配 `item()` 条件兜底），fail-fast |
+| `start_quest` | `<quest_id>` | 激活任务（跳过 prerequisites，conditions 仍生效）；激活集随任务进度持久化 |
+| `complete_node` | 可空（默认 `dlg:<tree>:<node>`） | 节点完成记忆（落 H3 flag 命名空间，conditions 可用 `flag()` 引用做一次性节点） |
+| `play_sound` | `<sound_id>[:<volume>:<pitch>]` | 客户端音效，缺省 volume/pitch = 1.0 |
+| `teleport` | `<x>,<y>,<z>[,<dimension>]` | 绝对坐标传送；缺省维度 = 当前维度 |
+
+遍历模型（`[拟]`，与 `DialogRunner` 实现对齐）：带 `conditions` 的节点是**门**——条件不满足沿 `next` 旁路（看下一个门或兜底节点），满足则停（决策节点等玩家选）；无条件的顺序节点（只有 `next`）进入时自动前进；选项 `next` 为空 = 对话结束，随后执行树级 `effects` 一次。选项跳转重置深度计数（玩家驱动的循环叙事合法），门链推进累计深度受 `max_depth_levels` 约束（门写成环 = 内容 bug，构建期炸）。带 conditions 的门节点允许 `options` 与 `next` 共存；无条件节点不得共存。
+
+任务联动（`[拟]`）：对话自然结束（玩家走完分支到终端）时装配层自动报一次 `talk` 与 `deliver`（target = 树的 npc；report 对无匹配目标是 no-op）。交付物由对话树的 `take_item` 声明流转，引擎不反查内容——"带齐东西来对话"即交付完成，Esc 关闭不报（任务对话必须走完才算交互）。
+
 产物形态（`[拟]`，DataGen 已实现）：一章一文件 `data/strife/strife_quests/<章>.json`，文件 `id` = 该章 `entry=true` 的任务 ID，全部行按表序进 `quests` 数组；每行字段同上表。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名章段一致——空表合法（章内容未写）。
 
 ### 4.7 `dialog_trees` — 对话树（`tables/dialog_trees_<章>.csv`，一章一文件）
@@ -260,6 +277,7 @@ CMP     := '>=' | '<=' | '==' | '!='
 - 上述前缀是 lang key 的**唯一**生成来源：`display_name_key` 一类字段只写已登记前缀拼出的 key，Validator 按 §7 `V-TEXT` 反查；缺前缀 = 契约漏项，走 ADR 补登记，不得在表里自造新前缀。
 - zh_cn 缺失 = 构建失败；en_us 允许占位但**不得为空串**（04 §6）。
 - 对话文本源在 `tables/dialog_<章>_text.csv`（05 §7 流程产物），每节点要求 `text` + `variant_a` + `variant_b`（05 §7"文本 + 变体 2 个"），只有 `text` 进 lang，变体进台账供人工润色挑选。
+- 对话文本的**运行时通道**（`[拟]`，本轮起草）：DataGen 由 `dialog_<章>_text.csv` 生成独立产物 `data/strife/dialog_text/<章>.json`（`texts` 映射 = `dialog.strife.<条目id>` → 正文），服务端在对话打开/推进时把成品文本随 S2C 包下发，客户端零 lang 依赖。理由：lang 文件是人工润色资产（无 `@generated` 头、不参与 V-FRESH），生成器合并写它会把"生成"与"手种"两种来源混进一个不可审计的文件。条目 id 约定：节点行 = 节点 id；选项行 = `<node_id>_opt<N>`（N 按 options 序从 1 起）。`V-TEXT` 对该产物反查与 `dialog_trees` 的 text_key 对应。
 - 版权红线（05 §7）：任何进 lang 的字符串不得含网文专名（调研用语清单见 LORE §7 禁用词表）。
 
 ### 4.11 表目录占位不填（`[占位]`，04 §2 末 / 09 F）

@@ -1,0 +1,296 @@
+{
+  "@generated": "from tables/dialog_trees_prologue.csv @ sha256:fb68c2b2e5a94e7ce28345178e82dc019b875b4ee5ee91430c14c8a05df9f798",
+  "id": "nd_elder_gate_done",
+  "chapter": "prologue",
+  "trees": [
+    {
+    "id": "dlg_prologue_elder",
+    "npc": "npc_qingshi_zhizhi",
+    "root": "nd_elder_gate_done",
+    "nodes": [
+    {
+    "id": "nd_elder_gate_done",
+    "speaker": "智执",
+    "text_key": "dialog.strife.nd_elder_gate_done",
+    "conditions": "flag(fac_qingshi:prologue:saw_debt)",
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_elder_gate_done_opt1",
+    "next": "nd_elder_teach"
+  },
+    {
+    "text_key": "dialog.strife.nd_elder_gate_done_opt2",
+    "next": "nd_elder_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_elder_gate_met",
+    "speaker": "智执",
+    "text_key": "dialog.strife.nd_elder_gate_met",
+    "conditions": "flag(fac_qingshi:prologue:met_elder)",
+    "next": "nd_elder_story",
+    "options": null
+  },
+    {
+    "id": "nd_elder_story",
+    "speaker": "智执",
+    "text_key": "dialog.strife.nd_elder_story",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_elder_story_opt1",
+    "next": "nd_elder_debt"
+  },
+    {
+    "text_key": "dialog.strife.nd_elder_story_opt2",
+    "next": "nd_elder_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_elder_debt",
+    "speaker": "智执",
+    "text_key": "dialog.strife.nd_elder_debt",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_elder_debt_opt1",
+    "next": "nd_elder_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_elder_meet",
+    "speaker": "智执",
+    "text_key": "dialog.strife.nd_elder_meet",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_elder_meet_opt1",
+    "next": "nd_elder_teach"
+  },
+    {
+    "text_key": "dialog.strife.nd_elder_meet_opt2",
+    "next": "nd_elder_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_elder_teach",
+    "speaker": "智执",
+    "text_key": "dialog.strife.nd_elder_teach",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_elder_teach_opt1",
+    "effects": "((type=set_flag;args=fac_qingshi:prologue:accepted_herb))",
+    "next": "nd_elder_bye"
+  },
+    {
+    "text_key": "dialog.strife.nd_elder_teach_opt2",
+    "next": "nd_elder_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_elder_bye",
+    "speaker": "智执",
+    "text_key": "dialog.strife.nd_elder_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 16
+  },
+    {
+    "id": "dlg_prologue_herbalist",
+    "npc": "npc_yaonog_su",
+    "root": "nd_herb_gate_task",
+    "nodes": [
+    {
+    "id": "nd_herb_gate_task",
+    "speaker": "苏氏",
+    "text_key": "dialog.strife.nd_herb_gate_task",
+    "conditions": "flag(fac_qingshi:prologue:accepted_herb)",
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_herb_gate_task_opt1",
+    "conditions": "item(item_ningxu:6)",
+    "effects": "((type=take_item;args=item_ningxu:6)|(type=set_flag;args=fac_qingshi:prologue:herb_delivered)|(type=reputation;args=fac_qingshi:5)|(type=play_sound;args=strife:ui.coin))",
+    "next": "nd_herb_done"
+  },
+    {
+    "text_key": "dialog.strife.nd_herb_gate_task_opt2",
+    "next": "nd_herb_chat"
+  }
+  ]
+  },
+    {
+    "id": "nd_herb_gate_fresh",
+    "speaker": "苏氏",
+    "text_key": "dialog.strife.nd_herb_gate_fresh",
+    "conditions": "!flag(fac_qingshi:prologue:accepted_herb)",
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_herb_gate_fresh_opt1",
+    "next": "nd_herb_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_herb_chat",
+    "speaker": "苏氏",
+    "text_key": "dialog.strife.nd_herb_chat",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_herb_chat_opt1",
+    "next": "nd_herb_gate_task"
+  }
+  ]
+  },
+    {
+    "id": "nd_herb_done",
+    "speaker": "苏氏",
+    "text_key": "dialog.strife.nd_herb_done",
+    "conditions": null,
+    "next": null,
+    "options": null
+  },
+    {
+    "id": "nd_herb_bye",
+    "speaker": "苏氏",
+    "text_key": "dialog.strife.nd_herb_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 8
+  },
+    {
+    "id": "dlg_prologue_innkeeper",
+    "npc": "npc_yuelai_deng",
+    "root": "nd_inn_welcome",
+    "nodes": [
+    {
+    "id": "nd_inn_welcome",
+    "speaker": "邓掌柜",
+    "text_key": "dialog.strife.nd_inn_welcome",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_inn_welcome_opt1",
+    "next": "nd_inn_rumor"
+  },
+    {
+    "text_key": "dialog.strife.nd_inn_welcome_opt2",
+    "next": "nd_inn_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_inn_rumor",
+    "speaker": "邓掌柜",
+    "text_key": "dialog.strife.nd_inn_rumor",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_inn_rumor_opt1",
+    "next": "nd_inn_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_inn_bye",
+    "speaker": "邓掌柜",
+    "text_key": "dialog.strife.nd_inn_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 8
+  },
+    {
+    "id": "dlg_prologue_taishang",
+    "npc": "npc_taishang_wu",
+    "root": "nd_sect_gate_ready",
+    "nodes": [
+    {
+    "id": "nd_sect_gate_ready",
+    "speaker": "太上乌",
+    "text_key": "dialog.strife.nd_sect_gate_ready",
+    "conditions": "flag(prologue:ready_to_zhuji)",
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_sect_gate_ready_opt1",
+    "effects": "((type=set_flag;args=prologue:sect_qingxin)|(type=reputation;args=fac_qingshi:15))",
+    "next": "nd_sect_qingxin"
+  },
+    {
+    "text_key": "dialog.strife.nd_sect_gate_ready_opt2",
+    "effects": "((type=set_flag;args=prologue:sect_wangchao)|(type=reputation;args=fac_wangchao:15))",
+    "next": "nd_sect_wangchao"
+  }
+  ]
+  },
+    {
+    "id": "nd_sect_gate_fresh",
+    "speaker": "太上乌",
+    "text_key": "dialog.strife.nd_sect_gate_fresh",
+    "conditions": "!flag(prologue:ready_to_zhuji)",
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_sect_gate_fresh_opt1",
+    "next": "nd_sect_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_sect_qingxin",
+    "speaker": "太上乌",
+    "text_key": "dialog.strife.nd_sect_qingxin",
+    "conditions": null,
+    "next": null,
+    "options": null
+  },
+    {
+    "id": "nd_sect_wangchao",
+    "speaker": "太上乌",
+    "text_key": "dialog.strife.nd_sect_wangchao",
+    "conditions": null,
+    "next": null,
+    "options": null
+  },
+    {
+    "id": "nd_sect_bye",
+    "speaker": "太上乌",
+    "text_key": "dialog.strife.nd_sect_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 8
+  }
+  ]
+}

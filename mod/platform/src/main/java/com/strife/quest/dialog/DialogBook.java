@@ -24,11 +24,16 @@ import java.util.Map;
  */
 public final class DialogBook {
 
-    /** §4.7 effects.type 枚举（`[拟]` 语义补注已登记真相源：args 语法见 {@code DialogRunner#parseEffect}）。 */
+    /**
+     * §4.7 effects.type 枚举（`[拟]` 语义补注已登记真相源：args 语法见 {@code DialogRunner#applyEffect}）。 {@code
+     * TAKE_ITEM} 是本轮 ` [拟]` 新起草的交付闭合面：deliver 目标只记进度，物品流转由对话树的 take_item 声明（引擎记进度、内容声明流转——03 §2
+     * 原语与剧本分离的分工）。
+     */
     public enum EffectType {
         SET_FLAG,
         REPUTATION,
         GIVE_ITEM,
+        TAKE_ITEM,
         START_QUEST,
         COMPLETE_NODE,
         PLAY_SOUND,
@@ -237,13 +242,16 @@ public final class DialogBook {
                         "node '" + id + "' of tree '" + treeId + "' has an empty options array");
             }
         }
-        if (options != null && next != null) {
+        if (options != null && next != null && conditions == null) {
+            // gate 模式合法：带 conditions 的节点满足时作决策点停、不满足沿 next 旁路（DialogRunner 门语义）。
+            // 无条件节点同时有 options 与 next 才是歧义（决策与自动流转无法共存）。
             throw new IllegalStateException(
                     "node '"
                             + id
                             + "' of tree '"
                             + treeId
-                            + "' has both next and options（§4.7：决策节点不流转，流转节点不决策）");
+                            + "' has both next and options without conditions（§4.7：决策与自动流转不能共存；"
+                            + "带 conditions 的门节点除外）");
         }
         return new NodeSpec(
                 id,

@@ -31,6 +31,7 @@ class DialogBookTest {
         final List<String> flags = new ArrayList<>();
         final List<String> reputation = new ArrayList<>();
         final List<String> items = new ArrayList<>();
+        final List<String> taken = new ArrayList<>();
         final List<String> quests = new ArrayList<>();
         final List<String> completedNodes = new ArrayList<>();
         final List<String> sounds = new ArrayList<>();
@@ -49,6 +50,12 @@ class DialogBookTest {
         @Override
         public void giveItem(String itemId, long count) {
             items.add(itemId + "x" + count);
+        }
+
+        @Override
+        public boolean takeItem(String itemId, long count) {
+            taken.add(itemId + "x" + count);
+            return true; // 录制器默认"持有充足"——持有不足路径由装配层测试覆盖
         }
 
         @Override
@@ -315,7 +322,7 @@ class DialogBookTest {
     }
 
     @Test
-    @DisplayName("全部七种 effects 的 args 语法逐条落地")
+    @DisplayName("全部八种 effects 的 args 语法逐条落地")
     void allSevenEffectTypesParseAndLand() {
         String all =
                 """
@@ -328,6 +335,7 @@ class DialogBookTest {
                           {"type": "set_flag", "args": "fac_qingshi:prologue:met"},
                           {"type": "reputation", "args": "fac_qingshi:-5"},
                           {"type": "give_item", "args": "item_lingshi:3"},
+                          {"type": "take_item", "args": "item_ningxu:6"},
                           {"type": "start_quest", "args": "quest_ch1_pingcang_survey_01"},
                           {"type": "complete_node"},
                           {"type": "play_sound", "args": "strife:ui.coin"},
@@ -344,10 +352,22 @@ class DialogBookTest {
         assertEquals(List.of("fac_qingshi:prologue:met"), sink.flags);
         assertEquals(List.of("fac_qingshi:-5"), sink.reputation);
         assertEquals(List.of("item_lingshix3"), sink.items);
+        assertEquals(List.of("item_ningxux6"), sink.taken, "take_item 记账（扣物品由装配层落地）");
         assertEquals(List.of("quest_ch1_pingcang_survey_01"), sink.quests);
         assertEquals(List.of("dlg:t:r1"), sink.completedNodes);
         assertEquals(List.of("strife:ui.coin:1.0:1.0"), sink.sounds, "缺省 volume/pitch = 1.0");
         assertEquals(List.of("1.5,64.0,-3.5"), sink.teleports, "无维度段 = 当前维度");
+    }
+
+    @Test
+    @DisplayName("EffectType 枚举覆盖 §4.7 全集（含 [拟] take_item）")
+    void effectTypeCoversSchema() {
+        assertEquals(8, EffectType.values().length);
+        assertEquals(EffectType.SET_FLAG, DialogBook.EffectType.fromId("set_flag"));
+        assertEquals(EffectType.COMPLETE_NODE, DialogBook.EffectType.fromId("complete_node"));
+        assertEquals(EffectType.TAKE_ITEM, DialogBook.EffectType.fromId("take_item"));
+        assertEquals(EffectType.TELEPORT, DialogBook.EffectType.fromId("teleport"));
+        assertFalse(EffectType.fromId("explode") != null);
     }
 
     @Test
@@ -405,15 +425,5 @@ class DialogBookTest {
                 """;
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> book(dup));
         assertTrue(e.getMessage().contains("two dialog trees"), e.getMessage());
-    }
-
-    @Test
-    @DisplayName("EffectType 枚举覆盖 §4.7 全集")
-    void effectTypeCoversSchema() {
-        assertEquals(7, EffectType.values().length);
-        assertEquals(EffectType.SET_FLAG, DialogBook.EffectType.fromId("set_flag"));
-        assertEquals(EffectType.COMPLETE_NODE, DialogBook.EffectType.fromId("complete_node"));
-        assertEquals(EffectType.TELEPORT, DialogBook.EffectType.fromId("teleport"));
-        assertFalse(EffectType.fromId("explode") != null);
     }
 }
