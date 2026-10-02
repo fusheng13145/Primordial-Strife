@@ -232,7 +232,14 @@ public final class ValidatorMain {
                     problems.add(table + ":" + (row + 1) + ": row has no id");
                     continue;
                 }
-                seen.computeIfAbsent(cells.get(0), k -> new ArrayList<>())
+                // 对话文本表的条目 id 与同章树的节点 id 是契约内的共享命名空间（JSON_SCHEMA §4.10：
+                // "节点行 id = 节点 id"，key 派生 dialog.strife.<条目id>）——给它独立 key 空间，
+                // 避免 V-DUP 把合法共享误判为跨表冲突；表内唯一性检查不受影响。
+                String key = cells.get(0);
+                if (fileName.startsWith("dialog_") && fileName.endsWith("_text.csv")) {
+                    key = "dialog.strife." + key;
+                }
+                seen.computeIfAbsent(key, k -> new ArrayList<>())
                         .add(new Declaration("tables/" + fileName, table + ":" + (row + 1), true));
             }
         }
@@ -420,6 +427,9 @@ public final class ValidatorMain {
             case "strife_spells" -> "spell.strife." + id;
             case "strife_pills" -> "item.strife." + id;
             case "strife_artifacts" -> "artifact.strife." + id;
+            // 对话域刻意无 lang 规则：文本走独立产物 dialog_text/<章>.json（§4.10 运行时通道，[拟]），
+            // 服务端随 S2C 下发成品文本；text_key ↔ 文本表条目的对应由 DialogTextGenerator 覆盖校验 + V-REF 二期把守。
+            case "dialog_trees", "dialog_text" -> null;
             case "strife_factions" ->
                     object.has("display_name_key")
                                     && object.get("display_name_key").isJsonPrimitive()
@@ -1209,6 +1219,430 @@ public final class ValidatorMain {
         return domainOf(file, options) != null && domain.equals(domainOf(file, options));
     }
 
+    /**
+     * V-REF 第二期（docs/04 §6 / JSON_SCHEMA §7）：跨域内容 ID 引用校验——任务奖励与对话 effects 引用的 功法/法术/物品/任务/势力，任务目标的
+     * item_/npc_ target，对话树的 npc，全部必须能落到源表主键、 lang 物品键或 LORE NPC 卡；缺口引用进 known-placeholders 白名单放行。
+     *
+     * <p>物品没有源表（物品注册在代码里，03 §1 production 职责），lang 的 {@code item.strife.<id>} 键是
+     * "物品已注册且有显示名"的代理证据——V-TEXT 保证 lang 完整，V-REF 二期只负责引用面。
+     */
+    public static List<String> referenceExistencePhase2(Options options) {
+        List<String> problems = new ArrayList<>();
+        Set<String> whitelist = placeholderWhitelist(options);
+        Set<String> techniqueIds = tableIdSet(options, "techniques.csv");
+        Set<String> spellIds = tableIdSet(options, "spells.csv");
+        Set<String> pillIds = tableIdSet(options, "pills.csv");
+        Set<String> factionIds = tableIdSet(options, "factions.csv");
+        Set<String> itemIds = langItemIds(options);
+        itemIds.addAll(pillIds);
+        Set<String> npcIds = loreNpcIds(options, problems);
+        Set<String> questIds = questIds(options);
+
+        for (Path file : jsonFiles(options.dataRoot())) {
+            String domain = domainOf(file, options);
+            JsonElement root = parse(file);
+            if (domain == null || !root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            switch (domain) {
+                case "strife_quests" -> {
+                    for (JsonElement element : arrayOrEmptyOf(object, "quests")) {
+                        if (!element.isJsonObject()) {
+                            continue;
+                        }
+                        JsonObject quest = element.getAsJsonObject();
+                        String questId = stringOrNull(quest.get("id"));
+                        String prefix = file + " quest '" + questId + "'";
+                        for (JsonElement reward : arrayOrEmptyOf(quest, "rewards")) {
+                            if (!reward.isJsonObject()) {
+                                continue;
+                            }
+                            JsonObject rewardObject = reward.getAsJsonObject();
+                            String type = stringOrNull(rewardObject.get("type"));
+                            String id = stringOrNull(rewardObject.get("id"));
+                            if (id == null) {
+                                continue;
+                            }
+                            switch (type == null ? "" : type) {
+                                case "item" ->
+                                        checkId(
+                                                problems,
+                                                prefix + " rewards",
+                                                "item",
+                                                id,
+                                                itemIds,
+                                                whitelist);
+                                case "technique" ->
+                                        checkId(
+                                                problems,
+                                                prefix + " rewards",
+                                                "technique",
+                                                id,
+                                                techniqueIds,
+                                                whitelist);
+                                case "spell" ->
+                                        checkId(
+                                                problems,
+                                                prefix + " rewards",
+                                                "spell",
+                                                id,
+                                                spellIds,
+                                                whitelist);
+                                case "reputation" ->
+                                        checkId(
+                                                problems,
+                                                prefix + " rewards",
+                                                "faction",
+                                                id,
+                                                factionIds,
+                                                whitelist);
+                                default -> {}
+                            }
+                        }
+                        for (JsonElement objective : arrayOrEmptyOf(quest, "objectives")) {
+                            if (!objective.isJsonObject()) {
+                                continue;
+                            }
+                            JsonObject target = objective.getAsJsonObject();
+                            String type = stringOrNull(target.get("type"));
+                            String value = stringOrNull(target.get("target"));
+                            if (value == null) {
+                                continue;
+                            }
+                            if ("collect".equals(type) && value.startsWith("item_")) {
+                                checkId(
+                                        problems,
+                                        prefix + " objectives",
+                                        "item",
+                                        value,
+                                        itemIds,
+                                        whitelist);
+                            } else if (("talk".equals(type) || "deliver".equals(type))
+                                    && value.startsWith("npc_")) {
+                                checkId(
+                                        problems,
+                                        prefix + " objectives",
+                                        "npc",
+                                        value,
+                                        npcIds,
+                                        whitelist);
+                            }
+                        }
+                    }
+                }
+                case "dialog_trees" -> {
+                    for (JsonElement treeElement : arrayOrEmptyOf(object, "trees")) {
+                        if (!treeElement.isJsonObject()) {
+                            continue;
+                        }
+                        JsonObject tree = treeElement.getAsJsonObject();
+                        String treeId = stringOrNull(tree.get("id"));
+                        String npc = stringOrNull(tree.get("npc"));
+                        if (npc != null) {
+                            checkId(
+                                    problems,
+                                    file + " tree '" + treeId + "'",
+                                    "npc",
+                                    npc,
+                                    npcIds,
+                                    whitelist);
+                        }
+                        for (JsonElement nodeElement : arrayOrEmptyOf(tree, "nodes")) {
+                            if (!nodeElement.isJsonObject()) {
+                                continue;
+                            }
+                            JsonObject node = nodeElement.getAsJsonObject();
+                            String nodeWhere =
+                                    file
+                                            + " tree '"
+                                            + treeId
+                                            + "' node '"
+                                            + stringOrNull(node.get("id"))
+                                            + "'";
+                            for (JsonElement optionElement : arrayOrEmptyOf(node, "options")) {
+                                if (!optionElement.isJsonObject()) {
+                                    continue;
+                                }
+                                for (JsonElement effect :
+                                        arrayOrEmptyOf(
+                                                optionElement.getAsJsonObject(), "effects")) {
+                                    if (!effect.isJsonObject()) {
+                                        continue;
+                                    }
+                                    JsonObject effectObject = effect.getAsJsonObject();
+                                    String type = stringOrNull(effectObject.get("type"));
+                                    String args = stringOrNull(effectObject.get("args"));
+                                    if (args == null) {
+                                        continue;
+                                    }
+                                    String[] parts = args.trim().split("[:,]", -1);
+                                    String head = parts.length > 0 ? parts[0].trim() : "";
+                                    switch (type == null ? "" : type) {
+                                        case "give_item", "take_item" ->
+                                                checkId(
+                                                        problems, nodeWhere, "item", head, itemIds,
+                                                        whitelist);
+                                        case "start_quest" ->
+                                                checkId(
+                                                        problems, nodeWhere, "quest", head,
+                                                        questIds, whitelist);
+                                        case "reputation" ->
+                                                checkId(
+                                                        problems,
+                                                        nodeWhere,
+                                                        "faction",
+                                                        head,
+                                                        factionIds,
+                                                        whitelist);
+                                        default -> {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                default -> {}
+            }
+        }
+        return problems;
+    }
+
+    /** 引用落点检查：主键集合或白名单任一命中即通过（白名单必须挂 issue 号，禁止长期驻留）。 */
+    private static void checkId(
+            List<String> problems,
+            String where,
+            String kind,
+            String id,
+            Set<String> known,
+            Set<String> whitelist) {
+        if (!known.contains(id) && !whitelist.contains(id)) {
+            problems.add(
+                    where
+                            + ": "
+                            + kind
+                            + " reference '"
+                            + id
+                            + "' has no source-row, lang key or LORE card and is not whitelisted"
+                            + " (docs/04 §6 V-REF phase 2)");
+        }
+    }
+
+    /** 单张源表的 id 主键集合（空表合法——章内容未写）。 */
+    private static Set<String> tableIdSet(Options options, String fileName) {
+        if (options.tablesRoot() == null) {
+            return Set.of();
+        }
+        for (Path table : csvFiles(options.tablesRoot())) {
+            if (!table.getFileName().toString().equals(fileName)) {
+                continue;
+            }
+            List<String> lines = readLines(table);
+            Set<String> ids = new LinkedHashSet<>();
+            for (int row = 1; row < lines.size(); row++) {
+                String line = lines.get(row);
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+                List<String> cells = splitRow(line);
+                if (!cells.isEmpty() && !cells.get(0).isBlank()) {
+                    ids.add(cells.get(0).trim());
+                }
+            }
+            return ids;
+        }
+        return Set.of();
+    }
+
+    /** zh_cn.json 里 {@code item.strife.<id>} 前缀的键 → 物品内容 ID 集合。 */
+    private static Set<String> langItemIds(Options options) {
+        Set<String> ids = new LinkedHashSet<>();
+        Path lang =
+                options.assetsRoot() == null
+                        ? null
+                        : options.assetsRoot().resolve("strife/lang/zh_cn.json");
+        if (lang == null || !Files.isRegularFile(lang)) {
+            return ids;
+        }
+        JsonElement root = parse(lang);
+        if (root.isJsonObject()) {
+            for (String key : root.getAsJsonObject().keySet()) {
+                if (key.startsWith("item.strife.")) {
+                    ids.add(key.substring("item.strife.".length()));
+                }
+            }
+        }
+        return ids;
+    }
+
+    /** LORE.md §6 NPC 卡的 {@code npc_} id 集合（真相源合入前同样是"唯一依据"）。 */
+    private static Set<String> loreNpcIds(Options options, List<String> problems) {
+        Set<String> ids = new LinkedHashSet<>();
+        Path lore = options.contentRoot() == null ? null : options.contentRoot().resolve("LORE.md");
+        if (lore == null || !Files.isRegularFile(lore)) {
+            problems.add(
+                    "V-REF phase 2: content/LORE.md not present — npc references unchecked this run");
+            return ids;
+        }
+        for (String line : readLines(lore)) {
+            if (!line.startsWith("| `npc_")
+                    && !line.startsWith("|npc_")
+                    && !line.startsWith("| npc_")) {
+                continue;
+            }
+            String[] cells = line.split("\\|");
+            for (String cell : cells) {
+                String value = cell.trim().replace("`", "");
+                if (value.startsWith("npc_")) {
+                    ids.add(value);
+                    break;
+                }
+            }
+        }
+        return ids;
+    }
+
+    /** 全部任务产物里的任务 id 集合（start_quest 引用的落点）。 */
+    private static Set<String> questIds(Options options) {
+        Set<String> ids = new LinkedHashSet<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!"strife_quests".equals(domainOf(file, options))) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            for (JsonElement element : arrayOrEmptyOf(root.getAsJsonObject(), "quests")) {
+                if (element.isJsonObject()) {
+                    String id = stringOrNull(element.getAsJsonObject().get("id"));
+                    if (id != null) {
+                        ids.add(id);
+                    }
+                }
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * V-DSL（docs/04 §6，`[拟]` 冻结于 JSON_SCHEMA §4.7.1/§4.7 effects 补注）：quests 与 dialog_trees 的
+     * conditions 表达式、对话 effects 的 type/args 契约、门链深度上限 ≥1。运行时解释器 fail-fast 兜底， 这里保证断链在构建期就红。
+     */
+    public static List<String> dslLegality(Options options) {
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            String domain = domainOf(file, options);
+            JsonElement root = parse(file);
+            if (domain == null || !root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            switch (domain) {
+                case "strife_quests" -> {
+                    for (JsonElement element : arrayOrEmptyOf(object, "quests")) {
+                        if (!element.isJsonObject()) {
+                            continue;
+                        }
+                        JsonObject quest = element.getAsJsonObject();
+                        String conditions = stringOrNull(quest.get("conditions"));
+                        if (conditions != null) {
+                            problems.addAll(
+                                    DslSyntax.validateCondition(
+                                            conditions,
+                                            file
+                                                    + " quest '"
+                                                    + stringOrNull(quest.get("id"))
+                                                    + "'"));
+                        }
+                    }
+                }
+                case "dialog_trees" -> {
+                    for (JsonElement treeElement : arrayOrEmptyOf(object, "trees")) {
+                        if (!treeElement.isJsonObject()) {
+                            continue;
+                        }
+                        JsonObject tree = treeElement.getAsJsonObject();
+                        String treeId = stringOrNull(tree.get("id"));
+                        String prefix = file + " tree '" + treeId + "'";
+                        int maxDepth =
+                                tree.has("max_depth_levels")
+                                        ? tree.get("max_depth_levels").getAsInt()
+                                        : 0;
+                        if (maxDepth < 1) {
+                            problems.add(
+                                    prefix + ": max_depth_levels 必须 ≥1（§4.7 求值上限），实际 " + maxDepth);
+                        }
+                        for (JsonElement effect : arrayOrEmptyOf(tree, "effects")) {
+                            problems.addAll(
+                                    effectProblems(
+                                            effect.getAsJsonObject(), prefix + " 树级 effect"));
+                        }
+                        for (JsonElement nodeElement : arrayOrEmptyOf(tree, "nodes")) {
+                            if (!nodeElement.isJsonObject()) {
+                                continue;
+                            }
+                            JsonObject node = nodeElement.getAsJsonObject();
+                            String nodeId = stringOrNull(node.get("id"));
+                            String nodeWhere = prefix + " node '" + nodeId + "'";
+                            String conditions = stringOrNull(node.get("conditions"));
+                            if (conditions != null) {
+                                problems.addAll(DslSyntax.validateCondition(conditions, nodeWhere));
+                            }
+                            for (JsonElement optionElement : arrayOrEmptyOf(node, "options")) {
+                                if (!optionElement.isJsonObject()) {
+                                    continue;
+                                }
+                                JsonObject option = optionElement.getAsJsonObject();
+                                String optionConditions = stringOrNull(option.get("conditions"));
+                                if (optionConditions != null) {
+                                    problems.addAll(
+                                            DslSyntax.validateCondition(
+                                                    optionConditions,
+                                                    nodeWhere
+                                                            + " 选项 '"
+                                                            + stringOrNull(option.get("text_key"))
+                                                            + "'"));
+                                }
+                                for (JsonElement effect : arrayOrEmptyOf(option, "effects")) {
+                                    problems.addAll(
+                                            effectProblems(
+                                                    effect.getAsJsonObject(),
+                                                    nodeWhere + " 选项 effect"));
+                                }
+                            }
+                        }
+                    }
+                }
+                default -> {}
+            }
+        }
+        return problems;
+    }
+
+    private static List<String> effectProblems(JsonObject effect, String where) {
+        List<String> problems = new ArrayList<>();
+        String problem =
+                DslSyntax.validateEffect(
+                        stringOrNull(effect.get("type")), stringOrNull(effect.get("args")), where);
+        if (problem != null) {
+            problems.add(problem);
+        }
+        return problems;
+    }
+
+    private static List<JsonElement> arrayOrEmptyOf(JsonObject object, String key) {
+        JsonElement element = object.get(key);
+        if (element == null || !element.isJsonArray()) {
+            return List.of();
+        }
+        List<JsonElement> items = new ArrayList<>();
+        for (JsonElement item : element.getAsJsonArray()) {
+            items.add(item);
+        }
+        return items;
+    }
+
     /** {@code data/strife/<domain>/<file>.json} 的域段，非该形态返回 null。 */
     private static String domainOf(Path file, Options options) {
         String relative = options.dataRoot().relativize(file).toString().replace('\\', '/');
@@ -1282,6 +1716,10 @@ public final class ValidatorMain {
         problems.addAll(questDag(options));
         executed++;
         problems.addAll(referenceExistence(options));
+        executed++;
+        problems.addAll(referenceExistencePhase2(options));
+        executed++;
+        problems.addAll(dslLegality(options));
         executed++;
         problems.addAll(probabilitySum(options));
         executed++;

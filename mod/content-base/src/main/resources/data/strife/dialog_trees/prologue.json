@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_trees_prologue.csv @ sha256:fb68c2b2e5a94e7ce28345178e82dc019b875b4ee5ee91430c14c8a05df9f798",
+  "@generated": "from tables/dialog_trees_prologue.csv @ sha256:723a496a22c23fea00d4dcc4103e51704c7ab498608eed6456d6bf3f47d8b988",
   "id": "nd_elder_gate_done",
   "chapter": "prologue",
   "trees": [
@@ -10,7 +10,7 @@
     "nodes": [
     {
     "id": "nd_elder_gate_done",
-    "speaker": "智执",
+    "speaker": "石执事",
     "text_key": "dialog.strife.nd_elder_gate_done",
     "conditions": "flag(fac_qingshi:prologue:saw_debt)",
     "next": null,
@@ -27,7 +27,7 @@
   },
     {
     "id": "nd_elder_gate_met",
-    "speaker": "智执",
+    "speaker": "石执事",
     "text_key": "dialog.strife.nd_elder_gate_met",
     "conditions": "flag(fac_qingshi:prologue:met_elder)",
     "next": "nd_elder_story",
@@ -35,7 +35,7 @@
   },
     {
     "id": "nd_elder_story",
-    "speaker": "智执",
+    "speaker": "石执事",
     "text_key": "dialog.strife.nd_elder_story",
     "conditions": null,
     "next": null,
@@ -52,7 +52,7 @@
   },
     {
     "id": "nd_elder_debt",
-    "speaker": "智执",
+    "speaker": "石执事",
     "text_key": "dialog.strife.nd_elder_debt",
     "conditions": null,
     "next": null,
@@ -65,7 +65,7 @@
   },
     {
     "id": "nd_elder_meet",
-    "speaker": "智执",
+    "speaker": "石执事",
     "text_key": "dialog.strife.nd_elder_meet",
     "conditions": null,
     "next": null,
@@ -82,7 +82,7 @@
   },
     {
     "id": "nd_elder_teach",
-    "speaker": "智执",
+    "speaker": "石执事",
     "text_key": "dialog.strife.nd_elder_teach",
     "conditions": null,
     "next": null,
@@ -100,7 +100,7 @@
   },
     {
     "id": "nd_elder_bye",
-    "speaker": "智执",
+    "speaker": "石执事",
     "text_key": "dialog.strife.nd_elder_bye",
     "conditions": null,
     "next": null,
@@ -112,12 +112,12 @@
   },
     {
     "id": "dlg_prologue_herbalist",
-    "npc": "npc_yaonog_su",
+    "npc": "npc_yaonong_su",
     "root": "nd_herb_gate_task",
     "nodes": [
     {
     "id": "nd_herb_gate_task",
-    "speaker": "苏氏",
+    "speaker": "苏药农",
     "text_key": "dialog.strife.nd_herb_gate_task",
     "conditions": "flag(fac_qingshi:prologue:accepted_herb)",
     "next": null,
@@ -136,7 +136,7 @@
   },
     {
     "id": "nd_herb_gate_fresh",
-    "speaker": "苏氏",
+    "speaker": "苏药农",
     "text_key": "dialog.strife.nd_herb_gate_fresh",
     "conditions": "!flag(fac_qingshi:prologue:accepted_herb)",
     "next": null,
@@ -149,7 +149,7 @@
   },
     {
     "id": "nd_herb_chat",
-    "speaker": "苏氏",
+    "speaker": "苏药农",
     "text_key": "dialog.strife.nd_herb_chat",
     "conditions": null,
     "next": null,
@@ -162,7 +162,7 @@
   },
     {
     "id": "nd_herb_done",
-    "speaker": "苏氏",
+    "speaker": "苏药农",
     "text_key": "dialog.strife.nd_herb_done",
     "conditions": null,
     "next": null,
@@ -170,7 +170,7 @@
   },
     {
     "id": "nd_herb_bye",
-    "speaker": "苏氏",
+    "speaker": "苏药农",
     "text_key": "dialog.strife.nd_herb_bye",
     "conditions": null,
     "next": null,
@@ -187,7 +187,7 @@
     "nodes": [
     {
     "id": "nd_inn_welcome",
-    "speaker": "邓掌柜",
+    "speaker": "挑灯人",
     "text_key": "dialog.strife.nd_inn_welcome",
     "conditions": null,
     "next": null,
@@ -204,7 +204,7 @@
   },
     {
     "id": "nd_inn_rumor",
-    "speaker": "邓掌柜",
+    "speaker": "挑灯人",
     "text_key": "dialog.strife.nd_inn_rumor",
     "conditions": null,
     "next": null,
@@ -217,7 +217,7 @@
   },
     {
     "id": "nd_inn_bye",
-    "speaker": "邓掌柜",
+    "speaker": "挑灯人",
     "text_key": "dialog.strife.nd_inn_bye",
     "conditions": null,
     "next": null,
@@ -234,7 +234,7 @@
     "nodes": [
     {
     "id": "nd_sect_gate_ready",
-    "speaker": "太上乌",
+    "speaker": "吴长老",
     "text_key": "dialog.strife.nd_sect_gate_ready",
     "conditions": "flag(prologue:ready_to_zhuji)",
     "next": null,
@@ -253,7 +253,7 @@
   },
     {
     "id": "nd_sect_gate_fresh",
-    "speaker": "太上乌",
+    "speaker": "吴长老",
     "text_key": "dialog.strife.nd_sect_gate_fresh",
     "conditions": "!flag(prologue:ready_to_zhuji)",
     "next": null,
@@ -266,7 +266,7 @@
   },
     {
     "id": "nd_sect_qingxin",
-    "speaker": "太上乌",
+    "speaker": "吴长老",
     "text_key": "dialog.strife.nd_sect_qingxin",
     "conditions": null,
     "next": null,
@@ -274,7 +274,7 @@
   },
     {
     "id": "nd_sect_wangchao",
-    "speaker": "太上乌",
+    "speaker": "吴长老",
     "text_key": "dialog.strife.nd_sect_wangchao",
     "conditions": null,
     "next": null,
@@ -282,7 +282,7 @@
   },
     {
     "id": "nd_sect_bye",
-    "speaker": "太上乌",
+    "speaker": "吴长老",
     "text_key": "dialog.strife.nd_sect_bye",
     "conditions": null,
     "next": null,

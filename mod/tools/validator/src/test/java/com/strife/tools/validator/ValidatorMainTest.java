@@ -809,4 +809,166 @@ class ValidatorMainTest {
         assertEquals(1, problems.size(), problems::toString);
         assertTrue(problems.get(0).contains("bs_ghost"), problems.get(0));
     }
+
+    // ===== V-DSL（对话树/任务 conditions + effects 契约，`[拟]` 冻结于 JSON_SCHEMA §4.7）=====
+
+    private static final String DIALOG_TREE_PRODUCT =
+            "{\"@generated\": \"from tables/dialog_trees_prologue.csv @ sha256:stub\", \"content_format\": 1,"
+                    + " \"id\": \"r1\", \"chapter\": \"prologue\", \"trees\": [";
+
+    @Test
+    void legalDialogConditionsAndEffectsPass(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife/dialog_trees");
+        write(
+                data.resolve("prologue.json"),
+                DIALOG_TREE_PRODUCT
+                        + "{\"id\": \"t1\", \"npc\": \"npc_x\", \"root\": \"r1\","
+                        + " \"max_depth_levels\": 8, \"nodes\": ["
+                        + "{\"id\": \"r1\", \"text_key\": \"dialog.strife.r1\","
+                        + " \"conditions\": \"flag(fac_a:prologue:met)&&item(item_lingshi:3)\","
+                        + " \"options\": [{\"text_key\": \"k\", \"next\": \"r2\","
+                        + " \"effects\": [{\"type\": \"take_item\", \"args\": \"item_ningxu:6\"},"
+                        + " {\"type\": \"teleport\", \"args\": \"1.5, 64, -3.5, minecraft:overworld\"}]}]},"
+                        + "{\"id\": \"r2\", \"text_key\": \"dialog.strife.r2\"}]}]}");
+        Options options = productsOnly(root.resolve("data"));
+
+        assertTrue(ValidatorMain.dslLegality(options).isEmpty());
+    }
+
+    @Test
+    void unknownPredicateInDialogConditionFails(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife/dialog_trees");
+        write(
+                data.resolve("prologue.json"),
+                DIALOG_TREE_PRODUCT
+                        + "{\"id\": \"t1\", \"npc\": \"npc_x\", \"root\": \"r1\","
+                        + " \"max_depth_levels\": 4, \"nodes\": ["
+                        + "{\"id\": \"r1\", \"text_key\": \"k\","
+                        + " \"conditions\": \"spiritroot(huo)\", \"next\": \"r2\"},"
+                        + "{\"id\": \"r2\", \"text_key\": \"k2\"}]}]}");
+        Options options = productsOnly(root.resolve("data"));
+
+        List<String> problems = ValidatorMain.dslLegality(options);
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("未知谓词 'spiritroot'"), problems.get(0));
+    }
+
+    @Test
+    void malformedEffectArgsFailWithTheContractMessage(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife/dialog_trees");
+        write(
+                data.resolve("prologue.json"),
+                DIALOG_TREE_PRODUCT
+                        + "{\"id\": \"t1\", \"npc\": \"npc_x\", \"root\": \"r1\","
+                        + " \"max_depth_levels\": 4, \"nodes\": ["
+                        + "{\"id\": \"r1\", \"text_key\": \"k\", \"options\": ["
+                        + "{\"text_key\": \"o\", \"effects\": ["
+                        + "{\"type\": \"reputation\", \"args\": \"fac_a\"}]}]},"
+                        + "{\"id\": \"r2\", \"text_key\": \"k2\"}]}]}");
+        Options options = productsOnly(root.resolve("data"));
+
+        List<String> problems = ValidatorMain.dslLegality(options);
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("reputation 需要 <fac_id>:<delta>"), problems.get(0));
+    }
+
+    @Test
+    void zeroMaxDepthIsRejected(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife/dialog_trees");
+        write(
+                data.resolve("prologue.json"),
+                DIALOG_TREE_PRODUCT
+                        + "{\"id\": \"t1\", \"npc\": \"npc_x\", \"root\": \"r1\","
+                        + " \"max_depth_levels\": 0, \"nodes\": ["
+                        + "{\"id\": \"r1\", \"text_key\": \"k\"}]}]}");
+        Options options = productsOnly(root.resolve("data"));
+
+        List<String> problems = ValidatorMain.dslLegality(options);
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("max_depth_levels 必须 ≥1"), problems.get(0));
+    }
+
+    // ===== V-REF 第二期（跨域内容 ID 引用）=====
+
+    @Test
+    void dialogNpcReferenceMustHaveALoreCard(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife/dialog_trees");
+        write(
+                data.resolve("prologue.json"),
+                DIALOG_TREE_PRODUCT
+                        + "{\"id\": \"t1\", \"npc\": \"npc_ghost\", \"root\": \"r1\","
+                        + " \"max_depth_levels\": 4, \"nodes\": ["
+                        + "{\"id\": \"r1\", \"text_key\": \"k\"}]}]}");
+        Path content = withNumbers(root, "@@limits\ndummy: 1\n");
+        write(
+                content.resolve("LORE.md"),
+                "## 6. NPC 卡\n| id | 名称 |\n|---|---|\n| `npc_real` | 有人 |\n");
+        Options options = new Options(root.resolve("data"), null, content, null);
+
+        List<String> problems = ValidatorMain.referenceExistencePhase2(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("npc reference 'npc_ghost'"), problems.get(0));
+        assertTrue(problems.get(0).contains("V-REF phase 2"), problems.get(0));
+    }
+
+    @Test
+    void questTechniqueRewardMustExistInTheSourceTable(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife/strife_quests");
+        write(
+                data.resolve("prologue.json"),
+                "{\"@generated\": \"from tables/quests_prologue.csv @ sha256:stub\", \"content_format\": 1,"
+                        + " \"id\": \"quest_a\", \"chapter\": \"prologue\", \"quests\": ["
+                        + "{\"id\": \"quest_a\", \"rewards\": ["
+                        + "{\"type\": \"technique\", \"id\": \"tech_ghost\"}]}]}");
+        Path tables = root.resolve("tables");
+        write(
+                tables.resolve("techniques.csv"),
+                "id,npc,root,nodes,effects,max_depth_levels,_note\ntech_real,x,x,x,x,1,x\n");
+        Options options = new Options(root.resolve("data"), tables, null, null);
+
+        List<String> problems = ValidatorMain.referenceExistencePhase2(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("technique reference 'tech_ghost'"), problems.get(0));
+    }
+
+    @Test
+    void startQuestEffectMustReferenceAnExistingQuest(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife");
+        write(
+                data.resolve("dialog_trees/prologue.json"),
+                DIALOG_TREE_PRODUCT
+                        + "{\"id\": \"t1\", \"npc\": \"npc_x\", \"root\": \"r1\","
+                        + " \"max_depth_levels\": 4, \"nodes\": ["
+                        + "{\"id\": \"r1\", \"text_key\": \"k\", \"options\": ["
+                        + "{\"text_key\": \"o\", \"effects\": ["
+                        + "{\"type\": \"start_quest\", \"args\": \"quest_ghost\"}]}]},"
+                        + "{\"id\": \"r2\", \"text_key\": \"k2\"}]}]}");
+        Options options = productsOnly(root.resolve("data"));
+
+        List<String> problems = ValidatorMain.referenceExistencePhase2(options);
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("quest reference 'quest_ghost'"), problems.get(0));
+    }
+
+    @Test
+    void itemEffectPassesWhenLangCarriesTheItemKey(@TempDir Path root) throws IOException {
+        Path data = root.resolve("data/strife");
+        write(
+                data.resolve("dialog_trees/prologue.json"),
+                DIALOG_TREE_PRODUCT
+                        + "{\"id\": \"t1\", \"npc\": \"npc_x\", \"root\": \"r1\","
+                        + " \"max_depth_levels\": 4, \"nodes\": ["
+                        + "{\"id\": \"r1\", \"text_key\": \"k\", \"options\": ["
+                        + "{\"text_key\": \"o\", \"effects\": ["
+                        + "{\"type\": \"take_item\", \"args\": \"item_ningxu:6\"}]}]},"
+                        + "{\"id\": \"r2\", \"text_key\": \"k2\"}]}]}");
+        Path assets = root.resolve("assets");
+        write(assets.resolve("strife/lang/zh_cn.json"), "{\"item.strife.item_ningxu\": \"凝墟草\"}");
+        Options options = new Options(root.resolve("data"), null, null, assets);
+
+        assertTrue(ValidatorMain.referenceExistencePhase2(options).isEmpty());
+    }
 }
