@@ -229,9 +229,15 @@ class OreTablesTest {
                 () -> OreTables.parseSpec(broken, "strife_ores/block_ore_lingyu.json"));
     }
 
-    /** 群系 ID 形状必须合法（{@code ns:path}）；"ID 是否真实存在"由 {@code /strife world ore status} 在运行时核对。 */
+    /**
+     * 群系 ID 必须是原版能解析的形状；"ID 是否真实存在"由 {@code /strife world ore status} 在运行时核对。
+     *
+     * <p>顺带固化一条原版行为：无命名空间的 ID 会被 {@code ResourceLocation.tryBySeparator} <b>补上默认命名空间</b> （{@code
+     * minecraft}）。所以"缺命名空间"不是错误形态——本仓表里写全 {@code minecraft:} 前缀是<b>可读性约定</b>，
+     * 不是格式强制项，这一点必须写清，否则后人会误加一条"必须带命名空间"的假门禁。
+     */
     @Test
-    void everyBiomeIdIsNamespacedAndNonBlank() {
+    void everyBiomeIdIsParseableByTheVanillaResourceLocation() {
         for (JsonObject product : ShippedProducts.allOres()) {
             String id = product.get("id").getAsString();
             OreTables.OreSpec spec = OreTables.parseSpec(product, "strife_ores/" + id + ".json");
@@ -239,18 +245,24 @@ class OreTablesTest {
             for (String biomeId : spec.placement().biomes()) {
                 assertNotNull(
                         ResourceLocation.tryParse(biomeId),
-                        id + " 的群系 ID '" + biomeId + "' 不是 命名空间:路径 形式");
+                        id + " 的群系 ID '" + biomeId + "' 不是原版可解析的资源位置");
             }
         }
     }
 
-    /** 群系 ID 拼写错误（缺命名空间、空项）必须在加载期红：原版不校验，矿会静默不生成。 */
+    /**
+     * 群系 ID 形状非法的必须报错。
+     *
+     * <p>注意用 {@code minecraft:Bad ID}（含空格）而不是"缺命名空间"当反例：原版 {@code ResourceLocation.tryBySeparator}
+     * 对无命名空间的字符串会<b>补默认命名空间</b>（{@code DEFAULT_NAMESPACE="minecraft"}），所以 {@code plains} 会被解析成
+     * {@code minecraft:plains} 而不是失败。 拿它当反例会让用例断言一个不存在的行为——这正是"测试先跑一遍确认它真的会因为正确的原因而红"的价值。
+     */
     @Test
     void malformedBiomeIdIsRejectedWithTheId() {
         JsonObject broken = ShippedProducts.ore("block_ore_lingyu").deepCopy();
         JsonArray biomes = new JsonArray();
         biomes.add("minecraft:plains");
-        biomes.add("plains_without_namespace");
+        biomes.add("minecraft:Bad ID");
         broken.getAsJsonObject("placement").add("biomes", biomes);
 
         IllegalStateException error =
@@ -258,7 +270,24 @@ class OreTablesTest {
                         IllegalStateException.class,
                         () -> OreTables.parseSpec(broken, "strife_ores/block_ore_lingyu.json"));
 
-        assertTrue(error.getMessage().contains("plains_without_namespace"), error.getMessage());
+        assertTrue(error.getMessage().contains("minecraft:Bad ID"), error.getMessage());
+    }
+
+    /** 空项群系必须报错：原版对"某个群系 ID 是空串"不校验，矿会静默不在任何群系生成。 */
+    @Test
+    void blankBiomeIdIsRejected() {
+        JsonObject broken = ShippedProducts.ore("block_ore_lingyu").deepCopy();
+        JsonArray biomes = new JsonArray();
+        biomes.add("minecraft:plains");
+        biomes.add("   ");
+        broken.getAsJsonObject("placement").add("biomes", biomes);
+
+        IllegalStateException error =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> OreTables.parseSpec(broken, "strife_ores/block_ore_lingyu.json"));
+
+        assertTrue(error.getMessage().contains("invalid id"), error.getMessage());
     }
 
     private static int placedCount(String oreId) {

@@ -395,7 +395,9 @@ public final class OreGenerator implements TableGenerator {
                             + ")");
         }
         List<String> ids = new ArrayList<>();
-        for (String part : biomes.split("\\|")) {
+        // split 必须带 -1（保留尾部空串）：默认 split 会丢掉 "a|" 的尾部空项，让"分隔符之间漏了一个 ID"
+        // 这种错表静默通过，产物里就少一个群系——而原版不会为这件事报任何错。
+        for (String part : biomes.split("\\|", -1)) {
             String trimmed = part.trim();
             if (trimmed.isEmpty()) {
                 throw new IllegalStateException(
