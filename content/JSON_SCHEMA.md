@@ -298,6 +298,63 @@ CMP     := '>=' | '<=' | '==' | '!='
 
 `strife_core/rules.json` 还带一个 `derived` 块：由其他块在**生成期算一次**的换算值，目前只有 `ticks_per_year`（= `@@lifespan.seconds_per_year` × 20 刻/秒）。放这里的理由：它不是独立事实，写进 NUMBERS 就有了两个可互相矛盾的真相，写进代码就是受管字面量；生成期换算是唯一不会漂移的位置。派生值只允许出现在 `derived` 内，且必须注明它由哪个块算出。
 
+### 4.13 宗门结构（`[拟]` 草案，未生效——见 §8 未决项 7）
+
+M4 宗门结构的字段契约**草案**。**本节尚未生效**：结构内容属真相源，合入需 C 名义确认；本节只把格式定下来供评审，DataGen **不生成**、Validator **不检查**，与 §4.11 的占位目录同等待遇。契约通过后才拆工单实现。
+
+**为什么单列一节而不并入 §4.8**：§4.8 是灵气场与矿石（世界生成噪声层），宗门结构是**离散建筑放置**，两者在原版侧走不同机制（`biome_modifier` vs `structure_set`），字段没有交集。
+
+#### 4.13.1 原版机制事实（1.21.1 产物实证，勿凭记忆改）
+
+原版结构由**两份产物**组成，缺一则结构不生成（且不报错）——与矿石五份产物同构的静默断链风险：
+
+| 产物 | 作用 | 关键字段（实证取自 `minecraft_1.21.1` jar 内 30 个原版结构） |
+|---|---|---|
+| `data/<ns>/worldgen/structure/<id>.json` | 结构定义 | `type` / `biomes` / `step` / `terrain_adaptation` / `spawn_overrides`；jigsaw 式另有 `start_pool` + `size` |
+| `data/<ns>/worldgen/structure_set/<id>.json` | 放置规则 | `placement`（`spacing` / `separation` / `salt`）+ `structures[]`（`structure` + `weight`） |
+
+**`.nbt` 模板不是硬依赖**（这条纠正了 `docs/10` §6.1 阻塞原因①的表述）：原版 30 个结构分两类——
+
+- **拼图式**（`type: minecraft:jigsaw`，如 village / ancient_city / pillager_outpost）：需要 `start_pool` 指向的 template pool，**`.nbt` 在那里**；
+- **代码生成式**（如 `ruined_portal` / `nether_fossil` / `ocean_ruin` / `fortress` / `mineshaft`）：由原版 Java 代码现场生成，**完全不需要 `.nbt`**，产物里也没有 `start_pool` 字段（已逐个核对 30 份原版产物）。
+
+因此宗门结构有**两条路**，成本差一个数量级：
+
+| 路线 | 需要什么 | 特点 |
+|---|---|---|
+| **A. 代码生成式** | 写一个 `Structure` 子类 + codec 注册（Java 侧） | 宗门建筑是规则化布局（门/院/塔），代码生成更可控，**且无资产依赖** |
+| **B. jigsaw 式拼图** | `.nbt` 模板 + template pool 目录 | 需外部工具（WorldEdit schematic → StructureBlock 导出）产资产，是 §6.1 阻塞点①的真正所指 |
+
+**建议走 A**：不必等 C 提供 `.nbt` 资产就能推进。代价是 `world` 包要引入一个 `Structure` 实现类——**不与 03 §2 的分层冲突**（`Structure` 属 world，core 不 import world）。
+
+#### 4.13.2 表结构（草案，`tables/structures.csv`）
+
+| 列 | 必/可 | 填什么 |
+|---|---|---|
+| `id` | 必 | `sect_<语义>`，小写下划线（V-NAME 守形状，见 docs/11 §2） |
+| `kind` | 必 | 实现路线：`code`（代码生成式，本期唯一可实现值）/ `jigsaw`（需 `.nbt`，本期留空不实现） |
+| `biomes` | 必 | 原版生物群系 ID，`\|` 分隔多值，**禁空项**（与 `ores.csv` 同规则） |
+| `step` | 必 | 原版生成阶段：`surface_structures` / `underground_structures` / `underground_decoration` |
+| `spacing` | 必 | `structure_set` 区域间距（区块）。**必须 > `separation`**，否则原版视作无效而不生成 |
+| `separation` | 必 | 区域内最小间距 |
+| `salt` | 必 | 原版随机盐（整数）。同 `spacing`/`separation` 下不同 salt 决定不同分布 |
+| `terrain_adaptation` | 可 | `none` / `beard_thin` / `beard_box` / `bury` / `encapsulate`，留空 = `none` |
+| `_note` | 可 | 备注 |
+
+#### 4.13.3 产物（草案）
+
+每行两份 JSON，字段名逐字对齐 §4.13.1 的原版实证：
+
+- `worldgen/structure/<id>.json` —— `kind=code` 时 `type` 填本命名空间注册名（需 Java 侧先注册 codec）
+- `worldgen/structure_set/<id>.json` —— `placement` 三字段 + `structures[]` 单元素带 `weight`
+
+#### 4.13.4 未决（阻塞实现）
+
+1. **`kind` 只实现 `code` 还是两条都实现**？只做 `code` → 无资产依赖、可立即开工；两条都做 → 需先解决 `.nbt` 产出方式。
+2. `spacing`/`separation`/`salt` 是受管数值还是内容参数？倾向**受管**（进 NUMBERS `@@world`），因为它们是平衡参数不是设定；但需 C 与 A 确认归属。
+3. 宗门建筑的具体形态属真相源（`content/LORE.md` §区域卡），**本节只定机制不定内容**。
+4. 若最终走 `.nbt` 路线，需先验证 WorldEdit schematic → StructureBlock 导出链在本机可行（**未验证**）。
+
 ## 5. 七钩子在 schema 中的落点（03 §10，H1–H7 必须从 M0 就存在）
 
 | 钩子 | schema 落点 | 读写入口 | 本期实现 |
@@ -364,6 +421,7 @@ CMP     := '>=' | '<=' | '==' | '!='
 4. H5 `period_ticks` 是否受 05 §1 数值管辖（若受管，需进 NUMBERS 新增 `@@periods` 块）。
 5. `alignment` / `chapter` / `objective_type` 枚举取值需与 STORY 定稿对齐——见 `STORY.md` §8 待审清单。
 6. `pattern` DSL（§4.4.1）语法由炼丹玩法实现方（B）确认，M2 前冻结。
+7. **§4.13 宗门结构契约草案是否采纳**（M4 剩余项的前置）。草案已把原版机制查实（两份产物；`.nbt` 仅 jigsaw 式需要，代码生成式不需要），待拍板：① `kind` 只做 `code` 还是含 `jigsaw`；② `spacing`/`separation`/`salt` 归 NUMBERS 受管还是归内容表；③ 建筑形态内容需 C 提供。**在拍板前 DataGen 不生成、Validator 不检查该表。**
 
 ### 8.1 与 `tables/FILLING_GUIDE.md` §6 待确认清单的对账
 
