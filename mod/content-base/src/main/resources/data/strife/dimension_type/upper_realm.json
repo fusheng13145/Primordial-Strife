@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dimensions.csv @ sha256:bc97fdd4d4ea65b42d0c046a074fe3a70fe4a07095992bc0dff2ef190e95e6bd",
+  "@generated": "from tables/dimensions.csv @ sha256:7a210bd84aa16024c940104cc6a18f51e92a57916c1209b2f4a443ad1c867c8d",
   "ultrawarm": false,
   "natural": false,
   "piglin_safe": false,
@@ -12,9 +12,9 @@
   "ambient_light": 0.5,
   "fixed_time": 6000,
   "monster_spawn_light_level": {
+    "min_inclusive": 0,
     "type": "minecraft:uniform",
-    "max_inclusive": 7,
-    "min_inclusive": 0
+    "max_inclusive": 7
   },
   "monster_spawn_block_light_limit": 0,
   "min_y": 0,

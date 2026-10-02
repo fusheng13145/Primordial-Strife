@@ -63,7 +63,7 @@ public final class DimensionGenerator implements TableGenerator {
             String noiseSettings = required(source, row, values, "noise_settings");
             String biome = required(source, row, values, "biome");
             requireVanillaNamespace(source, row, "noise_settings", noiseSettings);
-            requireVanillaNamespace(source, row, "biome", biome);
+            requireKnownNamespace(source, row, "biome", biome);
             double coordinateScale = doubleField(source, row, values, "coordinate_scale");
             if (coordinateScale <= 0) {
                 throw new IllegalStateException(
@@ -183,6 +183,24 @@ public final class DimensionGenerator implements TableGenerator {
         if (!id.matches("[a-z0-9_]+")) {
             throw new IllegalStateException(
                     source.fileName() + ":" + row.line() + ": id 必须是小写 snake_case：" + id);
+        }
+    }
+
+    /**
+     * 群系列允许 {@code minecraft:}（借原版）或 {@code strife:}（自研群系，{@code tables/biomes.csv}
+     * 的产物）；其余命名空间一律红掉——引用不存在的第三方群系时原版只会静默生成失败。
+     */
+    private static void requireKnownNamespace(
+            TableSource source, TableSource.Record row, String column, String value) {
+        if (!value.startsWith("minecraft:") && !value.startsWith("strife:")) {
+            throw new IllegalStateException(
+                    source.fileName()
+                            + ":"
+                            + row.line()
+                            + ": 列 "
+                            + column
+                            + " 必须是 minecraft:（借原版）或 strife:（biomes.csv 自研群系）："
+                            + value);
         }
     }
 }

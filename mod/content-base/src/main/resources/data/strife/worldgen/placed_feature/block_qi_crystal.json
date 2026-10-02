@@ -1,0 +1,28 @@
+{
+  "@generated": "from tables/realm_decor.csv @ sha256:98b529337e9e8b113e358ea628ff733467391d1f39c59156eeb779f35d9029b8",
+  "feature": "strife:block_qi_crystal",
+  "placement": [
+    {
+    "type": "minecraft:count",
+    "count": 6
+  },
+    {
+    "type": "minecraft:in_square"
+  },
+    {
+    "type": "minecraft:height_range",
+    "height": {
+    "type": "minecraft:trapezoid",
+    "min_inclusive": {
+    "absolute": 0
+  },
+    "max_inclusive": {
+    "absolute": 256
+  }
+  }
+  },
+    {
+    "type": "minecraft:biome"
+  }
+  ]
+}

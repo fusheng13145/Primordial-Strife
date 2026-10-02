@@ -1,12 +1,12 @@
 {
-  "@generated": "from tables/dimensions.csv @ sha256:bc97fdd4d4ea65b42d0c046a074fe3a70fe4a07095992bc0dff2ef190e95e6bd",
+  "@generated": "from tables/dimensions.csv @ sha256:7a210bd84aa16024c940104cc6a18f51e92a57916c1209b2f4a443ad1c867c8d",
   "type": "strife:upper_realm",
   "generator": {
     "type": "minecraft:noise",
     "settings": "minecraft:end_islands",
     "biome_source": {
     "type": "minecraft:fixed",
-    "biome": "minecraft:the_end"
+    "biome": "strife:upper_realm"
   }
   }
 }

@@ -1,0 +1,19 @@
+{
+  "@generated": "from tables/realm_decor.csv @ sha256:98b529337e9e8b113e358ea628ff733467391d1f39c59156eeb779f35d9029b8",
+  "type": "minecraft:ore",
+  "config": {
+    "size": 8,
+    "discard_chance_on_air_exposure": 0.0,
+    "targets": [
+    {
+    "state": {
+    "Name": "strife:block_qi_crystal"
+  },
+    "target": {
+    "predicate_type": "minecraft:block_match",
+    "block": "minecraft:end_stone"
+  }
+  }
+  ]
+  }
+}
