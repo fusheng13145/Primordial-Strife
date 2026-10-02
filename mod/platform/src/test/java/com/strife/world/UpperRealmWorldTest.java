@@ -49,7 +49,11 @@ class UpperRealmWorldTest {
         assertEquals("strife:" + CRYSTAL_ID, placed.get("feature").getAsString());
         assertEquals(
                 6,
-                placed.getAsJsonArray("placement").get(0).getAsJsonObject().get("count").getAsInt());
+                placed.getAsJsonArray("placement")
+                        .get(0)
+                        .getAsJsonObject()
+                        .get("count")
+                        .getAsInt());
 
         // configured → block_match 精确匹配 end_stone（end_stone 不在 stone_ore_replaceables tag，
         // 走矿石那条 tag_match 会静默一个都不替换——1.21.1 实证），state 指向注册常量同 ID 的方块。
