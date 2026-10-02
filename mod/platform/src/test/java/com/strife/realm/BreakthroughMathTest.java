@@ -64,10 +64,11 @@ class BreakthroughMathTest {
 
     @Test
     void stageStepQiGivesTheThresholdOfTheNextStage() {
-        // 练气 9 层，qi_max 230：从第 1 段推进一步 → 第 2 段起点 = floor(230×1/9)=25
-        assertEquals(25, BreakthroughMath.stageStepQi(1, 230, 9));
-        // 第 8 段推进 → 第 9 段起点 = floor(230×8/9)=204
-        assertEquals(204, BreakthroughMath.stageStepQi(8, 230, 9));
+        // 练气 9 层，qi_max 230：从第 1 段推进一步 → 第 2 段最小修为 = ceil(230×1/9)=26
+        // （floor 版本的 25 落在第 1 段——这个差 1 的边界正是实现写错、被本用例抓住的）
+        assertEquals(26, BreakthroughMath.stageStepQi(1, 230, 9));
+        // 第 8 段推进 → 第 9 段最小修为 = ceil(230×8/9)=205
+        assertEquals(205, BreakthroughMath.stageStepQi(8, 230, 9));
         // 推进结果与 stageFor 往返一致：落在第 stage+1 段
         assertEquals(2, BreakthroughMath.stageFor(BreakthroughMath.stageStepQi(1, 230, 9), 230, 9));
         assertEquals(9, BreakthroughMath.stageFor(BreakthroughMath.stageStepQi(8, 230, 9), 230, 9));

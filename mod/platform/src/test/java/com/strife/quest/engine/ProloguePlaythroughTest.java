@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
  */
 class ProloguePlaythroughTest {
 
-    /** 录制型 sink：所有奖励缝的出料都记下来，不碰 Minecraft。 */
+    /** 录制型 sink：所有奖励缝的出料都记下来；giveItem 同步写入虚拟背包（真实装配层语义：发放即进包）。 */
     private static final class RecordingSink implements RewardSink {
         final List<String> items = new ArrayList<>();
         final List<Long> qi = new ArrayList<>();
@@ -34,10 +34,16 @@ class ProloguePlaythroughTest {
         final List<String> flags = new ArrayList<>();
         final List<String> unlocks = new ArrayList<>();
         final List<String> reputation = new ArrayList<>();
+        private final Map<String, Integer> bag;
+
+        RecordingSink(Map<String, Integer> bag) {
+            this.bag = bag;
+        }
 
         @Override
         public void giveItem(String itemId, long count) {
             items.add(itemId + "x" + count);
+            bag.merge(itemId, (int) Math.min(count, Integer.MAX_VALUE), Integer::sum);
         }
 
         @Override
@@ -79,8 +85,8 @@ class ProloguePlaythroughTest {
     private static final class Playthrough {
         final QuestBook book = QuestBook.parse(ShippedProducts.prologueQuests());
         final QuestState state = new QuestState();
-        final RecordingSink sink = new RecordingSink();
         final Map<String, Integer> bag = new HashMap<>();
+        final RecordingSink sink = new RecordingSink(bag);
 
         void report(QuestBook.ObjectiveType type, String target, long amount) {
             book.report(type, target, amount, state, sink, context());
