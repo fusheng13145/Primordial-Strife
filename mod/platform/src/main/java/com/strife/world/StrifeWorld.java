@@ -67,6 +67,12 @@ public final class StrifeWorld {
                 "strife world entry constructed (version {})", container.getModInfo().getVersion());
         StrifeOreBlocks.BLOCKS.register(modEventBus);
         StrifeOreBlocks.ITEMS.register(modEventBus);
+        StrifeRealmBlocks.BLOCKS.register(modEventBus);
+        StrifeRealmBlocks.ITEMS.register(modEventBus);
+        // 宗门结构：结构本体 + codec 类型 + 建筑件类型，三者缺一结构都不会生成（JSON_SCHEMA §4.13）。
+        SectStructures.STRUCTURES.register(modEventBus);
+        SectStructures.STRUCTURE_TYPES.register(modEventBus);
+        SectStructures.PIECES.register(modEventBus);
         modEventBus.addListener(StrifeWorld::addCreativeTabEntries);
         NeoForge.EVENT_BUS.addListener(HerbDrops::onBreakBlock);
         NeoForge.EVENT_BUS.addListener(AmbientQiWarmup::onChunkLoad);
@@ -95,6 +101,7 @@ public final class StrifeWorld {
         event.accept(StrifeOreBlocks.ORE_LINGYU.get());
         event.accept(StrifeOreBlocks.ORE_CHIYAN.get());
         event.accept(StrifeOreBlocks.ORE_HANYU.get());
+        event.accept(StrifeRealmBlocks.QI_CRYSTAL.get());
     }
 
     /**

@@ -114,6 +114,16 @@ public final class ShippedProducts {
         return json("/data/strife/worldgen/configured_feature/" + featureId + ".json");
     }
 
+    /** 单个结构定义产物（{@code data/strife/worldgen/structure/<id>.json}，宗门结构）。 */
+    public static JsonObject structure(String structureId) {
+        return json("/data/strife/worldgen/structure/" + structureId + ".json");
+    }
+
+    /** 单个结构放置产物（{@code data/strife/worldgen/structure_set/<id>.json}）。 */
+    public static JsonObject structureSet(String structureId) {
+        return json("/data/strife/worldgen/structure_set/" + structureId + ".json");
+    }
+
     private static List<String> listResources(String dir) {
         List<String> names = new ArrayList<>();
         java.net.URL root = ShippedProducts.class.getResource(dir);
