@@ -32,6 +32,10 @@ import java.util.Set;
  * existence, DAG connectivity, probability normalisation, the remaining V-RANGE sub-items, text
  * coverage and DSL legality are tracked by later tickets and register here as {@link Check}
  * implementations.
+ *
+ * <p>V-NAME ({@link NameConventions}) enforces the docs/11 split — machine identifiers stay ASCII
+ * pinyin, player-visible text must be Chinese — because Minecraft's {@code ResourceLocation} makes a
+ * Chinese ID a load-time crash rather than a style choice.
  */
 public final class ValidatorMain {
 
@@ -41,6 +45,13 @@ public final class ValidatorMain {
      */
     private static final List<String> NON_CONTENT_TABLES =
             List.of("known-placeholders.csv", "id_migration.csv");
+
+    /**
+     * 台账表的第一列是记录号而非内容 ID（docs/04 §6），命名门禁对它们只查"不含非 ASCII 字母"，不套内容 ID 形状规则。
+     */
+    static boolean isLedgerTable(String fileName) {
+        return NON_CONTENT_TABLES.contains(fileName);
+    }
 
     @FunctionalInterface
     public interface Check {
@@ -455,7 +466,7 @@ public final class ValidatorMain {
                         + " (docs/04 §4; en_us may be a placeholder but never an empty string)");
     }
 
-    private static Map<String, Object> langEntries(Path file) {
+    static Map<String, Object> langEntries(Path file) {
         try (var reader = Files.newBufferedReader(file)) {
             JsonElement root = JsonParser.parseReader(reader);
             Map<String, Object> entries = new LinkedHashMap<>();
@@ -1728,6 +1739,8 @@ public final class ValidatorMain {
         executed++;
         problems.addAll(numericRanges(options));
         executed++;
+        problems.addAll(NameConventions.check(options));
+        executed++;
         notices.forEach(n -> System.out.println("validator: " + n));
         problems.forEach(p -> System.err.println("validator: " + p));
         System.out.printf(
@@ -1774,7 +1787,7 @@ public final class ValidatorMain {
     /**
      * CSV cells carry no commas (tables/FILLING_GUIDE.md §1.1), so a plain split is the contract.
      */
-    private static List<String> splitRow(String line) {
+    static List<String> splitRow(String line) {
         List<String> cells = new ArrayList<>();
         for (String cell : line.split(",", -1)) {
             cells.add(cell.trim());
@@ -1798,7 +1811,7 @@ public final class ValidatorMain {
         }
     }
 
-    private static List<String> readLines(Path file) {
+    static List<String> readLines(Path file) {
         try {
             return Files.readAllLines(file);
         } catch (IOException e) {
@@ -1806,14 +1819,14 @@ public final class ValidatorMain {
         }
     }
 
-    private static List<Path> csvFiles(Path root) {
+    static List<Path> csvFiles(Path root) {
         if (!Files.isDirectory(root)) {
             return List.of();
         }
         return walk(root).filter(p -> p.getFileName().toString().endsWith(".csv")).toList();
     }
 
-    private static List<Path> jsonFiles(Path root) {
+    static List<Path> jsonFiles(Path root) {
         if (!Files.isDirectory(root)) {
             return List.of();
         }
@@ -1836,7 +1849,7 @@ public final class ValidatorMain {
         return jsonFiles(root).size();
     }
 
-    private static JsonElement parse(Path file) {
+    static JsonElement parse(Path file) {
         try (var reader = Files.newBufferedReader(file)) {
             return JsonParser.parseReader(reader);
         } catch (IOException e) {
