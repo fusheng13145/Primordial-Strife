@@ -1,4 +1,4 @@
-package com.strife.quest.dialog;
+package com.strife.core.net;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;

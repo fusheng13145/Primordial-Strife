@@ -1,4 +1,4 @@
-package com.strife.quest.dialog;
+package com.strife.core.net;
 
 import com.strife.core.StrifeMod;
 import java.util.ArrayList;

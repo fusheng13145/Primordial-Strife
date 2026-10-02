@@ -1,7 +1,7 @@
 package com.strife.client_fx;
 
-import com.strife.quest.dialog.DialogClientMirror;
-import com.strife.quest.dialog.DialogPayloads;
+import com.strife.core.net.DialogClientMirror;
+import com.strife.core.net.DialogPayloads;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;

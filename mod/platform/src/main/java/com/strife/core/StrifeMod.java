@@ -2,9 +2,6 @@ package com.strife.core;
 
 import com.strife.core.net.StrifeNetwork;
 import com.strife.core.net.StrifeSyncManager;
-import com.strife.quest.StrifeEntities;
-import com.strife.quest.StrifeNpcEntity;
-import com.strife.quest.dialog.DialogNetwork;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -17,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * Platform entry point (A0-1 骨架).
  *
  * <p>本类只做注册编排：附件类型经注册表进 {@link StrifeAttachmentTypes}，命令树进 {@link StrifeCommands}（03 分册
- * §9）。业务逻辑一律不写在这里。
+ * §9）。业务逻辑一律不写在这里；各域（quest 等）的注册编排由各自的分侧入口承担——core 不 import 任何模块（03 §2）。
  */
 @Mod(StrifeMod.MOD_ID)
 public final class StrifeMod {
@@ -31,10 +28,6 @@ public final class StrifeMod {
                 "strife platform entry constructed (version {})",
                 container.getModInfo().getVersion());
         StrifeAttachmentTypes.ATTACHMENT_TYPES.register(modEventBus);
-        // quest 域实体（NPC：对话载体）与对话网络（quest 不能让 core 反向 import，注册各自挂 mod 总线）。
-        StrifeEntities.ENTITY_TYPES.register(modEventBus);
-        modEventBus.addListener(StrifeNpcEntity::onAttributes);
-        DialogNetwork.register(modEventBus);
         // 载荷注册在 mod 总线（注册期），玩法事件在游戏总线（03 §2）。
         StrifeNetwork.register(modEventBus);
         // RegisterCommandsEvent is fired on the game bus whenever Commands is rebuilt.

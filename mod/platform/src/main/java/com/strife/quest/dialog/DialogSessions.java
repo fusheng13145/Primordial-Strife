@@ -1,8 +1,8 @@
 package com.strife.quest.dialog;
 
+import com.strife.core.net.DialogPayloads.Open;
 import com.strife.core.net.StrifeNetwork;
 import com.strife.quest.dialog.DialogBook.TreeSpec;
-import com.strife.quest.dialog.DialogPayloads.Open;
 import com.strife.quest.dialog.DialogRunner.EffectSink;
 import com.strife.quest.engine.QuestAdapter;
 import com.strife.quest.engine.QuestBook;

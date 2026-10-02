@@ -2,13 +2,14 @@ package com.strife.client_fx;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.strife.core.StrifeMod;
+import com.strife.core.net.DialogClientMirror;
+import com.strife.core.net.DialogPayloads;
 import com.strife.core.net.IntentRateLimiter;
-import com.strife.quest.StrifeEntities;
-import com.strife.quest.dialog.DialogClientMirror;
-import com.strife.quest.dialog.DialogPayloads;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -29,8 +30,9 @@ import org.slf4j.LoggerFactory;
  * <p>{@code dist = CLIENT} 让专用服务端根本不构造本类；serverJar 又整体剔除 {@code com/strife/client_fx/**}（platform
  * build.gradle 的 exclude 规则先于本包落地）——两道隔离由 CI 的 headless 开服冒烟验证：若 client 类被服务端加载，冒烟当场红。
  *
- * <p>本类只做客户端注册编排：HUD 层进 {@link RegisterGuiLayersEvent}，按键进 {@link RegisterKeyMappingsEvent}，动作挂在客户端
- * tick。 键位与界面只负责<b>发起意图</b>（打坐起止、突破押注、面板拉取），判定与数值一律在服务端（03 §4 服务端权威）。
+ * <p>本类只做客户端注册编排：HUD 层进 {@link RegisterGuiLayersEvent}，按键进 {@link RegisterKeyMappingsEvent}， NPC
+ * 渲染器进 {@link EntityRenderersEvent.RegisterRenderers}（实体类型按注册表资源 ID 查——client_fx 只依赖 core， 不 import
+ * quest 的实体注册类，03 §2），动作挂在客户端 tick。
  */
 @Mod(value = StrifeMod.MOD_ID, dist = Dist.CLIENT)
 public final class StrifeClientFx {
@@ -64,6 +66,9 @@ public final class StrifeClientFx {
                     GLFW.GLFW_KEY_B,
                     "key.categories.strife");
 
+    /** 对话镜像的已处理版本号（tick 轮询，镜像惯例）。 */
+    private long handledDialogRevision = -1L;
+
     public StrifeClientFx(IEventBus modEventBus, ModContainer container) {
         LOGGER.info(
                 "strife client_fx entry constructed (version {})",
@@ -86,12 +91,16 @@ public final class StrifeClientFx {
         event.register(BREAKTHROUGH);
     }
 
+    /** NPC 渲染器注册：strife:npc 从注册表按资源 ID 取（注册期已完成，此处只读），不 import quest 类型。 */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(StrifeEntities.NPC.get(), StrifeNpcRenderer::new);
+        EntityType<?> npcType =
+                BuiltInRegistries.ENTITY_TYPE.get(
+                        ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, "npc"));
+        if (npcType != null) {
+            event.registerEntityRenderer((EntityType) npcType, StrifeNpcRenderer::new);
+        }
     }
-
-    /** 对话镜像的已处理版本号（tick 轮询，镜像惯例）。 */
-    private long handledDialogRevision = -1L;
 
     private void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
