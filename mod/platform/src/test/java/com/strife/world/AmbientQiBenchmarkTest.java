@@ -15,9 +15,8 @@ import org.junit.jupiter.api.Test;
  * 噪声实现换成什么都成立；这边用<b>生产同款 {@link ImprovedNoise}</b> 测<b>速度</b>——假噪声比真实噪声快一到两个数量级，
  * 拿假噪声报出的毫秒数是自欺。所以本类是唯一允许"慢"的测试，也是唯一需要真实噪声的测试。
  *
- * <p><b>断言策略</b>：上限断言刻意宽松（{@value #BUDGET_MS_PER_CHUNK} ms 的 10 倍），
- * 因为 CI 机、开发者机与本机的 CPU 差异可达数倍，绑死 2ms 会让门禁变成随机红。
- * 真正的读数由 {@link #report} 打印进测试输出，<b>数字进交接文档才算实测</b>；
+ * <p><b>断言策略</b>：上限断言刻意宽松（{@value #BUDGET_MS_PER_CHUNK} ms 的 10 倍）， 因为 CI 机、开发者机与本机的 CPU 差异可达数倍，绑死
+ * 2ms 会让门禁变成随机红。 真正的读数由 {@link #report} 打印进测试输出，<b>数字进交接文档才算实测</b>；
  * 宽松上限只负责兜住"数量级级别的退化"（例如误把缓存改成每次重采样噪声，会直接撞上限）。
  */
 class AmbientQiBenchmarkTest {
@@ -25,14 +24,12 @@ class AmbientQiBenchmarkTest {
     /** docs/03 §6 的红线值。 */
     private static final double BUDGET_MS_PER_CHUNK = 2.0;
 
-    /**
-     * 断言上限 = 红线的 10 倍。见类注释：这不是"允许超标"，而是"只抓数量级退化"，
-     * 真实读数靠 report 打印 + 人工入档。
-     */
+    /** 断言上限 = 红线的 10 倍。见类注释：这不是"允许超标"，而是"只抓数量级退化"， 真实读数靠 report 打印 + 人工入档。 */
     private static final double ASSERT_CEILING_MS_PER_CHUNK = BUDGET_MS_PER_CHUNK * 10;
 
     /** NUMBERS @@world 的生产值：ambient_qi_min / max / region_chunks / refine_weight。 */
     private static final double MIN = 0.50;
+
     private static final double MAX = 2.00;
     private static final int REGION_CHUNKS = 16;
     private static final double REFINE_WEIGHT = 0.25;
@@ -57,18 +54,19 @@ class AmbientQiBenchmarkTest {
     /**
      * 主用例：分别测"冷"（缓存全空，逐块算）与"热"（缓存已命中）两条路径。
      *
-     * <p>红线写的是"≤2ms/chunk（命中缓存 ≈0）"，所以两个数都要：冷路径是真实成本上限，
-     * 热路径是玩家实际感知到的成本。
+     * <p>红线写的是"≤2ms/chunk（命中缓存 ≈0）"，所以两个数都要：冷路径是真实成本上限， 热路径是玩家实际感知到的成本。
      *
      * <p><b>遍历策略</b>：区域是 16×16 区块一块，{@code regionX = floorDiv(chunkX, 16)}。
      * 所以"冷"和"热"必须<b>分开造</b>，而且要先算清坐标落在哪个桶里：
+     *
      * <ul>
      *   <li>冷路径：{@code chunk = i * 16} → 第 i 个区域，每块都未命中（{@code coarseSamples == n}）；
      *   <li>热路径：{@code chunk = base + (i % 16)} → 全在第 base/16 个区域内，来回走（1 次采样 + n-1 次命中）。
      * </ul>
-     * 初版用"对角线"想一次造两种，实际 {@code chunk=i*16} 落在第 i 个区域，256 块 = 256 个不同区域，
-     * 区域内命中这条真正要验的东西根本没被走到；第二次改成 {@code i/16} 铺开也超预期（算出 16 实际 1）。
-     * <b>教训：区域粒度是 16 时，"同一区域"只能靠 {@code % 16} 制造，靠 {@code / 16} 只会换区域。</b>
+     *
+     * 初版用"对角线"想一次造两种，实际 {@code chunk=i*16} 落在第 i 个区域，256 块 = 256 个不同区域， 区域内命中这条真正要验的东西根本没被走到；第二次改成
+     * {@code i/16} 铺开也超预期（算出 16 实际 1）。 <b>教训：区域粒度是 16 时，"同一区域"只能靠 {@code % 16} 制造，靠 {@code / 16}
+     * 只会换区域。</b>
      */
     @Test
     void newChunkGenerationStaysWithinBudget() {
@@ -123,8 +121,7 @@ class AmbientQiBenchmarkTest {
     /**
      * 缓存上限的行为：超过 {@code MAX_CACHED_REGIONS}（4096）即清空重建。
      *
-     * <p>这条不是性能测试，是<b>防退化</b>：清空策略如果哪天改成"LRU 逐出"或"永不淘汰"，缓存会无限增长直至 OOM。
-     * 这里钉住"超限后仍能正确返回值"，不钉住具体数字。
+     * <p>这条不是性能测试，是<b>防退化</b>：清空策略如果哪天改成"LRU 逐出"或"永不淘汰"，缓存会无限增长直至 OOM。 这里钉住"超限后仍能正确返回值"，不钉住具体数字。
      */
     @Test
     void cacheStaysBoundedAndStillReturnsValidValues() {
@@ -187,9 +184,11 @@ class AmbientQiBenchmarkTest {
                 avg <= ASSERT_CEILING_MS_PER_CHUNK,
                 String.format(
                         Locale.ROOT,
-                        "%s 平均 %.4fms 超过宽松上限 %.1fms（红线 %.1fms）——疑似数量级退化，"
-                                + "先查缓存是否被绕过",
-                        label, avg, ASSERT_CEILING_MS_PER_CHUNK, BUDGET_MS_PER_CHUNK));
+                        "%s 平均 %.4fms 超过宽松上限 %.1fms（红线 %.1fms）——疑似数量级退化，" + "先查缓存是否被绕过",
+                        label,
+                        avg,
+                        ASSERT_CEILING_MS_PER_CHUNK,
+                        BUDGET_MS_PER_CHUNK));
     }
 
     private static double average(int[] nanos) {
