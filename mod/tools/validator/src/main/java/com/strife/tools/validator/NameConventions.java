@@ -79,6 +79,8 @@ final class NameConventions {
             if (!object.has("id") || !object.get("id").isJsonPrimitive()) {
                 continue;
             }
+            // 产物 id 是<b>内容 ID</b>，不是 lang key：它等于 lang key 去掉 <类别>.strife. 前缀后的那一段，
+            // 所以不点分。lang key 的点分多级形态只由 checkLangFiles 认。
             describeShape(object.get("id").getAsString(), file + " (id)", problems);
         }
     }

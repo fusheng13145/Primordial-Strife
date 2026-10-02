@@ -51,11 +51,16 @@ class NameConventionsTest {
         assertEquals(List.of(), NameConventions.check(new Options(product(root, "block_ore_lingyu"), null, null, null)));
     }
 
+    /**
+     * 产物 {@code id} 字段是<b>内容 ID</b>，不点分——点分只属于 lang key（{@code dialog.strife.nd_...}）。
+     * 内容 ID 是 lang key 去掉 {@code <类别>.strife.} 前缀后的那一段，所以它自己必然是单段下划线形态。
+     */
     @Test
-    void multiSegmentIdPasses(@TempDir Path root) throws IOException {
-        assertEquals(
-                List.of(),
-                NameConventions.check(new Options(product(root, "dialog.strife.nd_elder_gate_met"), null, null, null)));
+    void contentIdWithDotsIsRejected(@TempDir Path root) throws IOException {
+        List<String> problems =
+                NameConventions.check(new Options(product(root, "dialog.strife.nd_elder_gate_met"), null, null, null));
+        assertEquals(1, problems.size(), problems.toString());
+        assertTrue(problems.get(0).contains("全小写"), problems.toString());
     }
 
     // ── ID 形状：三种坏形态各一张红脸 ───────────────────────────────────
