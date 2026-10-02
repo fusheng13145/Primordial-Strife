@@ -1,0 +1,13 @@
+{
+  "@generated": "from tables/structures.csv @ sha256:662e2d4fdd8695b660bf88d290df1fd6b585ff20c0b44bce84f3214011b2bf3a",
+  "type": "strife:sect_hall",
+  "biomes": [
+    "minecraft:plains",
+    "minecraft:forest",
+    "minecraft:meadow",
+    "minecraft:savanna"
+  ],
+  "spawn_overrides": {},
+  "step": "surface_structures",
+  "terrain_adaptation": "beard_thin"
+}

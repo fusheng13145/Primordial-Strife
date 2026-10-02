@@ -1,0 +1,15 @@
+{
+  "@generated": "from tables/structures.csv @ sha256:662e2d4fdd8695b660bf88d290df1fd6b585ff20c0b44bce84f3214011b2bf3a",
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 1205,
+    "separation": 12,
+    "spacing": 48
+  },
+  "structures": [
+    {
+    "structure": "strife:sect_hall",
+    "weight": 1
+  }
+  ]
+}
