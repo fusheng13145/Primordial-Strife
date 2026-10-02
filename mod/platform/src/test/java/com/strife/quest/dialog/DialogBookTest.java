@@ -97,7 +97,7 @@ class DialogBookTest {
                    {"id": "node_elder_open", "speaker": "zhizhi", "text_key": "dlg.elder.open",
                     "options": [
                       {"text_key": "dlg.elder.ask_herb", "next": "node_elder_herb"},
-                      {"text_key": "dlg.elder.leave", "conditions": "questDone(quest_prologue_herb_pick_01)", "next": "node_elder_bye"}
+                      {"text_key": "dlg.elder.leave", "conditions": "quest_done(quest_prologue_herb_pick_01)", "next": "node_elder_bye"}
                     ]},
                    {"id": "node_elder_herb", "speaker": "zhizhi", "text_key": "dlg.elder.herb",
                     "options": [
@@ -192,7 +192,7 @@ class DialogBookTest {
     void unknownFieldFailsFast() {
         String bad =
                 """
-                {"id": "r", "chapter": "prologue", "trees": [
+                {"id": "t", "chapter": "prologue", "trees": [
                   {"id": "t", "npc": "npc_x", "root": "r1", "max_depth_levels": 4, "nodes": [
                     {"id": "r1", "text_key": "k", "typo_field": 1}]}]}
                 """;
@@ -205,7 +205,7 @@ class DialogBookTest {
     void danglingNextRejected() {
         String bad =
                 """
-                {"id": "r", "chapter": "prologue", "trees": [
+                {"id": "t", "chapter": "prologue", "trees": [
                   {"id": "t", "npc": "npc_x", "root": "r1", "max_depth_levels": 4, "nodes": [
                     {"id": "r1", "text_key": "k", "next": "nowhere"}]}]}
                 """;
@@ -326,7 +326,7 @@ class DialogBookTest {
     void allSevenEffectTypesParseAndLand() {
         String all =
                 """
-                {"id": "r", "chapter": "prologue", "trees": [
+                {"id": "t", "chapter": "prologue", "trees": [
                   {"id": "t", "npc": "npc_x", "root": "r1", "max_depth_levels": 4,
                    "nodes": [
                      {"id": "r1", "text_key": "k",
@@ -375,7 +375,7 @@ class DialogBookTest {
     void badEffectArgsRejected() {
         String bad =
                 """
-                {"id": "r", "chapter": "prologue", "trees": [
+                {"id": "t", "chapter": "prologue", "trees": [
                   {"id": "t", "npc": "npc_x", "root": "r1", "max_depth_levels": 4,
                    "nodes": [
                      {"id": "r1", "text_key": "k",
@@ -397,7 +397,7 @@ class DialogBookTest {
     void cyclicTreeExplodesAtDepthLimit() {
         String cyclic =
                 """
-                {"id": "r", "chapter": "prologue", "trees": [
+                {"id": "t", "chapter": "prologue", "trees": [
                   {"id": "t", "npc": "npc_x", "root": "r1", "max_depth_levels": 4,
                    "nodes": [
                      {"id": "r1", "text_key": "k", "next": "r2"},

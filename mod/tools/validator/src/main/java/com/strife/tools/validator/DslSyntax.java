@@ -21,19 +21,17 @@ import java.util.Set;
  */
 final class DslSyntax {
 
-    /** 运行时 Context 支持的谓词名（与 ConditionExpression.Context 方法一一对应；新增谓词须双侧同步）。 */
+    /** 运行时支持的谓词名（ConditionDsl 的 case 表，蛇形命名；新增谓词须双侧同步）。 */
     private static final Set<String> PREDICATES =
             Set.of(
                     "realm",
-                    "stage",
-                    "subStage",
+                    "sub_stage",
+                    "luck",
                     "flag",
                     "item",
                     "reputation",
-                    "questDone",
-                    "affinity",
-                    "realmOrdinal",
-                    "luck");
+                    "quest_done",
+                    "affinity");
 
     private static final Set<String> COMPARISONS = Set.of(">=", "<=", "==", "!=", ">", "<");
 
