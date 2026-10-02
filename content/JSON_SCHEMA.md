@@ -355,6 +355,28 @@ M4 宗门结构的字段契约**草案**。**本节尚未生效**：结构内容
 3. 宗门建筑的具体形态属真相源（`content/LORE.md` §区域卡），**本节只定机制不定内容**。
 4. 若最终走 `.nbt` 路线，需先验证 WorldEdit schematic → StructureBlock 导出链在本机可行（**未验证**）。
 
+### 4.14 维度（ADR-021，2026-10-02 已实现）
+
+- 表：`tables/dimensions.csv`（列：`id,generator_type,noise_settings,biome,coordinate_scale,ambient_light,_note`）
+- 产物（每行维度两份，均带 `@generated` 头）：
+- `worldgen/dimension_type/<id>.json` —— 维度物理属性；格式基准 = 原版 jar 内 `the_end.json`（1.21.1 实证）
+- `worldgen/dimension/<id>.json` —— `type` 引用同 id 的 dimension_type；`generator`（noise + fixed 群系源）
+- 校验：`generator_type` 仅 `minecraft:noise`；`coordinate_scale>0`；`ambient_light∈[0,1]`；`noise_settings` 仅许 `minecraft:`（借原版 preset）；`biome` 许 `minecraft:` 或 `strife:`；id 小写 snake_case
+- 灵气参数不在本表（成长数值进 NUMBERS `@@world` `upper_qi_min/max`，随 §4.12 rules 直出）
+
+### 4.15 群系（ADR-021，2026-10-02 已实现）
+
+- 表：`tables/biomes.csv`（列：`id,sky_color,fog_color,water_color,water_fog_color,grass_color,temperature,downfall,features,_note`）
+- 产物：`worldgen/biome/<id>.json`（格式基准 = 原版 jar 内 `the_end.json`：`features` 11 步数组、颜色十进制 int）
+- `features` 列形状 `ores=a;b;`（k=v;，值必须 `strife:` 产物）落 index 6（UNDERGROUND_ORES）
+- 颜色/降水/刷怪均为材质属性（04 §7 管线调），非受管数值；`[拟]` 待 C 审定配色
+
+### 4.16 上界装饰（ADR-021，2026-10-02 已实现）
+
+- 表：`tables/realm_decor.csv`（列：`id,block,replace_target,veins_per_chunk,vein_size,y_min,y_max,_note`）
+- 产物（每行两份）：`worldgen/configured_feature/<id>.json`（`block_match` 精确匹配——end_stone 不在 `stone_ore_replaceables` tag，tag_match 会静默零替换）+ `worldgen/placed_feature/<id>.json`（count + trapezoid 高度）
+- 无 `biome_modifier`：装饰只长自研群系（§4.15 `features` 列直引）；校验：`block` 必须 `strife:`、`replace_target` 必须 `minecraft:`、veins/size>0、y_max≥y_min
+
 ## 5. 七钩子在 schema 中的落点（03 §10，H1–H7 必须从 M0 就存在）
 
 | 钩子 | schema 落点 | 读写入口 | 本期实现 |

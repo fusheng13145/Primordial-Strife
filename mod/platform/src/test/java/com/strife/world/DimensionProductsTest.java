@@ -33,11 +33,12 @@ class DimensionProductsTest {
     void generatorBorrowsVanillaEndAssets() {
         JsonObject generator = ShippedProducts.dimension(DIMENSION_ID).getAsJsonObject("generator");
 
-        // M4 借原版资产（表列显式声明）：end_islands 浮岛噪声 + the_end 群系。写成 strife: 会指向不存在的资产。
+        // 地形借原版噪声（end_islands 浮岛），群系用自研「灵霄青冥」（biomes.csv 产物）——
+        // 若写回 minecraft:the_end 等于退回末地复制品观感，这条用例把世界设计钉住。
         assertEquals("minecraft:end_islands", generator.get("settings").getAsString());
         JsonObject biomeSource = generator.getAsJsonObject("biome_source");
         assertEquals("minecraft:fixed", biomeSource.get("type").getAsString());
-        assertEquals("minecraft:the_end", biomeSource.get("biome").getAsString());
+        assertEquals("strife:upper_realm", biomeSource.get("biome").getAsString());
     }
 
     /**

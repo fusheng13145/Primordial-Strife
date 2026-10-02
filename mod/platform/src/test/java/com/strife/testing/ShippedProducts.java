@@ -104,6 +104,16 @@ public final class ShippedProducts {
         return json("/data/strife/dimension/" + dimensionId + ".json");
     }
 
+    /** 单个自研群系产物（{@code data/strife/worldgen/biome/<id>.json}，ADR-021 世界设计）。 */
+    public static JsonObject biome(String biomeId) {
+        return json("/data/strife/worldgen/biome/" + biomeId + ".json");
+    }
+
+    /** 单个 configured feature 产物（上界装饰生成链）。 */
+    public static JsonObject configuredFeature(String featureId) {
+        return json("/data/strife/worldgen/configured_feature/" + featureId + ".json");
+    }
+
     private static List<String> listResources(String dir) {
         List<String> names = new ArrayList<>();
         java.net.URL root = ShippedProducts.class.getResource(dir);
