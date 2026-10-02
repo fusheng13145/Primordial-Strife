@@ -43,9 +43,6 @@ public final class OreGenerator implements TableGenerator {
 
     private static final String CONTRACT = "JSON_SCHEMA §4.8";
 
-    /** 原版 1.21 的矿脉噪声：把矿脉形状打散，避免一个方块状团。 */
-    private static final String VEIN_NOISE = "minecraft:ore veins";
-
     @Override
     public String tableFile() {
         return "ores.csv";
@@ -84,8 +81,8 @@ public final class OreGenerator implements TableGenerator {
             String dropTable = dropTable(source, row, id);
             String element = Cells.required(source, row, "element", CONTRACT);
 
-            products.add(configuredFeature(source, id));
-            products.add(placedFeature(source, id, yMin, yMax, veinsPerChunk, veinSize, density));
+            products.add(configuredFeature(source, id, veinSize));
+            products.add(placedFeature(source, id, yMin, yMax, veinsPerChunk, density));
             products.add(biomeModifier(source, id, biomes));
             products.add(lootTable(source, id, dropTable));
             products.add(
@@ -133,18 +130,26 @@ public final class OreGenerator implements TableGenerator {
         return declared;
     }
 
-    /** 矿块本身 + 替换规则（石头被替换为矿；矿石在原版岩层里先出现再被替换，顺序即变形顺序）。 */
-    private static Product configuredFeature(TableSource source, String id) {
+    /**
+     * 矿块本身 + 替换规则。1.21.1 的 {@code OreConfiguration} 要求 {@code size} 是**整数**、 {@code targets}
+     * 是**数组**，每项含 {@code state.Name} 与 {@code target.{predicate_type,tag}}。 用原版 {@code
+     * #minecraft:stone_ore_replaceables} 标签做 predicate，石头与深板岩一并替换 （我们的矿只有一个方块形态，无需深板岩变体）。
+     */
+    private static Product configuredFeature(TableSource source, String id, int veinSize) {
         Map<String, Object> feature = new LinkedHashMap<>();
         feature.put("type", "minecraft:ore");
         Map<String, Object> config = new LinkedHashMap<>();
-        config.put("size", veinsPlaceholder());
         config.put("discard_chance_on_air_exposure", 0.0);
-        Map<String, Object> targets = new LinkedHashMap<>();
-        // 目标规则是原版 1.17+ 的"先变形再替换"写法：stone（含 deepslate）→ 该矿。
-        // 只列 stone 一个规则即可，deepslate 由 stone 规则的状态自动传播（原版 ore_diamond 即如此定义）。
-        targets.put("minecraft:stone_ore_replaceables", "minecraft:stone");
-        config.put("targets", targets);
+        config.put("size", veinSize);
+        Map<String, Object> target = new LinkedHashMap<>();
+        Map<String, Object> state = new LinkedHashMap<>();
+        state.put("Name", "strife:" + id);
+        target.put("state", state);
+        Map<String, Object> predicate = new LinkedHashMap<>();
+        predicate.put("predicate_type", "minecraft:tag_match");
+        predicate.put("tag", "minecraft:stone_ore_replaceables");
+        target.put("target", predicate);
+        config.put("targets", List.of(target));
         feature.put("config", config);
         return new Product(
                 "data/strife/worldgen/configured_feature/" + id + ".json",
@@ -153,23 +158,18 @@ public final class OreGenerator implements TableGenerator {
     }
 
     /**
-     * 放置规则：数量 = {@code veins_per_chunk × density_ratio}，尺寸 = {@code vein_size}。
+     * 放置规则：数量 = {@code veins_per_chunk × density_ratio}（矿脉尺寸落在 configured_feature 的 size 字段，不在
+     * placed_feature 出现）。
      *
      * <p>密度倍率在这里折算成"实际矿脉条数"而不是留在 JSON 里让运行时算——放矿是原版行为，运行时没有"读表再乘"的 钩子，倍率必须在此处落成整数。折算向上取整且保底
      * 1：density_ratio &gt; 0 时取整成 0 会让该矿彻底消失，而表作者 写 0.15 的意图是"稀"不是"没有"。
      */
     private static Product placedFeature(
-            TableSource source,
-            String id,
-            int yMin,
-            int yMax,
-            int veinsPerChunk,
-            int veinSize,
-            double density) {
+            TableSource source, String id, int yMin, int yMax, int veinsPerChunk, double density) {
         int effectiveVeins = Math.max(1, (int) Math.ceil(veinsPerChunk * density));
         Map<String, Object> feature = new LinkedHashMap<>();
         feature.put("feature", "strife:" + id);
-        feature.put("placement", placementList(effectiveVeins, yMin, yMax, veinSize));
+        feature.put("placement", placementList(effectiveVeins, yMin, yMax));
         return new Product(
                 "data/strife/worldgen/placed_feature/" + id + ".json",
                 feature,
@@ -320,50 +320,27 @@ public final class OreGenerator implements TableGenerator {
      * <p>{@code count} 用常量 {@code 1} × {@code N}：原版 {@code CountPlacement} 的第二个参数是均匀分布的倍数， 写 1
      * 即"每次放置恰好 N 条"，语义与表列名 {@code veins_per_chunk} 一致。
      */
-    private static List<Object> placementList(int veins, int yMin, int yMax, int veinSize) {
+    private static List<Object> placementList(int veins, int yMin, int yMax) {
         List<Object> modifiers = new ArrayList<>();
-        modifiers.add(singleKeyMap("count", veins));
-        modifiers.add(singleKeyMap("in_square", null));
-        modifiers.add(singleKeyMap("height_range", heightRange(yMin, yMax)));
-        modifiers.add(singleKeyMap("vein_size", veinSize));
-        modifiers.add(singleKeyMap("lakes", null));
-        modifiers.add(singleKeyMap("noise", VEIN_NOISE));
-        modifiers.add(singleKeyMap("noise_multiplier", 0.0));
+        Map<String, Object> count = new LinkedHashMap<>();
+        count.put("type", "minecraft:count");
+        count.put("count", veins);
+        modifiers.add(count);
+        modifiers.add(Map.of("type", "minecraft:in_square"));
+        Map<String, Object> heightRange = new LinkedHashMap<>();
+        heightRange.put("type", "minecraft:height_range");
+        Map<String, Object> trapezoid = new LinkedHashMap<>();
+        trapezoid.put("type", "minecraft:trapezoid");
+        Map<String, Object> max = new LinkedHashMap<>();
+        max.put("absolute", yMax);
+        Map<String, Object> min = new LinkedHashMap<>();
+        min.put("absolute", yMin);
+        trapezoid.put("max_inclusive", max);
+        trapezoid.put("min_inclusive", min);
+        heightRange.put("height", trapezoid);
+        modifiers.add(heightRange);
+        modifiers.add(Map.of("type", "minecraft:biome"));
         return modifiers;
-    }
-
-    /**
-     * 原版 {@code height_range} 是"以地表为 0 的相对高度"，允许负值。
-     *
-     * <p>{@code y_min} 是绝对高度，直接减掉 y=-64 的基线（1.21.2 之前原版世界的最低方块层是 -64）。这里减 64 是
-     * <b>平台常量</b>不是受管数值：它描述的是原版世界的高度基准，改动它意味着改 MC 版本。
-     */
-    private static Map<String, Object> heightRange(int yMin, int yMax) {
-        Map<String, Object> range = new LinkedHashMap<>();
-        range.put("height", yMax - WORLD_MIN_Y);
-        range.put("y", yMin - WORLD_MIN_Y);
-        return range;
-    }
-
-    /** 原版世界基线高度（1.21.1 为 -64）。 */
-    private static final int WORLD_MIN_Y = -64;
-
-    /** 只有一个键的修饰符 map；{@code value} 为 null 时写 {@code {}}（原版无参修饰符的写法）。 */
-    private static Map<String, Object> singleKeyMap(String key, Object value) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        if (value != null) {
-            map.put(key, value);
-        }
-        return map;
-    }
-
-    /** configured feature 的 size 由 placed feature 的 {@code vein_size} 覆写，这里给原版默认 1。 */
-    private static Map<String, Object> veinsPlaceholder() {
-        Map<String, Object> size = new LinkedHashMap<>();
-        size.put("type", "minecraft:uniform");
-        size.put("min_inclusive", 1);
-        size.put("max_inclusive", 1);
-        return size;
     }
 
     private static Map<String, String> placementMapping(

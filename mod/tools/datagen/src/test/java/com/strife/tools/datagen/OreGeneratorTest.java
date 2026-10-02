@@ -101,16 +101,25 @@ class OreGeneratorTest {
         assertEquals(1, countOf(rare), "2 × 0.15 = 0.3 → 保底 1（取整成 0 会让该矿彻底消失）");
     }
 
-    /** 高度区间是"以 y=0 为基准的相对高度"，绝对高度要减掉原版世界基线 −64。 */
+    /**
+     * 1.21.1 的 height_range 用 {@code VerticalAnchor.absolute} 直接写绝对高度，不折算世界基线（与 原版 {@code
+     * ore_iron_upper} 的 trapezoid 结构一致）。
+     */
     @Test
-    void heightRangeShiftsAbsoluteYByTheWorldBaseline(@TempDir Path dir) throws IOException {
+    void heightRangeUsesAbsoluteVerticalAnchors(@TempDir Path dir) throws IOException {
         TableSource source = readTable(dir, List.of(goodRow("block_ore_lingyu")));
 
-        JsonObject range =
+        JsonObject trapezoid =
                 heightRangeOf(placed(new OreGenerator().generate(source), "block_ore_lingyu"));
 
-        assertEquals(112, range.get("height").getAsInt(), "y_max 48 − (−64) = 112");
-        assertEquals(16, range.get("y").getAsInt(), "y_min −48 − (−64) = 16");
+        assertEquals(
+                48,
+                trapezoid.getAsJsonObject("max_inclusive").get("absolute").getAsInt(),
+                "y_max 48 直接落为 absolute 48");
+        assertEquals(
+                -48,
+                trapezoid.getAsJsonObject("min_inclusive").get("absolute").getAsInt(),
+                "y_min −48 直接落为 absolute −48（不折算基线）");
     }
 
     /** 掉落表必须与方块注册名一致：1.21.1 的掉落表路径由注册名推导，写别的名字 = 静默掉空气。 */
@@ -311,8 +320,8 @@ class OreGeneratorTest {
     private static JsonObject heightRangeOf(JsonObject placedFeature) {
         for (var element : placedFeature.getAsJsonArray("placement")) {
             JsonObject modifier = element.getAsJsonObject();
-            if (modifier.has("height_range")) {
-                return modifier.getAsJsonObject("height_range");
+            if ("minecraft:height_range".equals(modifier.get("type").getAsString())) {
+                return modifier.getAsJsonObject("height");
             }
         }
         throw new AssertionError("placed_feature 缺 height_range 修饰符");

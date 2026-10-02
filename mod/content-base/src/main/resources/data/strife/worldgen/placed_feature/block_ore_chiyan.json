@@ -3,24 +3,26 @@
   "feature": "strife:block_ore_chiyan",
   "placement": [
     {
+    "type": "minecraft:count",
     "count": 2
   },
-    {},
     {
-    "height_range": {
-    "height": 128,
-    "y": 32
+    "type": "minecraft:in_square"
+  },
+    {
+    "type": "minecraft:height_range",
+    "height": {
+    "type": "minecraft:trapezoid",
+    "max_inclusive": {
+    "absolute": 64
+  },
+    "min_inclusive": {
+    "absolute": -32
+  }
   }
   },
     {
-    "vein_size": 7
-  },
-    {},
-    {
-    "noise": "minecraft:ore veins"
-  },
-    {
-    "noise_multiplier": 0.0
+    "type": "minecraft:biome"
   }
   ]
 }

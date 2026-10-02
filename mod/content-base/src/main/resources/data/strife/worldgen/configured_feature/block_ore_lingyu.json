@@ -2,14 +2,18 @@
   "@generated": "from tables/ores.csv @ sha256:9d9d1ca58953c4e761d49570dede48d8a03c95430dcf60aa0f5e7ce7cc8f5907",
   "type": "minecraft:ore",
   "config": {
-    "size": {
-    "type": "minecraft:uniform",
-    "min_inclusive": 1,
-    "max_inclusive": 1
-  },
     "discard_chance_on_air_exposure": 0.0,
-    "targets": {
-    "minecraft:stone_ore_replaceables": "minecraft:stone"
+    "size": 10,
+    "targets": [
+    {
+    "state": {
+    "Name": "strife:block_ore_lingyu"
+  },
+    "target": {
+    "predicate_type": "minecraft:tag_match",
+    "tag": "minecraft:stone_ore_replaceables"
   }
+  }
+  ]
   }
 }

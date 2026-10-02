@@ -125,20 +125,27 @@ class OreTablesTest {
     }
 
     /**
-     * 矿脉数 = {@code veins_per_chunk × density_ratio} 向上取整且保底 1；高度区间 = 绝对高度减 64。
+     * 矿脉数 = {@code veins_per_chunk × density_ratio} 向上取整且保底 1；高度用绝对 VerticalAnchor 直接落位。
      *
      * <p>这两处换算错了都不会报错：矿脉数算成 0 → 矿完全不生成；高度算错 → 矿长在玩家挖不到的地方。灵玉矿 8×0.85=6.8 → 7、寒玉矿 2×0.15=0.3 → 保底
-     * 1，都是"向上取整 + 保底"的语义（稀，不是没有）。
+     * 1，都是"向上取整 + 保底"的语义（稀，不是没有）。高度用 1.21.1 的 {@code trapezoid} + {@code absolute} 锚点， 与原版 {@code
+     * ore_iron_upper} 同构，绝对高度不折算世界基线。
      */
     @Test
-    void placedFeatureFoldsDensityAndShiftsHeightByTheWorldBaseline() {
+    void placedFeatureFoldsDensityAndUsesAbsoluteHeight() {
         assertEquals(7, placedCount("block_ore_lingyu"), "8 × 0.85 = 6.8 → ceil = 7");
         assertEquals(2, placedCount("block_ore_chiyan"), "4 × 0.45 = 1.8 → ceil = 2");
         assertEquals(1, placedCount("block_ore_hanyu"), "2 × 0.15 = 0.3 → ceil 后保底 1（稀，不是没有）");
 
-        JsonObject range = heightRange("block_ore_lingyu");
-        assertEquals(112, range.get("height").getAsInt(), "y_max 48 − (−64) = 112");
-        assertEquals(16, range.get("y").getAsInt(), "y_min −48 − (−64) = 16");
+        JsonObject trapezoid = heightRange("block_ore_lingyu");
+        assertEquals(
+                48,
+                trapezoid.getAsJsonObject("max_inclusive").get("absolute").getAsInt(),
+                "y_max 48 直接落为 absolute 48");
+        assertEquals(
+                -48,
+                trapezoid.getAsJsonObject("min_inclusive").get("absolute").getAsInt(),
+                "y_min −48 直接落为 absolute −48（不折算基线）");
 
         JsonObject lingyu = ShippedProducts.ore("block_ore_lingyu");
         JsonObject placement = lingyu.getAsJsonObject("placement");
@@ -303,8 +310,8 @@ class OreTablesTest {
     private static JsonObject heightRange(String oreId) {
         for (var element : ShippedProducts.placedFeature(oreId).getAsJsonArray("placement")) {
             JsonObject modifier = element.getAsJsonObject();
-            if (modifier.has("height_range")) {
-                return modifier.getAsJsonObject("height_range");
+            if ("minecraft:height_range".equals(modifier.get("type").getAsString())) {
+                return modifier.getAsJsonObject("height");
             }
         }
         throw new AssertionError(oreId + " 的 placed_feature 缺 height_range 修饰符");

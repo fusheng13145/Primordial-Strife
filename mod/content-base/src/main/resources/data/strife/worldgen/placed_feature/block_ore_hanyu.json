@@ -3,24 +3,26 @@
   "feature": "strife:block_ore_hanyu",
   "placement": [
     {
+    "type": "minecraft:count",
     "count": 1
   },
-    {},
     {
-    "height_range": {
-    "height": 80,
-    "y": 8
+    "type": "minecraft:in_square"
+  },
+    {
+    "type": "minecraft:height_range",
+    "height": {
+    "type": "minecraft:trapezoid",
+    "max_inclusive": {
+    "absolute": 16
+  },
+    "min_inclusive": {
+    "absolute": -56
+  }
   }
   },
     {
-    "vein_size": 5
-  },
-    {},
-    {
-    "noise": "minecraft:ore veins"
-  },
-    {
-    "noise_multiplier": 0.0
+    "type": "minecraft:biome"
   }
   ]
 }
