@@ -1,0 +1,42 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:a033f84b89b785cdc339fb3f5ba99cdb56547027a308ab33dbe7b4e6586a7a47",
+  "id": "combat_rules",
+  "combat": {
+    "realm_coeff": {
+    "fanren": 1.0,
+    "qili": 1.5,
+    "zhuji": 2.4,
+    "jindan": 4.0,
+    "yuanying": 7.0,
+    "huashen": 12.0,
+    "lianxu": 20.0,
+    "heti": 33.0,
+    "dujie": 55.0
+  },
+    "formula_basic": {
+    "base": 6,
+    "scale": "realm_coeff"
+  },
+    "formula_pierce": {
+    "base": 4,
+    "scale": "realm_coeff",
+    "pen": 0.5
+  },
+    "formula_burst": {
+    "base": 12,
+    "scale": "realm_coeff",
+    "self_cost_qi": 0.15
+  },
+    "spell_cost_qi": {
+    "light": 6,
+    "medium": 18,
+    "heavy": 45
+  },
+    "spell_cooldown_sec": {
+    "light": 1.0,
+    "medium": 4.0,
+    "heavy": 12.0
+  },
+    "artifact_cooldown_sec": 20
+  }
+}

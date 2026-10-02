@@ -68,7 +68,8 @@ public final class DataGenMain {
                 new RealmsGenerator(),
                 new RealmRulesGenerator(),
                 new WorldRulesGenerator(),
-                new CoreRulesGenerator());
+                new CoreRulesGenerator(),
+                new CombatRulesGenerator());
     }
 
     public static void main(String[] args) {

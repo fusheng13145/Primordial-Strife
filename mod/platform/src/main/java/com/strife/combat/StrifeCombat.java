@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 /**
  * combat 分侧入口（docs/03 §7 模块入口模式）。
  *
- * <p>本模块此前<b>一行代码都没有</b>（03 §1 的职责表与依赖断言里一直留着它的位置）。本入口是它的第一行：把功法倍率接进 四因子公式、把授功法的奖励缝补上、挂上 {@code
- * /strife technique} 命令子树。
+ * <p>职责编排：功法倍率接进四因子公式、授功法奖励缝、{@code /strife technique} 命令子树、 法术产物表与 cast 意图（M2"法术弹道系统 +
+ * 施法限速"）、combat 域实体注册（弹道/妖兽）。
  */
 @Mod(value = StrifeMod.MOD_ID)
 public final class StrifeCombat {
@@ -27,5 +27,10 @@ public final class StrifeCombat {
         Techniques.registerFactor();
         RewardBridges.registerTechniqueGranter(Techniques::learn);
         StrifeCommands.MODULE_SUBTREES.add(Techniques.command());
+        StrifeCommands.MODULE_SUBTREES.add(Spells.command());
+        // M2：法术弹道系统（产物表 + cast 意图）与 combat 域实体（弹道/妖兽）。
+        StrifeCombatEntities.ENTITY_TYPES.register(modEventBus);
+        modEventBus.addListener(StrifeMonster::onAttributes);
+        Spells.register();
     }
 }
