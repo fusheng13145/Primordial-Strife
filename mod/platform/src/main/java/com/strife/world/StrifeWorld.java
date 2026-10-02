@@ -53,6 +53,7 @@ public final class StrifeWorld {
         StrifeOreBlocks.BLOCKS.register(modEventBus);
         StrifeOreBlocks.ITEMS.register(modEventBus);
         NeoForge.EVENT_BUS.addListener(HerbDrops::onBreakBlock);
+        NeoForge.EVENT_BUS.addListener(AmbientQiWarmup::onChunkLoad);
         CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
         StrifeCommands.MODULE_SUBTREES.add(OreCommand.subtree());
         LOGGER.info("strife world wired cultivation factor: environment=ambient qi field");
