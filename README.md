@@ -43,12 +43,32 @@ cd mod
 ./gradlew :platform:runClient  # 载入判据三行见 docs/02 §4
 ```
 
-**只想进游戏看看（不改代码）**：不必用 Gradle。`./gradlew :platform:build` 产出 `mod/platform/build/libs/strife-0.0.1.jar`，把它丢进一个 **NeoForge 1.21.1** 实例的 `mods/`，用官方启动器 / PCL2 / HMCL 启动即可（注意选 NeoForge，不是 Forge）。开发与正式启动两条路径的差别见 docs/02 §4.1。DataGen 已接 7 张表 + realms/world（NUMBERS 直出），24 个内容产物打进 jar（九境、两势力、五功法、三法术、三丹方、序章任务 DAG、world 运行时数值表）。**进游戏（单机）即可通关 MVP 主链**：登录随机显现灵根（UUID+种子化，永不重算）→ **按住潜行打坐**积修为（打断惩罚、小境界随修为推进）→ 修为滴满自动尝试突破（成功率按 NUMBERS 表 + 失败累计衰减，失败回退修为）→ 突破成功境界+1、寿元续至新境年限 → **序章任务链十节点全可推进**：破坏草丛掉落凝须草/断血草（概率走 NUMBERS @@world）、击杀任意生物计数、`/strife quest talk|deliver <npc_id>` 完成对话与交付节点、持有量（背包+末影箱）自动对账 `collect` 目标，奖励真实发放（灵石/药材是注册物品，`qi`/`flag`/`unlock` 直写附件）。屏幕左下角 HUD 与 **K 键面板**实时显示修为侧数据；`/strife quest status` 随时查任务进度。数值全部经 DataGen 产物（九境 + rules.json ×2）读取，零受管字面量。MVP 简化清单见 `CultivationHandler`/`QuestAdapter` 类注（突破无主动押注动作、talk/deliver 走命令而非 NPC 实体等，待 A 排期）。上手细节见 [SETUP.md](SETUP.md)。服务端专用制品走 `./gradlew :platform:serverJar`（见 docs/02 §4）。
+**只想进游戏看看（不改代码）**：不必用 Gradle。`./gradlew :platform:build` 产出 `mod/platform/build/libs/strife-0.0.1.jar`，把它丢进一个 **NeoForge 1.21.1** 实例的 `mods/`，用官方启动器 / PCL2 / HMCL 启动即可（注意选 NeoForge，不是 Forge）。开发与正式启动两条路径的差别见 docs/02 §4.1。DataGen 已接 **11 个表生成器实例**（覆盖 `tables/` 下 13 张策划表中的 11 张；`spirit_field.csv`/`ores.csv` 尚无生成器，`id_migration.csv`/`known-placeholders.csv` 是台账不产内容）与 **5 个 NUMBERS 直出域**（realms / realm_rules / world_rules / core_rules / combat_rules），**30 个内容产物**打进 jar（九境 + 两势力 + 五功法 + 三法术 + 三丹方 + 序章与第一章任务 DAG ×2 + 对话树与对话文本 ×4 + 五张运行时数值表），lang 种子 zh_cn/en_us 在库。**进游戏（单机）即可通关 MVP 主链**：登录随机显现灵根（UUID+种子化，永不重算）→ **按住潜行打坐**积修为（打断惩罚、小境界随修为推进）→ 修为滴满自动尝试突破（成功率按 NUMBERS 表 + 失败累计衰减，失败回退修为）→ 突破成功境界+1、寿元续至新境年限 → **序章任务链十节点全可推进**：破坏草丛掉落凝须草/断血草（概率走 NUMBERS @@world）、击杀任意生物计数、`/strife quest talk|deliver <npc_id>` 完成对话与交付节点、持有量（背包+末影箱）自动对账 `collect` 目标，奖励真实发放（灵石/药材是注册物品，`qi`/`flag`/`unlock` 直写附件）。屏幕左下角 HUD 与 **K 键面板**实时显示修为侧数据；`/strife quest status` 随时查任务进度。**游戏内对话**已可用：`/strife npc spawn <npc_id>` 放出一位 NPC，右键开对话树（选择项 + 条件门 + 八型效果），Esc 关闭。数值侧：修炼与战斗受管数值全部经 DataGen 产物读取（零受管字面量）；代码中仅存**技术常量**（同屏弹道上限 64、区块缓存条目上限 4096、每区块 16 格等 MC 固有量），已在 `docs/10-当前进展与交接.md` §4 列出并说明为何不受表管。MVP 简化清单见 `CultivationHandler`/`QuestAdapter` 类注（突破无主动押注动作等，待 A 排期）。上手细节见 [SETUP.md](SETUP.md)。服务端专用制品走 `./gradlew :platform:serverJar`（见 docs/02 §4）。
 
-**Windows 本机 `test` 不可运行**（GBK + 非 ASCII 路径的 Gradle 已知缺陷，机制与禁令见 docs/02 §4）：单测由 CI（ubuntu）执行，本地验证以 `build -x test` + headless 冒烟为准，**不得用 `jvmArgs`/`systemProperty`/跳过测试掩盖**。
+**Windows 本机 `test` 在中文路径下不可运行**（GBK + 非 ASCII 路径的 Gradle 已知缺陷，机制与禁令见 docs/02 §4）。**结论是换路径，不是换代码**：把仓库挂在纯 ASCII 路径的 worktree 上（例：`C:/strife-test`，`git worktree add` 后 `git checkout --detach <commit>`）即可跑全量单测；本仓库主工作树在中文路径下用 `build -x test` + `validator` + 客户端实测作为本地验证。**不得用 `jvmArgs`/`systemProperty`/跳过测试掩盖**。
 
 交单前必跑（docs/06）：`./gradlew spotlessCheck build test validator`——全绿才交，附输出。
 
 ## 当前状态
 
-M0 工程骨架已就位：MOD 可被服务端与客户端载入，`:platform` 有 `strife` 附件与 `/strife info` 兜底命令根。内容管线跑真实数据：**24 个内容产物在库**（realms 9 + realm/world 运行时数值表 ×2 由 NUMBERS 生成、factions 2、techniques 5、spells 3、pills 3、序章任务 DAG 1——STORY §4 十节点转译），`*_key` 列从 NUMBERS `@@块` 内联展开，lang 种子 zh_cn/en_us 在库。DataGen 已接 7 张表 + realms/world 两个 NUMBERS 直出域（quests/dialog_trees 为一章一文件聚合产物）。validator 实装九项门禁（V-DUP / V-FRESH 含 content/ 源头 / V-DAG 任务图 / V-REF 第一期 + V-GROWTH / 真相源数值域 / V-TEXT / V-PROB / price 非负）——`content/` 合入前 NUMBERS 侧 CI 自动跳过并声明。M3 前置已落：条件 DSL 解释器（八谓词 + 短路布尔树，22 用例）、QuestEngine 纯逻辑核（DAG 状态机 + 幂等推进 + 奖励缝 + **库存对账 collectDeltas**，20 用例）。**MVP 主链闭环（2026-09-30）**：production 注册五件 MVP 物品（灵石/凝须草/月见草/断血草/妖兽材料，lang 词条在库）；world 侧草丛掉落接线；quest 装配层订阅登录/打坐/突破/击杀/拾取 + `/strife quest talk|deliver|status`（core 挂载点 `StrifeCommands.MODULE_SUBTREES`，禁区 fast-track 待 A 评审）——序章十节点全可推进、奖励真实落包，MVP 用例（07 §4）可全链路跑通。后续任务与准出条件见 docs/07 与 docs/04 §8 的"未点亮门禁"清单。
+> 快照日期 2026-10-02。**逐项进展、遗留与下一步动作见 [`docs/10-当前进展与交接.md`](docs/10-当前进展与交接.md)**（交接成员先读那份）。本节只给结论级概览。
+
+M0–M3 主链已闭环，M2 战斗域与 M4 world 域部分交付。
+
+**已落地（可玩可验）**
+- **数据层**：`StrifeData` 16 字段聚合 record 挂单附件 `PLAYER_DATA`（copyOnDeath），Codec 全字段带默认值，旧档不破档。
+- **修炼主链**：灵根生成（UUID+种子化，永不重算）→ 潜行打坐（打断惩罚、降频结算）→ 修为累积 → 突破（成功率查表 + 失败累计衰减，失败非破坏性）→ 寿元续至新境年限。修仙 HUD（客户端）+ K 键面板（境界/修为/寿元/灵根/声望/所属势力）。
+- **任务域**：QuestEngine DAG 状态机 + 幂等推进 + 奖励缝 + 库存对账（背包 + 末影箱）；八谓词条件 DSL（短路布尔树）；对话树引擎（`DialogBook` 严格解析 / `DialogRunner` 门语义遍历 + 八型 effects）；NPC 实体（一实体类型承载全部 NPC，`npcId` 为同步数据字段）+ 对话 UI。序章十节点由真实 `prologue.json` 驱动的全链路用例守着。
+- **战斗域**：法术弹道（同屏 ≤64、超距回收、穿透/AOE 半伤）、妖兽实体 AI、限速令牌桶与统一意图信封（fail-closed 校验）、`/strife spell cast`。
+- **生产域**：统一配方机（炼丹）——材料校验 → 扣除 → 区间抽签（Σprob<1 差额判废丹）、`/strife recipe list|show`。
+- **世界域**：灵气浓度场（`ImprovedNoise` 双层，粗粒度 16×16 区块一值 + 细化层，按世界种子+维度缓存）、草类方块草药掉落。
+- **内容管线**：30 个 DataGen 产物（见上手节），`*_key` 列从 NUMBERS `@@块` 内联展开，zh_cn/en_us lang 在库；11 项 Validator 门禁全绿（`checks=11 problems=0`），含 V-DSL 与 V-REF 二期。
+- **质量基线**：单测 368 例全绿（platform 229 / buildSrc 7 / tools 132），`spotlessCheck build validator` 全绿，纯净服务端 jar 无头冒烟通过；`runClient` 客户端实测进世界、ERROR=0。
+- **资产**：8 张物品贴图 + 通用 NPC/妖兽贴图 + 全部模型 JSON 入库，生成方式与替换流程见 [CREDITS.md](CREDITS.md)。
+
+**已知遗留**（详见交接文档 §3）
+- `tables/spirit_field.csv` / `tables/ores.csv` 仍是无生成器的空模板：区域卡与矿石 placement 尚未进产物。
+- JEI/Patchouli/Accessories 三个软依赖仍是"无库降级"状态，未接真实 API。
+- 联机客户端镜像已通（`StrifeClientMirror` 轮询 + revision），但专用服下的面板消费端未做。
+- `content/` 四份真相源仍为 Agent 初稿，`[拟]` 值待 C 名义确认（AGENTS.md 硬规则）。
+- 本机中文路径下 Gradle 测试 worker 受 GBK 缺陷拦截，单测走 `C:/strife-test` ASCII worktree 或 CI。

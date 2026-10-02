@@ -1,0 +1,14 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:9d9d1ca58953c4e761d49570dede48d8a03c95430dcf60aa0f5e7ce7cc8f5907",
+  "type": "neoforge:add_features",
+  "biomes": [
+    "minecraft:plains",
+    "minecraft:forest",
+    "minecraft:desert",
+    "minecraft:taiga",
+    "minecraft:savanna",
+    "minecraft:swamp"
+  ],
+  "features": "strife:block_ore_lingyu",
+  "step": "underground_ores"
+}

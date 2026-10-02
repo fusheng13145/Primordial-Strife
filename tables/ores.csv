@@ -1,1 +1,4 @@
 id,element,placement,density_ratio,drop_table,regen_period_key,_note
+block_ore_lingyu,jin,biomes=minecraft:plains|minecraft:forest|minecraft:desert|minecraft:taiga|minecraft:savanna|minecraft:swamp;y_min=-48;y_max=48;veins_per_chunk=8;vein_size=10,0.85,blocks/block_ore_lingyu,,M4 灵玉矿 金属性 常见档（NUMBERS ore_drop_weights.common=70）序章筑基前可用
+block_ore_chiyan,huo,biomes=minecraft:desert|minecraft:badlands|minecraft:savanna|minecraft:nether_wastes|minecraft:soul_sand_valley;y_min=-32;y_max=64;veins_per_chunk=4;vein_size=7,0.45,blocks/block_ore_chiyan,,M4 赤炎矿 火属性 稀有档（NUMBERS ore_drop_weights.rare=25）文津渡以南荒地
+block_ore_hanyu,shui,biomes=minecraft:ocean|minecraft:deep_ocean|minecraft:frozen_ocean|minecraft:river|minecraft:frozen_river;y_min=-56;y_max=16;veins_per_chunk=2;vein_size=5,0.15,blocks/block_ore_hanyu,,M4 寒玉矿 水属性 灵品档（NUMBERS ore_drop_weights.spirit=5）石过滩灵脉改道现场 第一章冲突物

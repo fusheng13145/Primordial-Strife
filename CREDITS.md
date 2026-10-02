@@ -16,11 +16,21 @@
 | 灵石/凝墟草/越鉴/断血/药材 物品贴图 | `assets/strife/textures/item/item_*.png` | Python 程序化绘制（16×16，菱形晶体/药草/书卷/袋装） | 2026-10-02 |
 | 聚气/培元/延寿丹 物品贴图 | `assets/strife/textures/item/pill_*.png` | Python 程序化绘制（16×16 圆丹三色） | 2026-10-02 |
 | 法术弹道视觉 | （借用）`minecraft:fire_charge` | 原版火焰弹贴图，经 `SpellProjectile#getItem` 借用 | 2026-10-02 |
+| 灵玉/赤炎/寒玉矿 方块贴图 | `assets/strife/textures/block/block_ore_*.png` | `mod/tools/gen_ore_textures.py` 程序化绘制（16×16，石头底纹 + 斜向矿脉条带 + 矿斑，固定随机种子保证可复现） | 2026-10-02 |
+| 矿石方块模型与 blockstate | `assets/strife/models/block/block_ore_*.json`、`assets/strife/blockstates/block_ore_*.json` | 手写（继承 `minecraft:block/cube_all`，全表贴图） | 2026-10-02 |
 | HUD/面板/字体 | （借用）原版 GUI 元素 | `StrifeHudOverlay`/`StrifePanelScreen`/`DialogScreen` 使用原版组件与文本渲染 | 2026-10-02 |
 
 ## 程序化生成方式说明
 
-所有 Python 生成的贴图由一次性脚本绘制（RGBA PNG，标准 MC UV 布局），脚本本体未入库——生成参数记录在各资产的配色注释里（见生成脚本执行日志与 git 提交 `eebde98`、`0a28435` 的资产新增记录）。**替换流程**：美术人员按同路径投放同名文件（PNG，同尺寸）即可，无需改代码、无需重新构建内容管线。
+物品与生物贴图由一次性 Python 脚本绘制（RGBA PNG，标准 MC UV 布局），脚本本体未入库——生成参数记录在各资产的配色注释里（见生成脚本执行日志与 git 提交 `eebde98`、`0a28435` 的资产新增记录）。
+
+矿石贴图是唯一**脚本入库**的一类：`mod/tools/gen_ore_textures.py`（无第三方依赖，`zlib`+`struct` 手写 PNG）。入库理由是它带**固定随机种子**（`seed = sum(矿名.encode())`）——贴图因此是"可复现的源"而不是"一次性的产物"，重跑得到逐字节相同的结果，便于评审比对与回归。运行方式：
+
+```bash
+python mod/tools/gen_ore_textures.py
+```
+
+**替换流程**：美术人员按同路径投放同名文件（PNG，同尺寸）即可，无需改代码、无需重新构建内容管线。
 
 ## 借用资源致谢
 

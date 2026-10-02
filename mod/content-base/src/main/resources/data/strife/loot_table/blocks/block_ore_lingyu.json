@@ -1,0 +1,53 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:9d9d1ca58953c4e761d49570dede48d8a03c95430dcf60aa0f5e7ce7cc8f5907",
+  "type": "minecraft:block",
+  "pools": [
+    {
+    "rolls": 1.0,
+    "bonus_rolls": 0.0,
+    "entries": [
+    {
+    "type": "minecraft:alternatives",
+    "children": [
+    {
+    "type": "minecraft:item",
+    "name": "strife:block_ore_lingyu",
+    "conditions": [
+    {
+    "condition": "minecraft:match_tool",
+    "predicate": {
+    "predicates": {
+    "minecraft:enchantments": [
+    {
+    "enchantments": "minecraft:silk_touch",
+    "levels": {
+    "min": 1
+  }
+  }
+  ]
+  }
+  }
+  }
+  ]
+  },
+    {
+    "type": "minecraft:item",
+    "name": "strife:block_ore_lingyu",
+    "functions": [
+    {
+    "function": "minecraft:apply_bonus",
+    "enchantment": "minecraft:fortune",
+    "formula": "minecraft:ore_drops"
+  },
+    {
+    "function": "minecraft:explosion_decay"
+  }
+  ]
+  }
+  ]
+  }
+  ]
+  }
+  ],
+  "random_sequence": "strife:blocks/block_ore_lingyu"
+}

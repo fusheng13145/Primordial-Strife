@@ -11,38 +11,54 @@
 ## 2. 命令速查（都在 `mod/` 目录执行）
 
 ```bash
-./gradlew build                # 编译 + 依赖断言（单测只在 CI 跑，见 §4）
 ./gradlew spotlessCheck        # 格式门禁
-./gradlew validator            # 内容校验（V-DUP/V-FRESH/V-GROWTH/V-TEXT/V-PROB/数值域）
+./gradlew build                # 编译 + 依赖断言（本机中文路径下用 build -x test，见 §4）
+./gradlew validator            # 内容校验（11 项门禁：V-DUP/V-FRESH/V-DAG/V-REF×2/V-GROWTH/V-RANGE/V-TEXT/V-PROB/V-DSL/price）
 ./gradlew :tools:datagen:run   # 表 + NUMBERS → content-base 产物
 ./gradlew :platform:runClient  # 开发客户端（进游戏看效果）
 ./gradlew :platform:runServer  # 开发服务端（需自备 run/server/eula.txt）
+./gradlew :platform:build      # 出主 jar（含 content-base 产物），丢进启动器实例的 mods/
 ./gradlew :platform:serverJar  # 纯净服务端制品（CI 用它做 60s 开服冒烟）
 ```
 
+三条验证通道的完整判据见 [docs/02 §4.2](docs/02-技术基线.md)。简版：
+
+| 通道 | 命令 | 用途 |
+|---|---|---|
+| A 开发客户端 | `./gradlew :platform:runClient` | 日常端到端（渲染/UI/实体/进世界） |
+| B 纯 ASCII worktree | `git worktree add C:/strife-test <branch>` → `cd C:/strife-test/mod && ./gradlew test` | **Windows 中文路径下唯一能跑单测的通道** |
+| C 正式启动器 | `./gradlew :platform:build` → jar 放进 NeoForge 1.21.1 实例 `mods/`，用 PCL2 / HMCL / 官方启动器启动 | 交付验收、非开发成员试玩 |
+
 ## 3. 进游戏看什么（当前可见物）
 
-`./gradlew :platform:runClient` 启动开发客户端（离线账号，首屏可能出现 `authlib ... Read timed out`，不影响载入）。**载入成功判据三行**（docs/02 §4）：
-
-1. mod 列表出现 `Primordial Strife x.y.z (strife)`
-2. 日志出现 `strife platform entry constructed`
-3. 日志出现 `strife client_fx entry constructed`
-4. 控制设置里能看到类别「玄黄劫争」与按键「打开修仙面板」（默认 K）
+**载入成功判据**（docs/02 §4）：mod 列表出现 `Primordial Strife x.y.z (strife)`；日志出现 `strife platform entry constructed` 与 `strife client_fx entry constructed`；`ResourceManager: ... mod/strife ...`。首屏可能出现 `authlib ... Read timed out`（session/realms 域名网络受限），不影响载入。
 
 进世界后：
 
 | 可见物 | 在哪 | 说明 |
 |---|---|---|
 | **修仙 HUD** | 屏幕左下角，常驻 | `境界 凡人 · 修为 0` + `寿元 X 年 · 灵根 未生成`。单机读 integrated server 的**权威附件真实数据**；专用服/联机上暂不显示（客户端镜像等 M1 A1-5 同步），绝不画假数据 |
-| `/strife info` | 聊天栏 | 玩家数据骨架 |
-| **修仙面板** | 游戏内按 **K** | 详情页：境界/小境界/修为/寿元（年+刻）/灵根五行品阶/突破失败累计/所属势力/H2 声望向量。数据同 HUD（单机权威附件） |
+| **修炼面板** | 游戏内按 **K** | 详情页：境界/小境界/修为/寿元（年+刻）/灵根五行品阶/突破失败累计/所属势力/H2 声望向量 |
+| **对话树** | `/strife npc spawn <npc_qingshi_zhizhi>` 放出一位 NPC → **右键** | 说话人 + 正文 + 选项按钮；选项按条件门显隐；Esc 关闭（不暂停世界）。序章四棵树：石执事三段门链 / 苏药农交付 / 挑灯人风味 / 吴长老择宗 |
+| **妖兽** | 原版环境下自然生成 | `StrifeMonster`：仇恨/追击/近战 AI；可被 `/strife spell cast` 命中 |
+| **矿石与宗门结构** | — | **M4 未实现**：矿石 placement 与宗门结构尚未进产物（交接文档 §3 G-7） |
 
-境界/灵根的生成逻辑属 M1（A1-1/A1-5，禁区代码），当前新档显示默认值：凡人、寿元按存档默认、灵根未生成——HUD 骨架已把消费端打通，M1 数值落地即自动变活。
+命令速查：
+
+```
+/strife info                     查看玩家数据
+/strife quest status             任务进度
+/strife quest talk|deliver <npc> 兜底推进对话/交付节点（NPC 实体不可用时的备用通道）
+/strife npc spawn <npc_id>       放置 NPC
+/strife npc dialog open <npc_id> 直接打开某 NPC 的对话
+/strife spell cast <spell_id>    施法（走完整限速与冷却校验）
+/strife recipe list|show         丹方查阅（JEI 接入前的可信兜底）
+```
 
 ## 4. 本机限制（重要）
 
-- **本机不跑 `test`**：GBK + 非 ASCII 路径的 Gradle 已知缺陷（docs/02 §4）。单测由 CI（ubuntu）唯一执行；本地验证用 `build -x test` + `:platform:serverJar`。**不得用改 jvmArgs/跳测试来掩盖。**
-- 诊断用途例外：把仓库复制到纯 ASCII 路径（如 `C:\Temp\strife-ci`）后可跑全量 `build`（含单测），仅用于开发期自测，交单门禁仍以 CI 为准。
+- **本机主工作树在中文路径下不跑 `test`**：GBK + 非 ASCII 路径的 Gradle 已知缺陷（docs/02 §4，上游缺陷 gradle#30304/#30391）。**结论是换路径，不是换代码**——用 §2 的通道 B。**不得用改 jvmArgs/跳测试来掩盖。**
+- 通道 B 的 worktree 是独立检出：**必须在目标 commit 上跑**，否则测的是旧代码；测完 `git worktree remove C:/strife-test` 清理。
 
 ## 5. 改代码前
 

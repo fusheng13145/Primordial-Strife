@@ -1,0 +1,26 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:9d9d1ca58953c4e761d49570dede48d8a03c95430dcf60aa0f5e7ce7cc8f5907",
+  "feature": "strife:block_ore_chiyan",
+  "placement": [
+    {
+    "count": 2
+  },
+    {},
+    {
+    "height_range": {
+    "height": 128,
+    "y": 32
+  }
+  },
+    {
+    "vein_size": 7
+  },
+    {},
+    {
+    "noise": "minecraft:ore veins"
+  },
+    {
+    "noise_multiplier": 0.0
+  }
+  ]
+}

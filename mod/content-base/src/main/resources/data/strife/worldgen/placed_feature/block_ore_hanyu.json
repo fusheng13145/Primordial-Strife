@@ -1,0 +1,26 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:9d9d1ca58953c4e761d49570dede48d8a03c95430dcf60aa0f5e7ce7cc8f5907",
+  "feature": "strife:block_ore_hanyu",
+  "placement": [
+    {
+    "count": 1
+  },
+    {},
+    {
+    "height_range": {
+    "height": 80,
+    "y": 8
+  }
+  },
+    {
+    "vein_size": 5
+  },
+    {},
+    {
+    "noise": "minecraft:ore veins"
+  },
+    {
+    "noise_multiplier": 0.0
+  }
+  ]
+}

@@ -1,6 +1,7 @@
 package com.strife.world;
 
 import com.strife.core.CultivationFactors;
+import com.strife.core.StrifeCommands;
 import com.strife.core.StrifeMod;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,10 +22,20 @@ import org.slf4j.LoggerFactory;
 /**
  * world 分侧入口（docs/03 §7 模块入口模式）。
  *
- * <p>本入口编排两件事：草类方块破坏的草药掉落（{@link HerbDrops}），以及<b>灵气浓度场</b>——后者通过 {@link
- * CultivationFactors#registerEnvironment} 把环境系数接进 05 §2 的四因子公式，realm 侧一行不用改。
+ * <p>本入口编排三件事：
+ *
+ * <ol>
+ *   <li>草类方块破坏的草药掉落（{@link HerbDrops}）；
+ *   <li><b>灵气浓度场</b>——通过 {@link CultivationFactors#registerEnvironment} 把环境系数接进 05 §2 的四因子公式， realm
+ *       侧一行不用改；
+ *   <li><b>矿石方块注册与自检命令</b>——注册 {@link StrifeOreBlocks} 的方块/物品，并挂 {@code /strife world ore
+ *       status}（{@link OreCommand}）把已加载的矿石表与已注册方块并排打出来。
+ * </ol>
  *
  * <p>场按"世界种子 + 维度"缓存：同一个存档的同一维度共用一个场，换存档（单机切世界）会得到新场；噪声由世界种子决定，因此 同一存档里同一个地方的灵气永远一样。
+ *
+ * <p>矿石的<b>生成与掉落是数据驱动的</b>（{@code tables/ores.csv} → 五份原版 JSON），本入口只注册方块本身—— 方块属性（硬度、材质色、声音）无法用
+ * datapack 表达，而"哪种矿长在哪"可以，两者的分工见 {@link StrifeOreBlocks} 类注释。
  */
 @Mod(value = StrifeMod.MOD_ID)
 public final class StrifeWorld {
@@ -39,9 +50,16 @@ public final class StrifeWorld {
     public StrifeWorld(IEventBus modEventBus, ModContainer container) {
         LOGGER.info(
                 "strife world entry constructed (version {})", container.getModInfo().getVersion());
+        StrifeOreBlocks.BLOCKS.register(modEventBus);
+        StrifeOreBlocks.ITEMS.register(modEventBus);
         NeoForge.EVENT_BUS.addListener(HerbDrops::onBreakBlock);
         CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
+        StrifeCommands.MODULE_SUBTREES.add(OreCommand.subtree());
         LOGGER.info("strife world wired cultivation factor: environment=ambient qi field");
+        LOGGER.info(
+                "strife world registered ore blocks: {}",
+                String.join(", ", StrifeOreBlocks.registeredIds()));
+        LOGGER.info("strife world commands: /strife world ore status");
     }
 
     /**

@@ -54,6 +54,7 @@ public final class DataGenMain {
                 new SpellGenerator(numbers),
                 new PillGenerator(numbers),
                 new ArtifactGenerator(numbers),
+                new OreGenerator(),
                 new QuestGenerator("quests_prologue.csv"),
                 new QuestGenerator("quests_ch1.csv"),
                 new DialogTreeGenerator("dialog_trees_prologue.csv"),

@@ -104,5 +104,8 @@
   "gui.strife.panel.reputation": "Reputation · %s: %s",
   "gui.strife.panel.reputation.none": "Reputation: none",
   "gui.strife.panel.no_data": "Waiting for authoritative server data (synced on join)",
-  "entity.strife.npc": "Chixue Cultivator"
+  "entity.strife.npc": "Chixue Cultivator",
+  "block.strife.block_ore_lingyu": "Lingyu Ore",
+  "block.strife.block_ore_chiyan": "Chiyan Ore",
+  "block.strife.block_ore_hanyu": "Hanyu Ore"
 }

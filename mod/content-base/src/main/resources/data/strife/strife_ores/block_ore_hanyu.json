@@ -1,0 +1,21 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:9d9d1ca58953c4e761d49570dede48d8a03c95430dcf60aa0f5e7ce7cc8f5907",
+  "id": "block_ore_hanyu",
+  "element": "shui",
+  "placement": {
+    "biomes": [
+    "minecraft:ocean",
+    "minecraft:deep_ocean",
+    "minecraft:frozen_ocean",
+    "minecraft:river",
+    "minecraft:frozen_river"
+  ],
+    "y_min": -56,
+    "y_max": 16,
+    "veins_per_chunk": 2,
+    "vein_size": 5
+  },
+  "density_ratio": 0.15,
+  "drop_table": "blocks/block_ore_hanyu",
+  "regen_period_key": null
+}
