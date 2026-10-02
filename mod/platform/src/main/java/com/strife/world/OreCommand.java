@@ -32,14 +32,20 @@ import net.minecraft.world.level.storage.loot.LootTable;
  *
  * <p>为什么 lang 检查要真读文件：缺词条时游戏里显示的是 {@code block.strife.block_ore_lingyu} 这样的原始 key，
  * 玩家看到的是一串标识符。只检查"lang 文件存在"会把这种破损当成通过，所以这里解析 JSON 并按 key 精确查找。
+ *
+ * <p><b>lang 从 classpath 读而不是 server.getResourceManager()</b>（真机两端实证的教训）：命令在服务端线程执行， 而服务端的
+ * ResourceManager 只装载数据包 {@code data/}——无论专用服务端还是单人集成服务端都<b>不挂载</b>客户端 资源 {@code
+ * assets/}（数据包≠资源包），经它读 {@code zh_cn.json} 永远返回空，两端都误报过 [缺]（2026-10-02 专用服务端 RCON 与 PCL2
+ * 客户端截图双证，此前"客户端走原逻辑能正确点名"的判断被后者证伪）。mod 自己 jar 内的 {@code assets/} 随 mod 分发、两端都在 classpath
+ * 上，从那里读的才是真正交付出去的那份文件。
  */
 final class OreCommand {
 
     /** 词条前缀：契约 §4.10 登记的方块 lang 键形状。 */
     private static final String BLOCK_LANG_PREFIX = "block.strife.";
 
-    private static final ResourceLocation ZH_CN =
-            ResourceLocation.fromNamespaceAndPath("strife", "lang/zh_cn.json");
+    /** jar 内 lang 资源的 classpath 路径（服务端 ResourceManager 不挂载 assets/，见类注释）。 */
+    private static final String LANG_ASSET = "/assets/strife/lang/zh_cn.json";
 
     private OreCommand() {}
 
@@ -54,9 +60,6 @@ final class OreCommand {
     private static int status(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
         MinecraftServer server = source.getServer();
-        // 专用服务端(headless)不挂载客户端资源 assets/，lang 词条在那里读不到；此时把 lang 自检
-        // 标记为「跳过」而不是「缺失」，避免误报阻塞自动化验收。客户端(集成服务端)仍按原逻辑精确点名。
-        boolean dedicated = server.isDedicatedServer();
         source.sendSuccess(() -> title("矿石表状态（M4 数据驱动链）"), false);
 
         OreTables tables = OreTables.getOrNull(server);
@@ -71,7 +74,7 @@ final class OreCommand {
         List<String> missingLoot = new ArrayList<>();
         List<String> missingLang = new ArrayList<>();
         List<String> unknownBiome = new ArrayList<>();
-        JsonObject lang = readLang(server);
+        JsonObject lang = readLang();
         Registry<Biome> biomes = server.registryAccess().registryOrThrow(Registries.BIOME);
 
         for (OreTables.OreSpec spec : ores) {
@@ -81,9 +84,8 @@ final class OreCommand {
             if (!lootTableExists(server, spec.dropTable())) {
                 missingLoot.add(spec.id() + " → " + spec.dropTable());
             }
-            // 专用服务端不挂载 assets/，lang 词条在那里读不到——此时跳过，不计入缺口（避免误报）。
-            // 客户端(集成服务端)加载了 assets/，仍精确点名真正缺失的词条。
-            if (!dedicated && (lang == null || !lang.has(BLOCK_LANG_PREFIX + spec.id()))) {
+            // lang 从 jar 内 classpath 读，专用/集成服务端都读得到，正常精确点名。
+            if (lang == null || !lang.has(BLOCK_LANG_PREFIX + spec.id())) {
                 missingLang.add(spec.id());
             }
             for (String biomeId : spec.placement().biomes()) {
@@ -94,10 +96,7 @@ final class OreCommand {
             source.sendSuccess(() -> detail(spec), false);
         }
 
-        String langSummary =
-                dedicated
-                        ? "lang 齐备 不可测(专用服务端不挂载 assets/，请在客户端核验)"
-                        : String.format("lang 齐备 %d", ores.size() - missingLang.size());
+        String langSummary = String.format("lang 齐备 %d", ores.size() - missingLang.size());
         source.sendSuccess(
                 () ->
                         title(
@@ -117,24 +116,10 @@ final class OreCommand {
                 false);
         source.sendSuccess(() -> note("高度列是绝对 y，已在生成期换算为原版相对高度（基线 −64）；掉落表路径由方块注册名推导"), false);
         source.sendSuccess(() -> note("本命令不验「矿是否已在世界里生成」——那要造区块采样，请用镐实测或 /locate"), false);
-        if (dedicated) {
-            source.sendSuccess(
-                    () ->
-                            note(
-                                    "lang 词条自检已跳过：专用服务端(headless)不挂载客户端资源 assets/，"
-                                            + "矿石方块名在游戏客户端由 lang 文件渲染（资源文件已含 block.strife.block_ore_* 三条：灵玉矿/赤炎矿/寒玉矿）"),
-                    false);
-        }
-
         // 四类缺口逐条点名而不是只报计数：策划要能直接看出「哪一栏没填」。
         reportGaps(source, "表里有行但代码未注册方块", missingBlock);
         reportGaps(source, "掉落表产物缺失（该矿会掉空气）", missingLoot);
-        if (dedicated) {
-            // 专用服务端读不到 assets/，lang 不是「OK」也不是「缺」，单独标成跳过以免误导。
-            source.sendSuccess(() -> skip("lang 词条缺失（专用服务端不挂载 assets/，跳过；客户端会渲染中文名）"), false);
-        } else {
-            reportGaps(source, "lang 词条缺失（游戏内显示为原始 key）", missingLang);
-        }
+        reportGaps(source, "lang 词条缺失（游戏内显示为原始 key）", missingLang);
         reportGaps(source, "群系 ID 不存在（该矿在这些群系不生成）", unknownBiome);
 
         return missingBlock.isEmpty()
@@ -192,21 +177,18 @@ final class OreCommand {
         return server.reloadableRegistries().getLootTable(key) != LootTable.EMPTY;
     }
 
-    /** 读 {@code assets/strife/lang/zh_cn.json}；读不到返回 null（此时所有词条判为缺失，不静默当通过）。 */
-    private static JsonObject readLang(MinecraftServer server) {
-        return server.getResourceManager()
-                .getResource(ZH_CN)
-                .map(
-                        resource -> {
-                            try (InputStreamReader reader =
-                                    new InputStreamReader(
-                                            resource.open(), StandardCharsets.UTF_8)) {
-                                return JsonParser.parseReader(reader).getAsJsonObject();
-                            } catch (Exception e) {
-                                return null;
-                            }
-                        })
-                .orElse(null);
+    /**
+     * 从 jar 内 classpath 读 {@code /assets/strife/lang/zh_cn.json}（不依赖 server 的 ResourceManager，
+     * 因为服务端线程不挂载 assets/，见类注释）。读不到返回 null（此时所有词条判为缺失，不静默当通过）。
+     */
+    private static JsonObject readLang() {
+        try (InputStreamReader reader =
+                new InputStreamReader(
+                        OreCommand.class.getResourceAsStream(LANG_ASSET), StandardCharsets.UTF_8)) {
+            return JsonParser.parseReader(reader).getAsJsonObject();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static Component title(String text) {
@@ -223,9 +205,5 @@ final class OreCommand {
 
     private static Component bad(String text) {
         return Component.literal("  [缺] " + text).withStyle(ChatFormatting.RED);
-    }
-
-    private static Component skip(String text) {
-        return Component.literal("  [跳过] " + text).withStyle(ChatFormatting.YELLOW);
     }
 }
