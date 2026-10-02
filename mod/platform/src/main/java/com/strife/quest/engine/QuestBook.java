@@ -286,9 +286,13 @@ public final class QuestBook {
         if (quest == null || state.completed(questId)) {
             return false;
         }
-        for (String prerequisite : quest.prerequisites()) {
-            if (!state.completed(prerequisite)) {
-                return false;
+        // start_quest 激活的任务跳过 prerequisites（叙事钩子显式开门；对话树 start_quest 的语义），
+        // conditions 仍然生效——开门不等于绕过进入门槛
+        if (!state.isActivated(questId)) {
+            for (String prerequisite : quest.prerequisites()) {
+                if (!state.completed(prerequisite)) {
+                    return false;
+                }
             }
         }
         if (quest.conditions() != null) {

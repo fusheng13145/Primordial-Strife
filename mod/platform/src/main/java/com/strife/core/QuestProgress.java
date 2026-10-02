@@ -18,14 +18,17 @@ import java.util.Set;
  *
  * @param completed 已完成的 questId 集合
  * @param objectiveProgress questId → objectiveId → 进度值（已按目标 count 封顶，引擎保证）
+ * @param activated start_quest 激活集（对话树等叙事钩子显式开门；激活任务跳过 prerequisites）
  * @param flags H3 因果标记（{@code <域>:<章>:<语义>} 冒号分段，03 §10 末口径）
  */
 public record QuestProgress(
         Set<String> completed,
         Map<String, Map<String, Long>> objectiveProgress,
+        Set<String> activated,
         Set<String> flags) {
 
-    public static final QuestProgress EMPTY = new QuestProgress(Set.of(), Map.of(), Set.of());
+    public static final QuestProgress EMPTY =
+            new QuestProgress(Set.of(), Map.of(), Set.of(), Set.of());
 
     public static final Codec<QuestProgress> CODEC =
             RecordCodecBuilder.create(
@@ -48,6 +51,14 @@ public record QuestProgress(
                                                     .forGetter(QuestProgress::objectiveProgress),
                                             Codec.STRING
                                                     .listOf()
+                                                    .fieldOf("activated")
+                                                    .orElse(List.of())
+                                                    .forGetter(
+                                                            progress ->
+                                                                    List.copyOf(
+                                                                            progress.activated())),
+                                            Codec.STRING
+                                                    .listOf()
                                                     .fieldOf("flags")
                                                     .orElse(List.of())
                                                     .forGetter(
@@ -55,15 +66,17 @@ public record QuestProgress(
                                                                     List.copyOf(progress.flags())))
                                     .apply(
                                             instance,
-                                            (completed, objectiveProgress, flags) ->
+                                            (completed, objectiveProgress, activated, flags) ->
                                                     new QuestProgress(
                                                             Set.copyOf(completed),
                                                             copyProgress(objectiveProgress),
+                                                            Set.copyOf(activated),
                                                             Set.copyOf(flags))));
 
     public QuestProgress {
         completed = completed == null ? Set.of() : Set.copyOf(completed);
         objectiveProgress = objectiveProgress == null ? Map.of() : copyProgress(objectiveProgress);
+        activated = activated == null ? Set.of() : Set.copyOf(activated);
         flags = flags == null ? Set.of() : Set.copyOf(flags);
     }
 
@@ -88,7 +101,7 @@ public record QuestProgress(
         }
         Set<String> updated = new java.util.HashSet<>(flags);
         updated.add(flag);
-        return new QuestProgress(completed, objectiveProgress, updated);
+        return new QuestProgress(completed, objectiveProgress, activated, updated);
     }
 
     private static Map<String, Map<String, Long>> copyProgress(

@@ -32,7 +32,7 @@ class QuestProgressTest {
     }
 
     @Test
-    @DisplayName("非空进度往返一致：已完成集合 + 嵌套目标进度 + H3 标记")
+    @DisplayName("非空进度往返一致：已完成集合 + 嵌套目标进度 + 激活集 + H3 标记")
     void roundTripPreservesAllThreeParts() {
         QuestProgress original =
                 new QuestProgress(
@@ -40,6 +40,7 @@ class QuestProgressTest {
                         Map.of(
                                 "quest_prologue_herb_pick_01", Map.of("collect", 3L),
                                 "quest_prologue_breakthrough_qi_01", Map.of("breakthrough", 1L)),
+                        Set.of("quest_ch1_pingcang_survey_01"),
                         Set.of("quest_scaffold_talk_done", "h3_luoxia_met"));
 
         QuestProgress decoded = decode(encode(original));
@@ -65,7 +66,8 @@ class QuestProgressTest {
     @DisplayName("progress 对未知任务/未知目标一律返回 0，不抛异常")
     void progressDefaultsToZeroForUnknownKeys() {
         QuestProgress progress =
-                new QuestProgress(Set.of(), Map.of("quest_a", Map.of("obj_1", 2L)), Set.of());
+                new QuestProgress(
+                        Set.of(), Map.of("quest_a", Map.of("obj_1", 2L)), Set.of(), Set.of());
 
         assertEquals(2L, progress.progress("quest_a", "obj_1"));
         assertEquals(0L, progress.progress("quest_a", "obj_unknown"));
@@ -75,7 +77,7 @@ class QuestProgressTest {
     @Test
     @DisplayName("withFlag 幂等且不可变：重复添加不产生新对象外的副作用")
     void withFlagIsIdempotent() {
-        QuestProgress base = new QuestProgress(Set.of("quest_a"), Map.of(), Set.of());
+        QuestProgress base = new QuestProgress(Set.of("quest_a"), Map.of(), Set.of(), Set.of());
 
         QuestProgress once = base.withFlag("h3_x");
         QuestProgress twice = once.withFlag("h3_x");
@@ -103,7 +105,7 @@ class QuestProgressTest {
         Map<String, Map<String, Long>> progress = new java.util.HashMap<>();
         progress.put("quest_a", new java.util.HashMap<>(Map.of("obj", 1L)));
 
-        QuestProgress snapshot = new QuestProgress(completed, progress, Set.of());
+        QuestProgress snapshot = new QuestProgress(completed, progress, Set.of(), Set.of());
         completed.add("quest_b");
         progress.get("quest_a").put("obj", 99L);
 

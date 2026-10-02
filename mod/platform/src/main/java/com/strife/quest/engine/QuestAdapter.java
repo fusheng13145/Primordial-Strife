@@ -43,11 +43,14 @@ public final class QuestAdapter implements RewardSink {
 
     private final ServerPlayer player;
     private final QuestState state;
+    private final Set<String> activated;
     private final Set<String> h3Flags;
 
-    private QuestAdapter(ServerPlayer player, QuestState state, Set<String> h3Flags) {
+    private QuestAdapter(
+            ServerPlayer player, QuestState state, Set<String> activated, Set<String> h3Flags) {
         this.player = player;
         this.state = state;
+        this.activated = activated;
         this.h3Flags = h3Flags;
     }
 
@@ -126,8 +129,21 @@ public final class QuestAdapter implements RewardSink {
     /** 每个事件入口都从附件重建装配层：任务进度现在是玩家数据（03 §3），不再有世界级缓存可复用。 */
     private static QuestAdapter adapter(ServerPlayer player) {
         QuestProgress progress = player.getData(StrifeAttachmentTypes.PLAYER_DATA).quests();
-        QuestState state = QuestState.of(progress.completed(), progress.objectiveProgress());
-        return new QuestAdapter(player, state, new HashSet<>(progress.flags()));
+        QuestState state =
+                QuestState.of(
+                        progress.completed(), progress.objectiveProgress(), progress.activated());
+        return new QuestAdapter(
+                player,
+                state,
+                new HashSet<>(progress.activated()),
+                new HashSet<>(progress.flags()));
+    }
+
+    /** start_quest 意图落点（对话树 effects）：激活 + 立即落盘（调用点不在 report 保存链上）。 */
+    public void startQuest(String questId) {
+        state.activate(questId);
+        activated.add(questId);
+        save();
     }
 
     /** {@code /strife quest talk|deliver} 的落地：一次面向目标 NPC 的交互事件（target 按内容 ID 全等匹配）。 */
@@ -246,7 +262,8 @@ public final class QuestAdapter implements RewardSink {
         player.setData(
                 StrifeAttachmentTypes.PLAYER_DATA,
                 data.withQuests(
-                        new QuestProgress(state.completedIds(), state.progressMap(), h3Flags)));
+                        new QuestProgress(
+                                state.completedIds(), state.progressMap(), activated, h3Flags)));
     }
 
     /** 条件 DSL 的玩家侧上下文：realm/灵根亲和/flag 全部读玩家附件，物品走库存实时计数。 */

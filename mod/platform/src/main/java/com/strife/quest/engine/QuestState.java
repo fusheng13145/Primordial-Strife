@@ -15,6 +15,9 @@ public final class QuestState {
     private final Map<String, Map<String, Long>> objectiveProgress = new HashMap<>();
     private final Map<String, Boolean> completed = new HashMap<>();
 
+    /** start_quest 激活集（对话树等叙事钩子显式开门；激活的任务跳过 prerequisites，conditions 仍生效）。 */
+    private final java.util.Set<String> activated = new java.util.HashSet<>();
+
     /** 某任务某目标的当前进度；任务/目标未知按 0。 */
     public long progress(String questId, String objectiveId) {
         Map<String, Long> byObjective = objectiveProgress.get(questId);
@@ -31,6 +34,15 @@ public final class QuestState {
 
     void markCompleted(String questId) {
         completed.put(questId, true);
+    }
+
+    /** start_quest 的落点（幂等：重复激活是 no-op）。公开给装配层（对话树 effects 的唯一开门入口）。 */
+    public void activate(String questId) {
+        activated.add(questId);
+    }
+
+    public boolean isActivated(String questId) {
+        return activated.contains(questId);
     }
 
     /** 交给持久化层的只读快照（深拷贝，防外部改坏引擎状态）。 */
@@ -56,6 +68,11 @@ public final class QuestState {
         return ids;
     }
 
+    /** start_quest 激活集（附件持久化用；只读副本）。 */
+    public java.util.Set<String> activatedIds() {
+        return java.util.Set.copyOf(activated);
+    }
+
     /** 目标进度表（附件持久化用；{@code snapshot()} 的强类型视图）。 */
     public Map<String, Map<String, Long>> progressMap() {
         Map<String, Map<String, Long>> copy = new HashMap<>();
@@ -67,6 +84,14 @@ public final class QuestState {
     /** 从附件的强类型视图恢复（比 {@link #restore(Map)} 少一层装箱）。 */
     public static QuestState of(
             java.util.Set<String> completedIds, Map<String, Map<String, Long>> progress) {
+        return of(completedIds, progress, java.util.Set.of());
+    }
+
+    /** 全量恢复（含 start_quest 激活集）。 */
+    public static QuestState of(
+            java.util.Set<String> completedIds,
+            Map<String, Map<String, Long>> progress,
+            java.util.Set<String> activatedIds) {
         QuestState state = new QuestState();
         if (completedIds != null) {
             completedIds.forEach(questId -> state.completed.put(questId, true));
@@ -77,6 +102,9 @@ public final class QuestState {
                             state.objectiveProgress
                                     .computeIfAbsent(questId, k -> new HashMap<>())
                                     .putAll(byObjective));
+        }
+        if (activatedIds != null) {
+            state.activated.addAll(activatedIds);
         }
         return state;
     }

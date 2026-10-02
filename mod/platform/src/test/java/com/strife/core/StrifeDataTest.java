@@ -141,6 +141,7 @@ class StrifeDataTest {
                 new QuestProgress(
                         java.util.Set.of("quest_prologue_herb_pick_01"),
                         Map.of("quest_prologue_herb_pick_01", Map.of("collect", 3L)),
+                        java.util.Set.of("quest_ch1_pingcang_survey_01"),
                         java.util.Set.of("quest_scaffold_talk_done"));
         StrifeData base = saturated().withQuests(progress);
 
