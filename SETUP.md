@@ -29,6 +29,12 @@
 | B 纯 ASCII worktree | `git worktree add C:/strife-test <branch>` → `cd C:/strife-test/mod && ./gradlew test` | **Windows 中文路径下唯一能跑单测的通道** |
 | C 正式启动器 | `./gradlew :platform:build` → jar 放进 NeoForge 1.21.1 实例 `mods/`，用 PCL2 / HMCL / 官方启动器启动 | 交付验收、非开发成员试玩 |
 
+**通道 C 的 M4 判据（2026-10-03 待跑，尚未验证）**：进主世界后依次做
+1. `/strife world ore status` → 三种矿各一行明细，末尾四类缺口（方块未注册 / 掉落表缺失 / lang 缺词条 / 群系 ID 不存在）**必须全 `[OK]`**；
+2. 用时运镐挖任意一种矿 → 掉落物名称应为 `灵玉矿/赤炎矿/寒玉矿`（掉空气 = 掉落表链断了）；
+3. 丝触镐挖同一种 → 应掉**方块本体**；
+4. 存档截图存 `docs/appendix/`。
+
 ## 3. 进游戏看什么（当前可见物）
 
 **载入成功判据**（docs/02 §4）：mod 列表出现 `Primordial Strife x.y.z (strife)`；日志出现 `strife platform entry constructed` 与 `strife client_fx entry constructed`；`ResourceManager: ... mod/strife ...`。首屏可能出现 `authlib ... Read timed out`（session/realms 域名网络受限），不影响载入。
@@ -41,7 +47,9 @@
 | **修炼面板** | 游戏内按 **K** | 详情页：境界/小境界/修为/寿元（年+刻）/灵根五行品阶/突破失败累计/所属势力/H2 声望向量 |
 | **对话树** | `/strife npc spawn <npc_qingshi_zhizhi>` 放出一位 NPC → **右键** | 说话人 + 正文 + 选项按钮；选项按条件门显隐；Esc 关闭（不暂停世界）。序章四棵树：石执事三段门链 / 苏药农交付 / 挑灯人风味 / 吴长老择宗 |
 | **妖兽** | 原版环境下自然生成 | `StrifeMonster`：仇恨/追击/近战 AI；可被 `/strife spell cast` 命中 |
-| **矿石与宗门结构** | — | **M4 未实现**：矿石 placement 与宗门结构尚未进产物（交接文档 §3 G-7） |
+| **矿石** | 原版主世界地形中自然生成 | 三种：`block_ore_lingyu` 灵玉矿（金属性 常见）/ `block_ore_chiyan` 赤炎矿（火属性 稀有）/ `block_ore_hanyu` 寒玉矿（水属性 灵品）。丝触掉方块本体，时运走物品。**进世界先跑 `/strife world ore status` 看四类缺口是否全 `[OK]`**，再挖一铲验掉落 |
+| **灵气场** | 任意已加载区块 | 区域灵气浓度场（噪声 + NUMBERS `world` 域），客户端面板与环境系数联动。数据表 `spirit_field.csv` 仍未接生成器，现走噪声路径 |
+| **宗门结构** | — | **未实现**：宗门结构生成（G-7 剩余项），需先定结构模板契约 |
 
 命令速查：
 
@@ -53,6 +61,7 @@
 /strife npc dialog open <npc_id> 直接打开某 NPC 的对话
 /strife spell cast <spell_id>    施法（走完整限速与冷却校验）
 /strife recipe list|show         丹方查阅（JEI 接入前的可信兜底）
+/strife world ore status         矿石链自检：逐矿打印 + 四类缺口（方块未注册/掉落表缺失/lang 缺词条/群系不存在）
 ```
 
 ## 4. 本机限制（重要）

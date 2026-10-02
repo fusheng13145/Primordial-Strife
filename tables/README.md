@@ -5,8 +5,8 @@ CSV 是唯一入口：UTF-8、首行表头、以 `_` 开头的列视为注释列
 模板与填写说明 `FILLING_GUIDE.md`（人话版，含逐列说明、格式示例、报错读法、待确认清单）
 是内容作者的第一份必读。**填表前先读它的 §0**——那里讲清了"现在填表能走多远"。
 
-**已接生成器的表**（2026-10-02 实测：`datagen: tables=17 rows=79 generators=11 numbers=5 products=30 problems=0`）：
-11 个生成器实例覆盖 9 张 CSV（quests 与 dialog_trees / dialog_text 各按章注册为独立实例），
+**已接生成器的表**（2026-10-03 实测：`datagen: tables=17 rows=82 generators=12 numbers=5 products=45 problems=0`）：
+12 个生成器实例覆盖 10 张 CSV（quests 与 dialog_trees / dialog_text 各按章注册为独立实例），
 另有 5 个 NUMBERS 直出域（realms / realm_rules / world_rules / core_rules / combat_rules）。
 往**没有**生成器的表里填行，`./gradlew :tools:datagen:run` 会直接报错并指名这张表
 （刻意如此，不让内容静默消失）——所以下表"本期填不填"必须看"生成器"那一列。
@@ -32,7 +32,7 @@ CSV 是唯一入口：UTF-8、首行表头、以 `_` 开头的列视为注释列
 | `dialog_prologue_text.csv` | §4.10 | **已接**（→ `dialog_text/prologue.json`） | 41 | 已填（正文 + 双变体 + 设定引用） |
 | `dialog_ch1_text.csv` | §4.10 | **已接**（→ `dialog_text/ch1.json`） | 0 | 文本由 C 按 05 §7 流程产出 |
 | `spirit_field.csv` | §4.8 | ⬜ **无** | 0 | M4 待接（区域灵气卡，灵气场目前走噪声 + NUMBERS） |
-| `ores.csv` | §4.8 | ⬜ **无** | 0 | M4 待接（矿石 placement，G-7） |
+| `ores.csv` | §4.8 | **已接**（→ `worldgen/` + `loot_table/`） | 3 | 已填（M4 矿石 placement，**每行 5 产物**；G-7 已完成） |
 | `periods.csv` | §5.1 | ⬜ **无** | 0 | **不填**（H5 全局时钟，`[占位]` 结构先定） |
 | `wars.csv` | §5.3 | ⬜ **无** | 0 | **不填**（H7 声明式冲突表，ADR-016 后置） |
 | `id_migration.csv` | §6 | 不适用（台账表） | 0 | 不填（本期无破档 ID） |
