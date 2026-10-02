@@ -94,6 +94,16 @@ public final class ShippedProducts {
         return json("/data/strife/worldgen/placed_feature/" + oreId + ".json");
     }
 
+    /** 单个维度物理属性产物（{@code data/strife/dimension_type/<id>.json}，ADR-021）。 */
+    public static JsonObject dimensionType(String dimensionId) {
+        return json("/data/strife/dimension_type/" + dimensionId + ".json");
+    }
+
+    /** 单个维度本体产物（{@code data/strife/dimension/<id>.json}：type + generator）。 */
+    public static JsonObject dimension(String dimensionId) {
+        return json("/data/strife/dimension/" + dimensionId + ".json");
+    }
+
     private static List<String> listResources(String dir) {
         List<String> names = new ArrayList<>();
         java.net.URL root = ShippedProducts.class.getResource(dir);

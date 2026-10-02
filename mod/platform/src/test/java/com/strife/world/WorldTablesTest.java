@@ -51,6 +51,48 @@ class WorldTablesTest {
     }
 
     @Test
+    void parsesUpperAmbientFromTheShippedProduct() {
+        WorldTables.Ambient overworld = WorldTables.parseAmbient(worldBlock());
+        WorldTables.Ambient upper = WorldTables.parseUpperAmbient(worldBlock(), overworld);
+
+        assertEquals(1.50, upper.min(), 1e-9);
+        assertEquals(3.00, upper.max(), 1e-9);
+        // region/refine 是「场的实现粒度」而非浓度语义，沿用人界值。
+        assertEquals(overworld.regionChunks(), upper.regionChunks());
+        assertEquals(overworld.refineWeight(), upper.refineWeight(), 1e-9);
+    }
+
+    @Test
+    void upperReversedRangeIsRejectedAtLoadTime() {
+        JsonObject broken = worldBlock().deepCopy();
+        broken.addProperty("upper_qi_min", 5.0);
+
+        IllegalStateException error =
+                assertThrows(
+                        IllegalStateException.class,
+                        () ->
+                                WorldTables.parseUpperAmbient(
+                                        broken, WorldTables.parseAmbient(broken)));
+
+        assertTrue(error.getMessage().contains("upper_qi_min"), error.getMessage());
+    }
+
+    @Test
+    void missingUpperKeyNamesTheKey() {
+        JsonObject broken = worldBlock().deepCopy();
+        broken.remove("upper_qi_max");
+
+        IllegalStateException error =
+                assertThrows(
+                        IllegalStateException.class,
+                        () ->
+                                WorldTables.parseUpperAmbient(
+                                        broken, WorldTables.parseAmbient(broken)));
+
+        assertTrue(error.getMessage().contains("upper_qi_max"), error.getMessage());
+    }
+
+    @Test
     void probabilityOutsideUnitRangeIsRejectedAtLoadTime() {
         JsonObject broken = worldBlock().deepCopy();
         broken.getAsJsonObject("herb_grass_drop_prob").addProperty("item_ningxu", 1.5);

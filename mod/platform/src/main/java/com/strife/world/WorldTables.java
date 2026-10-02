@@ -29,6 +29,9 @@ public final class WorldTables {
 
     private final Ambient ambient;
 
+    /** 上界维度（strife:upper_realm，ADR-021）的灵气参数：浓度区间独立，region/refine 沿用人界。 */
+    private final Ambient upperAmbient;
+
     /**
      * 灵气场参数（NUMBERS @@world 的 ambient_* 四项）。
      *
@@ -62,6 +65,7 @@ public final class WorldTables {
             herbGrassDropProb.putAll(parseHerbs(herbs));
         }
         this.ambient = parseAmbient(world);
+        this.upperAmbient = parseUpperAmbient(world, this.ambient);
     }
 
     /**
@@ -74,6 +78,23 @@ public final class WorldTables {
                 require(world, "ambient_qi_max").getAsDouble(),
                 require(world, "ambient_region_chunks").getAsInt(),
                 require(world, "ambient_refine_weight").getAsDouble());
+    }
+
+    /**
+     * 解析 NUMBERS @@world 的 {@code upper_qi_min/max}（上界维度，ADR-021）。region/refine 是「场的实现粒度」而非
+     * 浓度语义，沿用人界值；浓度区间独立且校验 min ≤ max（写反是内容错误，加载期红掉）。
+     *
+     * <p><b>为什么 require 严格解析而不缺省回退</b>：DataGen 新鲜度门禁保证 rules.json 与 NUMBERS 同源（表加了键、
+     * 产物必然跟上），此处宽松反而会把「漏跑 DataGen」的漂移吞成静默退化——回退语义留给调用方显式写，不在解析层偷。
+     */
+    static Ambient parseUpperAmbient(JsonObject world, Ambient overworld) {
+        double min = require(world, "upper_qi_min").getAsDouble();
+        double max = require(world, "upper_qi_max").getAsDouble();
+        if (min > max) {
+            throw new IllegalStateException(
+                    "upper_qi_min(" + min + ") > upper_qi_max(" + max + ")——浓度区间写反");
+        }
+        return new Ambient(min, max, overworld.regionChunks(), overworld.refineWeight());
     }
 
     /** 解析草药掉落概率表，并逐项校验落在 [0,1]（概率越界是内容错误，必须在加载期红掉）。 */
@@ -147,6 +168,11 @@ public final class WorldTables {
     /** 灵气场参数（NUMBERS @@world）。 */
     public Ambient ambient() {
         return ambient;
+    }
+
+    /** 上界维度灵气参数（{@code upper_qi_min/max}，ADR-021；region/refine 沿用人界）。 */
+    public Ambient upperAmbient() {
+        return upperAmbient;
     }
 
     private static JsonObject read(Resource resource) {

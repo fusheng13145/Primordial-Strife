@@ -6,7 +6,9 @@ import com.strife.core.StrifeMod;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -42,6 +44,16 @@ public final class StrifeWorld {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("strife/world");
 
+    /**
+     * 上界维度（M4，ADR-021）：本体是数据包维度（{@code data/strife/dimension/upper_realm.json}，由 {@code
+     * tables/dimensions.csv} DataGen 产出），此处只引用其 ID 做灵气参数分支——world 侧对维度的全部职责 就是「提供参数」，注册归 core
+     * 治理体系（ADR-021 归属线）。
+     */
+    static final ResourceKey<Level> UPPER_REALM =
+            ResourceKey.create(
+                    Registries.DIMENSION,
+                    ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, "upper_realm"));
+
     /** 场缓存：键 = 世界种子 + 维度 ID（换存档必须换场，否则新世界会沿用旧世界的灵气分布）。 */
     private static final Map<String, AmbientQiField> FIELDS = new ConcurrentHashMap<>();
 
@@ -56,11 +68,13 @@ public final class StrifeWorld {
         NeoForge.EVENT_BUS.addListener(AmbientQiWarmup::onChunkLoad);
         CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
         StrifeCommands.MODULE_SUBTREES.add(OreCommand.subtree());
+        StrifeCommands.MODULE_SUBTREES.add(RealmCommand.subtree());
         LOGGER.info("strife world wired cultivation factor: environment=ambient qi field");
         LOGGER.info(
                 "strife world registered ore blocks: {}",
                 String.join(", ", StrifeOreBlocks.registeredIds()));
-        LOGGER.info("strife world commands: /strife world ore status");
+        LOGGER.info(
+                "strife world commands: /strife world ore status | /strife world realm [go upper|overworld]");
     }
 
     /**
@@ -94,7 +108,10 @@ public final class StrifeWorld {
             }
             return null;
         }
-        AmbientQiField built = build(level.dimension(), level.getSeed(), tables.ambient());
+        // 维度参数分支（ADR-021）：上界灵气浓度整体高于人界（NUMBERS @@world upper_qi_*），其余维度用人界区间。
+        WorldTables.Ambient params =
+                level.dimension().equals(UPPER_REALM) ? tables.upperAmbient() : tables.ambient();
+        AmbientQiField built = build(level.dimension(), level.getSeed(), params);
         FIELDS.put(key, built);
         LOGGER.info(
                 "ambient qi field ready for {}: [{}, {}], region={} chunks, refine={}",
