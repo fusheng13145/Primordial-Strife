@@ -326,7 +326,7 @@ public final class OreGenerator implements TableGenerator {
         count.put("type", "minecraft:count");
         count.put("count", veins);
         modifiers.add(count);
-        modifiers.add(Map.of("type", "minecraft:in_square"));
+        modifiers.add(singleKeyMap("type", "minecraft:in_square"));
         Map<String, Object> heightRange = new LinkedHashMap<>();
         heightRange.put("type", "minecraft:height_range");
         Map<String, Object> trapezoid = new LinkedHashMap<>();
@@ -339,8 +339,18 @@ public final class OreGenerator implements TableGenerator {
         trapezoid.put("min_inclusive", min);
         heightRange.put("height", trapezoid);
         modifiers.add(heightRange);
-        modifiers.add(Map.of("type", "minecraft:biome"));
+        modifiers.add(singleKeyMap("type", "minecraft:biome"));
         return modifiers;
+    }
+
+    /**
+     * 单键嵌套对象。禁用 {@code Map.of} 的理由见 {@code DataGenDeterminismTest}：{@code Map.of} 的迭代顺序按 JVM
+     * 启动随机化，产物会逐次漂移；单键时虽无可见差异，但留着它就会被人复制成多键用法。
+     */
+    private static Map<String, Object> singleKeyMap(String key, String value) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put(key, value);
+        return map;
     }
 
     private static Map<String, String> placementMapping(

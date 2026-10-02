@@ -108,9 +108,13 @@ public final class DimensionGenerator implements TableGenerator {
         fields.put("coordinate_scale", coordinateScale);
         fields.put("ambient_light", ambientLight);
         fields.put("fixed_time", 6000);
-        fields.put(
-                "monster_spawn_light_level",
-                Map.of("type", "minecraft:uniform", "min_inclusive", 0, "max_inclusive", 7));
+        // 必须 LinkedHashMap：Map.of 的迭代顺序由 JVM 启动时的随机 SALT 决定（ImmutableCollections），
+        // 会让同一份输入两次生成得到不同键序的产物，破坏 04 §5「同输入同产物」。见 DataGenDeterminismTest。
+        Map<String, Object> spawnLight = new LinkedHashMap<>();
+        spawnLight.put("type", "minecraft:uniform");
+        spawnLight.put("min_inclusive", 0);
+        spawnLight.put("max_inclusive", 7);
+        fields.put("monster_spawn_light_level", spawnLight);
         fields.put("monster_spawn_block_light_limit", 0);
         fields.put("min_y", 0);
         fields.put("height", 256);
