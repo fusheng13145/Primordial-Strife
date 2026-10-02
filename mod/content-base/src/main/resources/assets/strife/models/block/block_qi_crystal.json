@@ -1,0 +1,7 @@
+{
+  "__comment": "灵气结晶块：上界浮岛的灵气矿藏（青金晶面，方块属性发光 lightEmission(10)）。",
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "strife:block/block_qi_crystal"
+  }
+}

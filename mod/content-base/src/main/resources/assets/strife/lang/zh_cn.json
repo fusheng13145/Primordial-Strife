@@ -107,5 +107,6 @@
   "entity.strife.npc": "初雪宗修士",
   "block.strife.block_ore_lingyu": "灵玉矿",
   "block.strife.block_ore_chiyan": "赤炎矿",
-  "block.strife.block_ore_hanyu": "寒玉矿"
+  "block.strife.block_ore_hanyu": "寒玉矿",
+  "block.strife.block_qi_crystal": "灵气结晶"
 }
