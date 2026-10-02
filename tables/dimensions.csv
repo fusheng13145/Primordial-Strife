@@ -1,0 +1,2 @@
+id,generator_type,noise_settings,biome,coordinate_scale,ambient_light,_note
+upper_realm,minecraft:noise,minecraft:end_islands,minecraft:the_end,1.0,0.5,M4 上界维度（ADR-021 已批准 2026-10-02）：浮岛地形借 end_islands 噪声、观感借 the_end 群系（暗天），坐标 1:1、环境光 0.5（无昼夜恐惧刷怪）；正式群系与地形随美术管线迭代（09 EP4 上界）；灵气参数见 NUMBERS @@world upper_qi_min/max

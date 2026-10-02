@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:a033f84b89b785cdc339fb3f5ba99cdb56547027a308ab33dbe7b4e6586a7a47",
+  "@generated": "from content/NUMBERS.md @ sha256:65ddbd3553d27c0c063007bc605224e1e8374c91369e039d7848fde2863f6a28",
   "id": "world_rules",
   "world": {
     "ambient_qi_min": 0.5,
@@ -11,6 +11,8 @@
     "rare": 25,
     "spirit": 5
   },
+    "upper_qi_min": 1.5,
+    "upper_qi_max": 3.0,
     "beast_loot_rolls": 3,
     "herb_grass_drop_prob": {
     "item_ningxu": 0.12,

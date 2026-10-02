@@ -157,6 +157,8 @@ ambient_qi_max: 2.00   # [拟] 上限（灵脉/宗门核心区）
 ambient_region_chunks: 16      # [拟] 灵气场粗粒度：16×16 区块一值（03 §6 的"区域粗粒度缓存"），细化层在其上加局部差异
 ambient_refine_weight: 0.25    # [拟] 细化层权重：局部差异占最终环境系数的比例（0 = 完全粗粒度，1 = 只看局部）
 ore_drop_weights: { common: 70, rare: 25, spirit: 5 }  # [拟] 矿石品质权重（和 = 100）
+upper_qi_min: 1.50   # [拟] 上界维度（strife:upper_realm）环境系数下限——灵气浓度整体高于人界（人界 0.50–2.00），ADR-021 授权后实现；数值待 C 复核
+upper_qi_max: 3.00   # [拟] 上界维度环境系数上限
 beast_loot_rolls: 3    # [拟] 妖兽掉落表默认 roll 次数
 herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }  # [拟] 草丛采集 MVP：破坏草类方块时各草药独立掷此概率（序章 #3/#8 的采集来源；键 = 物品内容 ID 全名），待 C 审定
 ```
