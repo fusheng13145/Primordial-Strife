@@ -49,14 +49,14 @@ class PlaceGeneratorTest {
         // 键序必须固定（DataGenDeterminismTest 拦住 Map.of，这里确认插入序被保留）：
         // id → dimension → name → x → y → z → radius → qi_scale → chapter
         String expectedShape =
-                "  \"id\": \"qi_luoxia\"\n"
-                        + "  \"dimension\": \"minecraft:overworld\"\n"
-                        + "  \"name\": \"落霞山麓\"\n"
-                        + "  \"x\": 256\n"
-                        + "  \"y\": 70\n"
-                        + "  \"z\": 256\n"
-                        + "  \"radius\": 320\n"
-                        + "  \"qi_scale\": 0.9\n"
+                "  \"id\": \"qi_luoxia\",\n"
+                        + "  \"dimension\": \"minecraft:overworld\",\n"
+                        + "  \"name\": \"落霞山麓\",\n"
+                        + "  \"x\": 256,\n"
+                        + "  \"y\": 70,\n"
+                        + "  \"z\": 256,\n"
+                        + "  \"radius\": 320,\n"
+                        + "  \"qi_scale\": 0.9,\n"
                         + "  \"chapter\": \"prologue\"";
         assertTrue(json.contains(expectedShape), "键序不符合插入序：\n" + json);
     }
