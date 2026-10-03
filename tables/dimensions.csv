@@ -1,2 +1,2 @@
 id,generator_type,noise_settings,biome,coordinate_scale,ambient_light,_note
-upper_realm,minecraft:noise,minecraft:end_islands,strife:upper_realm,1.0,0.5,M4 上界维度（ADR-021 已批准 2026-10-02）：浮岛地形借 end_islands 噪声；群系为自研 strife:upper_realm（biomes.csv「灵霄青冥」配色，见 worldgen/biome 产物）；坐标 1:1、环境光 0.5（无昼夜恐惧刷怪）；灵气参数见 NUMBERS @@world upper_qi_min/max
+upper_realm,minecraft:noise,minecraft:end_islands,strife:upper_realm_biome,1.0,0.5,M4 上界维度（ADR-021 已批准 2026-10-02）：浮岛地形借 end_islands 噪声；群系为自研 strife:upper_realm_biome（biomes.csv「灵霄青冥」配色，见 worldgen/biome 产物）；坐标 1:1、环境光 0.5（无昼夜恐惧刷怪）；灵气参数见 NUMBERS @@world upper_qi_min/max

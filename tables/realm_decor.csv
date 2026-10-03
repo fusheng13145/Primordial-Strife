@@ -1,2 +1,2 @@
 id,block,replace_target,veins_per_chunk,vein_size,y_min,y_max,_note
-block_qi_crystal,strife:block_qi_crystal,minecraft:end_stone,6,8,0,256,M4 上界灵气结晶：长在 end_islands 浮岛的 end_stone 里（block_match 精确匹配 end_stone 不在 stone_ore_replaceables tag）；每区块 6 串×8 格 全高分布；features 由 biomes.csv upper_realm 的 ores 列表直引（自研群系不走 biome_modifier）；方块发光 lightEmission(10) 掉落自身
+block_qi_crystal,strife:block_qi_crystal,minecraft:end_stone,6,8,0,256,M4 上界灵气结晶：长在 end_islands 浮岛的 end_stone 里（block_match 精确匹配 end_stone 不在 stone_ore_replaceables tag）；每区块 6 串×8 格 全高分布；features 由 biomes.csv upper_realm_biome 的 ores 列表直引（自研群系不走 biome_modifier）；方块发光 lightEmission(10) 掉落自身

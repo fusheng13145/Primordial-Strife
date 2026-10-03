@@ -38,7 +38,7 @@ class DimensionProductsTest {
         assertEquals("minecraft:end_islands", generator.get("settings").getAsString());
         JsonObject biomeSource = generator.getAsJsonObject("biome_source");
         assertEquals("minecraft:fixed", biomeSource.get("type").getAsString());
-        assertEquals("strife:upper_realm", biomeSource.get("biome").getAsString());
+        assertEquals("strife:upper_realm_biome", biomeSource.get("biome").getAsString());
     }
 
     /**

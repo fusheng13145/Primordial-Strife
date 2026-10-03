@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  */
 class UpperRealmWorldTest {
 
-    private static final String BIOME_ID = "upper_realm";
+    private static final String BIOME_ID = "upper_realm_biome";
     private static final String CRYSTAL_ID = "block_qi_crystal";
 
     @Test
