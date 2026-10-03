@@ -1,0 +1,15 @@
+{
+  "@generated": "from content/NUMBERS.md @ sha256:7cf02384317a9ec0a6b451cc1aa64caf842bb6d72c1d0c97da7f916adb1814e0",
+  "type": "minecraft:entity",
+  "pools": [
+    {
+    "rolls": 3,
+    "entries": [
+    {
+    "type": "minecraft:item",
+    "name": "strife:item_yaocai"
+  }
+  ]
+  }
+  ]
+}

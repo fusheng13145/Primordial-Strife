@@ -146,6 +146,11 @@ formula_burst:    { base: 12, scale: realm_coeff, self_cost_qi: 0.15 } # [拟] �
 spell_cost_qi:    { light: 6,  medium: 18, heavy: 45 }           # [拟] 灵气/修为消耗三档
 spell_cooldown_sec: { light: 1.0, medium: 4.0, heavy: 12.0 }     # [拟]
 artifact_cooldown_sec: 20                                        # [拟] 法宝主动技能
+# —— 妖兽基础属性（M2 妖兽 AI / 战斗目标；EP3 前不做平行境界，数值为通用战斗参数，非代码字面量）——
+beast_health: 20.0        # [拟] 妖兽基础生命（strife:monster），启动时按 combat_rules 应用，覆盖硬编码默认值
+beast_attack: 3.0         # [拟] 妖兽基础攻击伤害
+beast_speed: 0.30         # [拟] 妖兽移动速度
+beast_follow_range: 16.0  # [拟] 妖兽索敌/追击半径（格）
 ```
 
 ## 9. 世界与掉落（M4 / 04 分册 §2）

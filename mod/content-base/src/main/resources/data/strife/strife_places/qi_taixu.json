@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/places.csv @ sha256:3ed673c75388a32bba195b4dd2b444bb2473f6da71a89d0b36d50c16425b13b2",
+  "@generated": "from tables/places.csv @ sha256:a92d48222731c9e77e0ad44d268f363a1ca757694e9c93351ab7edd9ffa0d645",
   "id": "qi_taixu",
   "dimension": "minecraft:overworld",
   "name": "太虚干脉",

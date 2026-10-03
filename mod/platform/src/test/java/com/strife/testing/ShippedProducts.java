@@ -49,6 +49,16 @@ public final class ShippedProducts {
         return json("/data/strife/strife_core/rules.json");
     }
 
+    /** {@code data/strife/strife_combat/rules.json}（combat 运行时参数，含 beast_* 妖兽属性）。 */
+    public static JsonObject combatRules() {
+        return json("/data/strife/strife_combat/rules.json");
+    }
+
+    /** 妖兽掉落表产物（{@code data/strife/loot_table/entities/monster.json}，BeastLootGenerator 产出）。 */
+    public static JsonObject beastLoot() {
+        return json("/data/strife/loot_table/entities/monster.json");
+    }
+
     /** 单张丹方产物，如 {@code pill_juqi}。 */
     public static JsonObject pill(String pillId) {
         return json("/data/strife/strife_pills/" + pillId + ".json");
