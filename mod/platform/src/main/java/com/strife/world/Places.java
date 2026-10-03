@@ -83,8 +83,7 @@ public final class Places {
     /** 单份产物的字段解析（包内可见以便用例断言）。 */
     static Place fromJson(JsonObject json) {
         String id = string(json, "id");
-        ResourceLocation dimension =
-                ResourceLocation.parse(string(json, "dimension"));
+        ResourceLocation dimension = ResourceLocation.parse(string(json, "dimension"));
         String name = string(json, "name");
         int x = json.get("x").getAsInt();
         int y = json.get("y").getAsInt();
@@ -100,7 +99,8 @@ public final class Places {
      *
      * <p>只在<b>水平面</b>判定——高度不参与地点归属（洞窟也算落霞山麓，玩家下矿仍享受山麓灵气），与「地点是区域灵气」语义一致。
      */
-    public static Place placeAt(List<Place> all, ResourceLocation dimension, int blockX, int blockZ) {
+    public static Place placeAt(
+            List<Place> all, ResourceLocation dimension, int blockX, int blockZ) {
         Place best = null;
         double bestDistSq = Double.MAX_VALUE;
         for (Place p : all) {

@@ -18,10 +18,10 @@ import org.junit.jupiter.api.Test;
 /**
  * 产物确定性门禁（docs/04 §5「同输入同产物」）。
  *
- * <p><b>为什么必须有这条测试</b>：{@code Map.of} / {@code Set.of} 返回的不可变集合，其迭代顺序由 JVM 启动时生成的随机
- * {@code SALT} 决定（{@code java.util.ImmutableCollections}），<b>同一份代码、同一份输入，两次运行会写出不同键序的
- * JSON</b>。这不是理论风险——上界维度 {@code dimension_type/upper_realm.json} 的 {@code monster_spawn_light_level}
- * 就真实漂移过一次（min/max 互换），表现为"什么都没改却有一行 diff"。
+ * <p><b>为什么必须有这条测试</b>：{@code Map.of} / {@code Set.of} 返回的不可变集合，其迭代顺序由 JVM 启动时生成的随机 {@code SALT}
+ * 决定（{@code java.util.ImmutableCollections}），<b>同一份代码、同一份输入，两次运行会写出不同键序的 JSON</b>。这不是理论风险——上界维度
+ * {@code dimension_type/upper_realm.json} 的 {@code monster_spawn_light_level} 就真实漂移过一次（min/max
+ * 互换），表现为"什么都没改却有一行 diff"。
  *
  * <p><b>为什么用扫源码而不是行为断言</b>：这个缺陷在单个 JVM 进程内<b>不可复现</b>——进程内 {@code SALT} 固定，跑一百次顺序都一样。
  * 任何"生成两遍再比对"的用例都会稳定通过，是一条永远不会红的假门禁。它是跨进程缺陷，只能靠静态规则拦住。

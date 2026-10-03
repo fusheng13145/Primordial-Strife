@@ -56,6 +56,7 @@ public final class DataGenMain {
                 new ArtifactGenerator(numbers),
                 new OreGenerator(),
                 new DimensionGenerator(),
+                new PlaceGenerator(),
                 new BiomeGenerator(),
                 new RealmDecorGenerator(),
                 new StructureGenerator(),

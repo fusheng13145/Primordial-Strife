@@ -24,13 +24,12 @@ import net.minecraft.world.level.Level;
  * <ul>
  *   <li>{@code list}：列出全部地点（id / 名称 / 维度 / 坐标）；
  *   <li>{@code info <id>}：单点详情；
- *   <li>{@code nav <id>}：以玩家当前位置为基准，算<b>水平方向</b>（N/E/S/W）+ 水平距离 + 高度差，并提示维度—— 不传送，
- *       纯指引；
+ *   <li>{@code nav <id>}：以玩家当前位置为基准，算<b>水平方向</b>（N/E/S/W）+ 水平距离 + 高度差，并提示维度—— 不传送， 纯指引；
  *   <li>{@code goto <id>}：跨维度传送至地点中心（复用 {@link RealmCommand} 的「维度未注册即显式报错」口径）。
  * </ul>
  *
- * <p><b>为什么 world 侧实现而非 quest 侧</b>：03 §2 禁止 quest↔world 横向依赖；地点坐标/维度与跨维度传送都属 world 职责，
- * 而任务目标只持有地点 ID 字符串。quest 侧「目标 → 地点」自动联动需要一道 realm/core 级 SPI（见 08 分册 ADR-023 提案），
+ * <p><b>为什么 world 侧实现而非 quest 侧</b>：03 §2 禁止 quest↔world 横向依赖；地点坐标/维度与跨维度传送都属 world 职责， 而任务目标只持有地点
+ * ID 字符串。quest 侧「目标 → 地点」自动联动需要一道 realm/core 级 SPI（见 08 分册 ADR-023 提案），
  * 不在本回合权限内。本命令把导航能力做成可被玩家直接调用的兜底原语。
  */
 final class PlaceCommand {
@@ -44,17 +43,26 @@ final class PlaceCommand {
                 .then(
                         Commands.literal("info")
                                 .then(
-                                        Commands.argument("id", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                        Commands.argument(
+                                                        "id",
+                                                        com.mojang.brigadier.arguments
+                                                                .StringArgumentType.word())
                                                 .executes(PlaceCommand::info)))
                 .then(
                         Commands.literal("nav")
                                 .then(
-                                        Commands.argument("id", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                        Commands.argument(
+                                                        "id",
+                                                        com.mojang.brigadier.arguments
+                                                                .StringArgumentType.word())
                                                 .executes(PlaceCommand::nav)))
                 .then(
                         Commands.literal("goto")
                                 .then(
-                                        Commands.argument("id", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                        Commands.argument(
+                                                        "id",
+                                                        com.mojang.brigadier.arguments
+                                                                .StringArgumentType.word())
                                                 .executes(PlaceCommand::go)));
     }
 
@@ -119,7 +127,9 @@ final class PlaceCommand {
                 false);
         if (place.chapter() != null) {
             source.sendSuccess(
-                    () -> Component.literal("所属章节：" + place.chapter()).withStyle(ChatFormatting.GRAY),
+                    () ->
+                            Component.literal("所属章节：" + place.chapter())
+                                    .withStyle(ChatFormatting.GRAY),
                     false);
         }
         return 1;
@@ -148,7 +158,9 @@ final class PlaceCommand {
                                                     + "，而你当前在 "
                                                     + here
                                                     + "。先切换维度：/strife world realm go "
-                                                    + (place.dimension().getNamespace().equals("strife")
+                                                    + (place.dimension()
+                                                                    .getNamespace()
+                                                                    .equals("strife")
                                                             ? place.dimension().getPath()
                                                             : "overworld")
                                                     + "，再用 /strife world place goto "
@@ -190,8 +202,7 @@ final class PlaceCommand {
             source.sendFailure(Component.literal("未知地点：" + id));
             return 0;
         }
-        ResourceKey<Level> target =
-                ResourceKey.create(Registries.DIMENSION, place.dimension());
+        ResourceKey<Level> target = ResourceKey.create(Registries.DIMENSION, place.dimension());
         ServerLevel targetLevel = player.getServer().getLevel(target);
         if (targetLevel == null) {
             source.sendFailure(

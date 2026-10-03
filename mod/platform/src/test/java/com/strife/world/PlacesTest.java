@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 /**
  * 地点运行时表 ×【真实产物】的契约用例（{@code tables/places.csv} → {@code strife_places/*.json}）。
  *
- * <p>与 WorldTablesTest 同口径：解析器读错块/缺键的缺陷只在运行时发作，这里直接拿产物当输入，把
- * 「产物 / 解析器 / 真相源」三者对齐钉死。同时覆盖 {@link Places#placeAt} 的归属判定（半径 / 维度 / 最近优先）。
+ * <p>与 WorldTablesTest 同口径：解析器读错块/缺键的缺陷只在运行时发作，这里直接拿产物当输入，把 「产物 / 解析器 / 真相源」三者对齐钉死。同时覆盖 {@link
+ * Places#placeAt} 的归属判定（半径 / 维度 / 最近优先）。
  */
 class PlacesTest {
 
@@ -25,7 +25,8 @@ class PlacesTest {
 
         assertEquals("qi_luoxia", p.id());
         assertEquals("落霞山麓", p.name());
-        assertEquals(ResourceLocation.fromNamespaceAndPath("minecraft", "overworld"), p.dimension());
+        assertEquals(
+                ResourceLocation.fromNamespaceAndPath("minecraft", "overworld"), p.dimension());
         assertEquals(256, p.x());
         assertEquals(70, p.y());
         assertEquals(256, p.z());
@@ -46,7 +47,8 @@ class PlacesTest {
     @Test
     void placeAtReturnsNullOutsideRadius() {
         List<Places.Place> all = List.of(luoxia());
-        ResourceLocation overworld = ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
+        ResourceLocation overworld =
+                ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
         // (256,256) 是中心，半径 320；(2000,2000) 远在圈外。
         assertNull(Places.placeAt(all, overworld, 2000, 2000));
         // 圈内、同维度应命中。
@@ -86,14 +88,16 @@ class PlacesTest {
                         2.0,
                         null);
         List<Places.Place> all = List.of(wide, narrow);
-        ResourceLocation overworld = ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
+        ResourceLocation overworld =
+                ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
         assertEquals("qi_narrow", Places.placeAt(all, overworld, 10, 10).id(), "重叠时取更近（更小）的圈");
     }
 
     @Test
     void spiritFieldOverrideIsRealFeatureNotJustComment() {
         // 灵气地点差异化的「数据基础」：每个地点的 qi_scale 确实进入了产物，且落在合法区间。
-        for (String id : List.of("qi_luoxia", "qi_wenjiang", "qi_shiguo", "qi_yunmeng", "qi_taixu")) {
+        for (String id :
+                List.of("qi_luoxia", "qi_wenjiang", "qi_shiguo", "qi_yunmeng", "qi_taixu")) {
             double scale = ShippedProducts.place(id).get("qi_scale").getAsDouble();
             assertTrue(scale > 0 && scale <= 10, id + " qi_scale 越界：" + scale);
         }

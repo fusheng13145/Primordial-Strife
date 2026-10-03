@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/realm_decor.csv @ sha256:98b529337e9e8b113e358ea628ff733467391d1f39c59156eeb779f35d9029b8",
+  "@generated": "from tables/realm_decor.csv @ sha256:7800333e4d3798b080fb4d38447e8da5b270a3bb896f1f3f6d11a2dc1774426d",
   "type": "minecraft:ore",
   "config": {
     "size": 8,
