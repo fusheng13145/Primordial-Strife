@@ -378,6 +378,16 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 - 产物（每行两份）：`worldgen/configured_feature/<id>.json`（`block_match` 精确匹配——end_stone 不在 `stone_ore_replaceables` tag，tag_match 会静默零替换）+ `worldgen/placed_feature/<id>.json`（count + trapezoid 高度）
 - 无 `biome_modifier`：装饰只长自研群系（§4.15 `features` 列直引）；校验：`block` 必须 `strife:`、`replace_target` 必须 `minecraft:`、veins/size>0、y_max≥y_min
 
+### 4.17 地点（世界域，G-4 任务导航 + 灵气地点差异化）
+
+- 表：`tables/places.csv`（列：`id,dimension,name,x,y,z,radius,qi_scale,chapter,_note`）
+- 产物（每行一份）：`strife_places/<id>.json`
+- 双消费真相源（属「设定/材质」属性，不进 NUMBERS——与 §4.8 矿石 density 同口径，与单结构强绑定，进 NUMBERS 会让「加地点」动两张真相源）：
+  - **G-4 任务导航**：任务目标 `type=reach;target=<id>` 的 target 即地点 ID，导航命令按坐标 + 维度算方向距离；
+  - **灵气地点差异化**：`qi_scale` 是地点环境系数（05 §2 公式第二项），玩家落在半径内覆盖全局噪声场——闭合 docs/10 §3.3 的 `spirit_field.csv` 欠账。
+- 校验（构建期红）：`id` 小写蛇形；`dimension` 须带已知命名空间（`minecraft:`/`strife:`，自定义命名空间无法随注册表校验）；`x/y/z` 整数；`radius>0`；`qi_scale>0 且 ≤10`（>0 是 05 §2「系数恒正」硬约束，越界判误填）；`chapter` 空则省略、非空须 `^[a-z0-9_]+$`。
+- 归属判定（运行时）：仅水平面比较（高度不参与），同维度内取最近（更小）圈；`name` 为玩家可见中文，不入 lang（少数固定地点，直接写表）。
+
 ## 5. 七钩子在 schema 中的落点（03 §10，H1–H7 必须从 M0 就存在）
 
 | 钩子 | schema 落点 | 读写入口 | 本期实现 |

@@ -124,6 +124,11 @@ public final class ShippedProducts {
         return json("/data/strife/worldgen/structure_set/" + structureId + ".json");
     }
 
+    /** 单个地点产物（{@code data/strife/strife_places/<id>.json}，G-4 导航 + 灵气地点差异化）。 */
+    public static JsonObject place(String placeId) {
+        return json("/data/strife/strife_places/" + placeId + ".json");
+    }
+
     private static List<String> listResources(String dir) {
         List<String> names = new ArrayList<>();
         java.net.URL root = ShippedProducts.class.getResource(dir);

@@ -79,12 +79,13 @@ public final class StrifeWorld {
         CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
         StrifeCommands.MODULE_SUBTREES.add(OreCommand.subtree());
         StrifeCommands.MODULE_SUBTREES.add(RealmCommand.subtree());
+        StrifeCommands.MODULE_SUBTREES.add(PlaceCommand.subtree());
         LOGGER.info("strife world wired cultivation factor: environment=ambient qi field");
         LOGGER.info(
                 "strife world registered ore blocks: {}",
                 String.join(", ", StrifeOreBlocks.registeredIds()));
         LOGGER.info(
-                "strife world commands: /strife world ore status | /strife world realm [go upper|overworld]");
+                "strife world commands: /strife world ore status | /strife world realm [go upper|overworld] | /strife world place [list|info|nav|goto]");
     }
 
     /**
@@ -116,7 +117,32 @@ public final class StrifeWorld {
             return 1.0;
         }
         BlockPos pos = player.blockPosition();
-        return field.ratioAtBlock(pos.getX(), pos.getZ());
+        double ratio = field.ratioAtBlock(pos.getX(), pos.getZ());
+        // 灵气地点差异化（docs/10 §3.3 的 spirit_field 欠账收口）：玩家落在某地点半径内时，
+        // 用该地点的灵气系数覆盖全局噪声场——落霞山麓≈0.9、太虚干脉≈2.0 等「区域灵脉」由此成立。
+        // 夹在 [min,max] 内，保证覆盖值仍是合法环境系数（05 §2：系数恒 > 0）。
+        Places.Place here =
+                Places.placeAt(
+                        Places.getOrThrow(player.getServer()),
+                        player.level().dimension().location(),
+                        pos.getX(),
+                        pos.getZ());
+        if (here != null) {
+            double min = field.min();
+            double max = field.max();
+            double clamped = Math.max(min, Math.min(max, here.qiScale()));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(
+                        "place override at {}: noise={} -> place {}({})={}",
+                        pos,
+                        ratio,
+                        here.id(),
+                        here.name(),
+                        clamped);
+            }
+            return clamped;
+        }
+        return ratio;
     }
 
     /** 该维度当前的灵气场；表不可用时返回 null（并只报一次错）。 */

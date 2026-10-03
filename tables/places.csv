@@ -1,0 +1,6 @@
+id,dimension,name,x,y,z,radius,qi_scale,chapter,_note
+qi_luoxia,minecraft:overworld,落霞山麓,256,70,256,320,0.9,prologue,序章舞台：小宗门 + 山脚药农聚落，练气–筑基规模（LORE §4）
+qi_wenjiang,minecraft:overworld,文津渡,-512,64,-512,256,0.6,ch1,散修渡口与消息集散地，第一章开场（LORE §4）
+qi_shiguo,minecraft:overworld,石过滩,512,64,256,256,0.7,ch1,灵脉改道后的衰败冲突现场（LORE §4）
+qi_yunmeng,minecraft:overworld,云梦泽外围,0,64,1024,384,1.4,ch2,五行灵珠探索区（LORE §4；主题 04 §3）
+qi_taixu,minecraft:overworld,太虚干脉,-1024,80,-1024,448,2.0,,大宗门核心区，M4 仅远处可见山门轮廓（LORE §4）

@@ -1,0 +1,12 @@
+{
+  "@generated": "from tables/places.csv @ sha256:3ed673c75388a32bba195b4dd2b444bb2473f6da71a89d0b36d50c16425b13b2",
+  "id": "qi_yunmeng",
+  "dimension": "minecraft:overworld",
+  "name": "云梦泽外围",
+  "x": 0,
+  "y": 64,
+  "z": 1024,
+  "radius": 384,
+  "qi_scale": 1.4,
+  "chapter": "ch2"
+}
