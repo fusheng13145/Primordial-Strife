@@ -1,0 +1,6 @@
+{
+  "@generated": "from tables/spirit_field.csv @ sha256:02beefba2809168cd406504f69933997dcfe13e5c2a10a156836de4d662caf45",
+  "id": "qi_xuanyu",
+  "region_id": "qi_xuanyu",
+  "ambient_qi_ratio": 1.35
+}

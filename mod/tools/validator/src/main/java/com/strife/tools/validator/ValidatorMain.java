@@ -741,6 +741,78 @@ public final class ValidatorMain {
     }
 
     /**
+     * V-RANGE sub-item for {@code strife_spirit_field} products (docs/04 §6): ambient_qi_ratio must
+     * stay inside NUMBERS @@world {@code [ambient_qi_min, ambient_qi_max]} and must never be 0 (05
+     * §2 forbids "zero growth with no explanation"). Bounds come from the truth source, not
+     * literals.
+     */
+    public static List<String> spiritFieldRanges(Options options) {
+        Path numbers = NumbersBlocks.numbersFile(options.contentRoot());
+        if (numbers == null) {
+            return List.of();
+        }
+        BigDecimal min = null;
+        BigDecimal max = null;
+        try {
+            for (NumbersBlocks.Line line : NumbersBlocks.yamlBlock(numbers, "world")) {
+                String content = NumbersBlocks.stripComment(line.text()).trim();
+                if (content.isEmpty() || content.startsWith("#")) {
+                    continue;
+                }
+                int colon = content.indexOf(':');
+                if (colon <= 0) {
+                    continue;
+                }
+                String key = content.substring(0, colon).trim();
+                String value = content.substring(colon + 1).trim();
+                if ("ambient_qi_min".equals(key)) {
+                    min = new BigDecimal(value);
+                } else if ("ambient_qi_max".equals(key)) {
+                    max = new BigDecimal(value);
+                }
+            }
+        } catch (IllegalStateException e) {
+            return List.of(numbers + ": " + e.getMessage());
+        } catch (NumberFormatException e) {
+            return List.of(numbers + ": ambient_qi_min/max are not numeric (NUMBERS §9)");
+        }
+        if (min == null || max == null) {
+            return List.of(
+                    numbers
+                            + ": @@world declares no ambient_qi_min/max, so spirit-field ratios"
+                            + " cannot be range-checked (NUMBERS §9)");
+        }
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!"strife_spirit_field".equals(domainOf(file, options))) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("ambient_qi_ratio")
+                    || !object.get("ambient_qi_ratio").isJsonPrimitive()) {
+                continue;
+            }
+            BigDecimal ratio = object.get("ambient_qi_ratio").getAsBigDecimal();
+            if (ratio.compareTo(min) < 0 || ratio.compareTo(max) > 0) {
+                problems.add(
+                        file
+                                + ": ambient_qi_ratio "
+                                + ratio
+                                + " is outside ["
+                                + min
+                                + ", "
+                                + max
+                                + "] (NUMBERS §9, V-RANGE)");
+            }
+        }
+        return problems;
+    }
+
+    /**
      * V-RANGE sub-items on the truth source itself (docs/04 §6), gated on content/ being merged
      * like V-GROWTH: success rates stay inside the success_rate bounds NUMBERS declares, and
      * lifespan_years must strictly increase along the realm chain — with the [占位] relaxation the
@@ -1727,6 +1799,8 @@ public final class ValidatorMain {
         problems.addAll(probabilitySum(options));
         executed++;
         problems.addAll(numericRanges(options));
+        executed++;
+        problems.addAll(spiritFieldRanges(options));
         executed++;
         notices.forEach(n -> System.out.println("validator: " + n));
         problems.forEach(p -> System.err.println("validator: " + p));
