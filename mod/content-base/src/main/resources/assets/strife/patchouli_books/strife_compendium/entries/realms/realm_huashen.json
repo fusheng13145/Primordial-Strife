@@ -1,0 +1,11 @@
+{
+  "name": "化神",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "化神：神识外放，感知千里。"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "元婴",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "元婴：元神初成，可离体。"
+    }
+  ]
+}

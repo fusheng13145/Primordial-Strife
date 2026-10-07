@@ -1,0 +1,11 @@
+{
+  "name": "青石观",
+  "icon": "strife:item_yuejian",
+  "category": "factions",
+  "pages": [
+    {
+      "type": "text",
+      "text": "青石观：古道清修之宗，立于青石之上。"
+    }
+  ]
+}

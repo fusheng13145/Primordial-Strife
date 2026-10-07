@@ -1,0 +1,11 @@
+{
+  "name": "月见草",
+  "icon": "strife:item_yuejian",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "月见草：月华所钟之草。"
+    }
+  ]
+}

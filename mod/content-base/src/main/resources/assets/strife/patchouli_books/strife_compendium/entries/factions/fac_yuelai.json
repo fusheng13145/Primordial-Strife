@@ -1,0 +1,11 @@
+{
+  "name": "月来渡",
+  "icon": "strife:item_yuejian",
+  "category": "factions",
+  "pages": [
+    {
+      "type": "text",
+      "text": "月来渡：渡口往来之所，商旅辐辏。"
+    }
+  ]
+}

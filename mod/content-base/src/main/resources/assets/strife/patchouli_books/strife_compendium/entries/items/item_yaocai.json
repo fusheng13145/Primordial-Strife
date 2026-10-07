@@ -1,0 +1,11 @@
+{
+  "name": "妖兽材料",
+  "icon": "strife:item_yaocai",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "妖兽材料：取自妖兽之躯体。"
+    }
+  ]
+}

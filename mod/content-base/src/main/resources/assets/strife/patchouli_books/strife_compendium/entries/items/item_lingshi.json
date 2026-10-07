@@ -1,0 +1,11 @@
+{
+  "name": "灵石",
+  "icon": "strife:item_lingshi",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "灵石：修行硬通货，亦作丹方材料与价格。"
+    }
+  ]
+}

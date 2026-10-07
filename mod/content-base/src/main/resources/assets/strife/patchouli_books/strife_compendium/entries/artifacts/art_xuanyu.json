@@ -1,0 +1,11 @@
+{
+  "name": "玄玉佩",
+  "icon": "strife:item_duanxue",
+  "category": "artifacts",
+  "pages": [
+    {
+      "type": "text",
+      "text": "玄玉佩：玄玉宗传承法宝，授「玄玉刃」神通，需练气境方可催动，冷却中等。"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "玄玉诀",
+  "icon": "strife:item_ningxu",
+  "category": "techniques",
+  "pages": [
+    {
+      "type": "text",
+      "text": "玄玉诀：玄玉宗秘传，玉润冰清。"
+    }
+  ]
+}

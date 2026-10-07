@@ -1,0 +1,11 @@
+{
+  "name": "壬水真解",
+  "icon": "strife:item_ningxu",
+  "category": "techniques",
+  "pages": [
+    {
+      "type": "text",
+      "text": "壬水真解：水属绵柔，生生不息。"
+    }
+  ]
+}

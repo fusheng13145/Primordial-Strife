@@ -1,0 +1,11 @@
+{
+  "name": "筑基",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "筑基：气机凝基，可运转功法。"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "落霞争端",
+  "icon": "strife:item_yaocai",
+  "category": "wars",
+  "pages": [
+    {
+      "type": "text",
+      "text": "落霞争端：青石观与月来渡因落霞灵脉而起的 recurring 争端。誓约条件 realm(qili)>=3；阶段「skirmish」降低环境灵气至 0.8；休战条件 flag(truce_luoxia)；后果为双方声望此消彼长。"
+    }
+  ]
+}

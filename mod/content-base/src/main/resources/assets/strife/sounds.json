@@ -1,0 +1,29 @@
+{
+  "strife.meditate_start": {
+    "sounds": [ { "name": "strife:meditate_start", "type": "event" } ]
+  },
+  "strife.meditate_stop": {
+    "sounds": [ { "name": "strife:meditate_stop", "type": "event" } ]
+  },
+  "strife.breakthrough_success": {
+    "sounds": [ { "name": "strife:breakthrough_success", "type": "event" } ]
+  },
+  "strife.breakthrough_fail": {
+    "sounds": [ { "name": "strife:breakthrough_fail", "type": "event" } ]
+  },
+  "strife.tribulation": {
+    "sounds": [ { "name": "strife:tribulation", "type": "event" } ]
+  },
+  "strife.pill_use": {
+    "sounds": [ { "name": "strife:pill_use", "type": "event" } ]
+  },
+  "strife.spell_cast": {
+    "sounds": [ { "name": "strife:spell_cast", "type": "event" } ]
+  },
+  "strife.war_horn": {
+    "sounds": [ { "name": "strife:war_horn", "type": "event" } ]
+  },
+  "strife.ui_panel_open": {
+    "sounds": [ { "name": "strife:ui_panel_open", "type": "event" } ]
+  }
+}

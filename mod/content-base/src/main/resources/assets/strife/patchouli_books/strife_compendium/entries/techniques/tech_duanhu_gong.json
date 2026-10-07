@@ -1,0 +1,11 @@
+{
+  "name": "锻火功",
+  "icon": "strife:item_ningxu",
+  "category": "techniques",
+  "pages": [
+    {
+      "type": "text",
+      "text": "锻火功：火属炼体，刚猛迅烈。"
+    }
+  ]
+}

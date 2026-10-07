@@ -1,0 +1,11 @@
+{
+  "name": "聚气丹",
+  "icon": "strife:pill_juqi",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "聚气丹：提升修炼速率。"
+    }
+  ]
+}

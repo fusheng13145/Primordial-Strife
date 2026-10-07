@@ -1,0 +1,11 @@
+{
+  "name": "断血草",
+  "icon": "strife:item_duanxue",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "断血草：止血疗伤之草。"
+    }
+  ]
+}

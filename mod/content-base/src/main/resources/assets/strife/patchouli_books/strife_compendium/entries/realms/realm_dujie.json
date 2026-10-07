@@ -1,0 +1,11 @@
+{
+  "name": "渡劫",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "渡劫：迎天劫，过则飞升，败则道消。"
+    }
+  ]
+}
