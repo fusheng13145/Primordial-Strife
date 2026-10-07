@@ -1510,6 +1510,34 @@ public final class ValidatorMain {
                         }
                     }
                 }
+                case "strife_wars" -> {
+                    String warId = stringOrNull(object.get("id"));
+                    String prefix = file + " war '" + warId + "'";
+                    for (JsonElement belligerent : arrayOrEmptyOf(object, "belligerents")) {
+                        String factionId =
+                                belligerent.isJsonPrimitive() ? belligerent.getAsString() : null;
+                        if (factionId == null) {
+                            continue;
+                        }
+                        checkId(problems, prefix, "faction", factionId, factionIds, whitelist);
+                    }
+                    for (JsonElement consequence : arrayOrEmptyOf(object, "consequences")) {
+                        if (!consequence.isJsonObject()) {
+                            continue;
+                        }
+                        JsonObject consequenceObject = consequence.getAsJsonObject();
+                        String type = stringOrNull(consequenceObject.get("type"));
+                        String args = stringOrNull(consequenceObject.get("args"));
+                        if (args == null) {
+                            continue;
+                        }
+                        if ("reputation".equals(type)) {
+                            String[] parts = args.trim().split("[:,]", -1);
+                            String head = parts.length > 0 ? parts[0].trim() : "";
+                            checkId(problems, prefix, "faction", head, factionIds, whitelist);
+                        }
+                    }
+                }
                 default -> {}
             }
         }

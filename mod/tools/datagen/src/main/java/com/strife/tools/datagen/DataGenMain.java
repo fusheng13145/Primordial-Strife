@@ -52,6 +52,7 @@ public final class DataGenMain {
                 new FactionGenerator(),
                 new SpiritFieldGenerator(),
                 new PeriodsGenerator(),
+                new WarsGenerator(),
                 new TechniqueGenerator(),
                 new SpellGenerator(numbers),
                 new PillGenerator(numbers),

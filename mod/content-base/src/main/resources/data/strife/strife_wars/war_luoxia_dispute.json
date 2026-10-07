@@ -1,0 +1,29 @@
+{
+  "@generated": "from tables/wars.csv @ sha256:d2581fe4a7ad6d5ee0b0dea2c31875d293a62a4d641f88711a361e9f63f8781a",
+  "id": "war_luoxia_dispute",
+  "belligerents": [
+    "fac_qingshi",
+    "fac_yuelai"
+  ],
+  "cause_predicate": "realm(qili)>=3",
+  "phases": [
+    {
+    "id": "skirmish",
+    "entry_conditions": "flag(war_luoxia_dispute)",
+    "world_effects": "ambient_qi:0.8",
+    "duration_ticks": 1200
+  }
+  ],
+  "peace_terms": "flag(truce_luoxia)",
+  "consequences": [
+    {
+    "type": "reputation",
+    "args": "fac_qingshi:-5"
+  },
+    {
+    "type": "reputation",
+    "args": "fac_yuelai:5"
+  }
+  ],
+  "form": "recurring"
+}
