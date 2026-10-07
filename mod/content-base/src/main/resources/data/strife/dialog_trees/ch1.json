@@ -1,0 +1,132 @@
+{
+  "@generated": "from tables/dialog_trees_ch1.csv @ sha256:db04603d22c7a3b40d8bf5b81714d4ca7eefedcb9a82155db91f249552619a06",
+  "id": "nd_offer_welcome",
+  "chapter": "ch1",
+  "trees": [
+    {
+    "id": "dlg_ch1_offer",
+    "npc": "npc_yuelai_deng",
+    "root": "nd_offer_welcome",
+    "nodes": [
+    {
+    "id": "nd_offer_welcome",
+    "speaker": "挑灯人",
+    "text_key": "dialog.strife.nd_offer_welcome",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_offer_welcome_opt1",
+    "next": "nd_offer_lead"
+  },
+    {
+    "text_key": "dialog.strife.nd_offer_welcome_opt2",
+    "next": "nd_offer_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_offer_lead",
+    "speaker": "挑灯人",
+    "text_key": "dialog.strife.nd_offer_lead",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_offer_lead_opt1",
+    "effects": "((type=reputation;args=fac_yuelai:3)|(type=give_item;args=item_lingshi:3))",
+    "next": "nd_offer_deal"
+  },
+    {
+    "text_key": "dialog.strife.nd_offer_lead_opt2",
+    "next": "nd_offer_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_offer_deal",
+    "speaker": "挑灯人",
+    "text_key": "dialog.strife.nd_offer_deal",
+    "conditions": null,
+    "next": null,
+    "options": null
+  },
+    {
+    "id": "nd_offer_bye",
+    "speaker": "挑灯人",
+    "text_key": "dialog.strife.nd_offer_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 8
+  },
+    {
+    "id": "dlg_ch1_debt",
+    "npc": "npc_yaonong_su",
+    "root": "nd_debt_gate",
+    "nodes": [
+    {
+    "id": "nd_debt_gate",
+    "speaker": "苏药农",
+    "text_key": "dialog.strife.nd_debt_gate",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_debt_gate_opt1",
+    "next": "nd_debt_tale"
+  },
+    {
+    "text_key": "dialog.strife.nd_debt_gate_opt2",
+    "next": "nd_debt_chat"
+  }
+  ]
+  },
+    {
+    "id": "nd_debt_tale",
+    "speaker": "苏药农",
+    "text_key": "dialog.strife.nd_debt_tale",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_debt_tale_opt1",
+    "effects": "((type=set_flag;args=fac_qingshi:ch1:debt_told))",
+    "next": "nd_debt_bye"
+  },
+    {
+    "text_key": "dialog.strife.nd_debt_tale_opt2",
+    "next": "nd_debt_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_debt_chat",
+    "speaker": "苏药农",
+    "text_key": "dialog.strife.nd_debt_chat",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_debt_chat_opt1",
+    "next": "nd_debt_gate"
+  }
+  ]
+  },
+    {
+    "id": "nd_debt_bye",
+    "speaker": "苏药农",
+    "text_key": "dialog.strife.nd_debt_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 8
+  }
+  ]
+}
