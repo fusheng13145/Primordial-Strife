@@ -2,3 +2,4 @@ id,element,required_technique,cost_key,cooldown_key,damage_formula_key,projectil
 spell_prologue_huodan,huo,tech_duanhu_gong,light,light,formula_basic,speed=0.8;gravity=0.03;range=20;pierce_count=0,0,,,C1-1 初稿 火弹术 弹道数值为拟稿占位
 spell_prologue_jinren,jin,tech_jinsha_jue,medium,medium,formula_pierce,speed=1.2;gravity=0;range=24;pierce_count=1,,,item_id=item_lingshi;count=60,C1-1 初稿 金刃术 卷轴可售
 spell_prologue_tubi,tu,tech_houtu_gong,medium,heavy,formula_basic,,,,,C1-1 初稿 土壁术 自身施放无弹道
+spell_xuanyu_ren,jin,tech_xuanyu_jue,medium,medium,formula_pierce,speed=1.2;gravity=0;range=24;pierce_count=1,,,item_id=item_lingshi;count=50,W4证明-新增玄玉刃 玄玉诀配套金系穿透法术 验证spells域管线零逻辑改动

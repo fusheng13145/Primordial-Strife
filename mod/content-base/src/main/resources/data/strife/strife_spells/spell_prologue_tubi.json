@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/spells.csv @ sha256:f0f26733f07ccac0f843d943d47476e8c4e673d4049a53df0680a3583c083221",
+  "@generated": "from tables/spells.csv @ sha256:c5b968f8d80aa2b1bd8b4c2b5c5afb57aae9ec274adc8f23c402088238c35446",
   "id": "spell_prologue_tubi",
   "element": "tu",
   "required_technique": "tech_houtu_gong",

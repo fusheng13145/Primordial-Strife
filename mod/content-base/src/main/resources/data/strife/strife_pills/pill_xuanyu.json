@@ -1,26 +1,30 @@
 {
   "@generated": "from tables/pills.csv @ sha256:7b4197cfc506f519bfd3b0c759104081d9afb0125faea5515d12c69540d96a8f",
-  "id": "pill_peiyuan",
+  "id": "pill_xuanyu",
   "quality_tier": "di",
-  "pattern": "1x1=item_yuejian;2x2=item_ningxu",
-  "core_slot": "item_yuejian",
+  "pattern": "2x2=item_lingshi;1x1=item_ningxu;3x3=item_duanxue",
+  "core_slot": "item_lingshi",
   "materials": [
     {
-    "item_id": "item_yuejian",
+    "item_id": "item_lingshi",
     "count": 2
   },
     {
     "item_id": "item_ningxu",
+    "count": 2
+  },
+    {
+    "item_id": "item_duanxue",
     "count": 1
   }
   ],
   "heat_range": [
-    0.4,
-    0.6
+    0.3,
+    0.7
   ],
   "outputs": [
     {
-    "item_id": "pill_peiyuan",
+    "item_id": "pill_xuanyu",
     "count": 1,
     "prob": 0.85,
     "quality": "di"
@@ -32,12 +36,12 @@
     "quality": "fan"
   }
   ],
-  "effect_key": "pill_peiyuan",
+  "effect_key": "pill_xuanyu",
   "effect": {
-    "qi_rate_bonus": 0.6,
-    "duration_sec": 120,
-    "repeat_step": 0.1,
-    "repeat_floor": 0.2
+    "qi_rate_bonus": 0.5,
+    "duration_sec": 180,
+    "repeat_step": 0.08,
+    "repeat_floor": 0.15
   },
   "failure_output": null,
   "price": null
