@@ -813,6 +813,39 @@ public final class ValidatorMain {
     }
 
     /**
+     * V-RANGE sub-item for {@code strife_periods} products (docs/04 §6): {@code kind} must be one
+     * of the §5.1 enum values (tide/open_window/harvest/war_phase). The generator passes the value
+     * through; the Validator adjudicates the enum contract.
+     */
+    public static List<String> periodKindEnum(Options options) {
+        Set<String> kinds = Set.of("tide", "open_window", "harvest", "war_phase");
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!"strife_periods".equals(domainOf(file, options))) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("kind") || !object.get("kind").isJsonPrimitive()) {
+                continue;
+            }
+            String kind = object.get("kind").getAsString();
+            if (!kinds.contains(kind)) {
+                problems.add(
+                        file
+                                + ": kind '"
+                                + kind
+                                + "' is not a §5.1 enum value (tide/open_window/harvest/war_phase)"
+                                + " (V-RANGE)");
+            }
+        }
+        return problems;
+    }
+
+    /**
      * V-RANGE sub-items on the truth source itself (docs/04 §6), gated on content/ being merged
      * like V-GROWTH: success rates stay inside the success_rate bounds NUMBERS declares, and
      * lifespan_years must strictly increase along the realm chain — with the [占位] relaxation the
@@ -1801,6 +1834,8 @@ public final class ValidatorMain {
         problems.addAll(numericRanges(options));
         executed++;
         problems.addAll(spiritFieldRanges(options));
+        executed++;
+        problems.addAll(periodKindEnum(options));
         executed++;
         notices.forEach(n -> System.out.println("validator: " + n));
         problems.forEach(p -> System.err.println("validator: " + p));

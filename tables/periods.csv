@@ -1,1 +1,2 @@
 id,kind,period_ticks,window_sec,condition,effect_on_world,_note
+per_lingmai_tide,tide,24000,3600,,type=ambient_qi;args=ratio:1.5|type=broadcast;args=灵脉潮汐来袭,W4/P3证明-新增灵脉潮汐周期 验证periods域生成器 H5时钟

@@ -1,0 +1,18 @@
+{
+  "@generated": "from tables/periods.csv @ sha256:b005fe9f8f2fb997a4dd4f17a2cb38807343eadebe62b732da4314c92ed9ba01",
+  "id": "per_lingmai_tide",
+  "kind": "tide",
+  "period_ticks": 24000,
+  "window_sec": 3600,
+  "condition": null,
+  "effect_on_world": [
+    {
+    "type": "ambient_qi",
+    "args": "ratio:1.5"
+  },
+    {
+    "type": "broadcast",
+    "args": "灵脉潮汐来袭"
+  }
+  ]
+}
