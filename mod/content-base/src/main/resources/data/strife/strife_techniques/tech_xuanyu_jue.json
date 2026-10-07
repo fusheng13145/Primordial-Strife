@@ -1,21 +1,21 @@
 {
   "@generated": "from tables/techniques.csv @ sha256:6714e4bf379dcbe746d25138b732565d50a132b8730e71b6b4e03e3242a82fe0",
-  "id": "tech_renshui_zhenjie",
+  "id": "tech_xuanyu_jue",
   "grade": "xuan",
-  "element": "shui",
-  "required_realm": "zhuji",
+  "element": "jin",
+  "required_realm": "qili",
   "required_stage": 1,
   "required_spiritroot": [
-    "shui"
+    "jin"
   ],
   "affinity_rule": "matched",
-  "qi_rate_ratio": 1.2,
+  "qi_rate_ratio": 1.18,
   "passives": null,
   "grants_spells": null,
   "faction": "fac_qingshi",
   "price": {
     "item_id": "item_lingshi",
-    "count": 120
+    "count": 50
   },
   "source": "inherit",
   "disabled_reason_key": null

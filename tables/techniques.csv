@@ -4,3 +4,4 @@ tech_duanhu_gong,huang,huo,qili,,huo,matched,1.10,,,fac_qingshi,item_id=item_lin
 tech_jinsha_jue,huang,jin,qili,,jin,matched,1.05,,,,item_id=item_lingshi;count=40,scroll,,C1-1 初稿 金砂诀 散修抄本 无门无派
 tech_renshui_zhenjie,xuan,shui,zhuji,,shui,matched,1.20,,,fac_qingshi,item_id=item_lingshi;count=120,inherit,,C1-1 初稿 壬水真解 藏经阁一层压箱
 tech_houtu_gong,huang,tu,qili,,tu,matched,1.10,,,fac_qingshi,item_id=item_lingshi;count=25,inherit,,C1-1 初稿 厚土功
+tech_xuanyu_jue,xuan,jin,qili,,jin,matched,1.18,,,fac_qingshi,item_id=item_lingshi;count=50,inherit,,W4证明-新增玄玉诀 金系入门功法 验证内容产能管线零逻辑改动

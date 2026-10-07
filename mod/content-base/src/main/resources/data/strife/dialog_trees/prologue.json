@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_trees_prologue.csv @ sha256:723a496a22c23fea00d4dcc4103e51704c7ab498608eed6456d6bf3f47d8b988",
+  "@generated": "from tables/dialog_trees_prologue.csv @ sha256:d9d7061a92296451abe2001e5ac1bafb59af84d50ddb08613421f829b0155ea2",
   "id": "nd_elder_gate_done",
   "chapter": "prologue",
   "trees": [

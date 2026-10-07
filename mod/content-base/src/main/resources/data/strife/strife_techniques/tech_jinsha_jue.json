@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/techniques.csv @ sha256:e0555b5d8a0724266ef79d52db7722ae69a74970494ee706dd94ea42047df60f",
+  "@generated": "from tables/techniques.csv @ sha256:6714e4bf379dcbe746d25138b732565d50a132b8730e71b6b4e03e3242a82fe0",
   "id": "tech_jinsha_jue",
   "grade": "huang",
   "element": "jin",
