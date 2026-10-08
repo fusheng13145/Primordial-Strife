@@ -1,0 +1,11 @@
+{
+  "name": "厚土功",
+  "icon": "strife:item_ningxu",
+  "category": "techniques",
+  "pages": [
+    {
+      "type": "text",
+      "text": "厚土功：土属沉稳，根基深厚。"
+    }
+  ]
+}

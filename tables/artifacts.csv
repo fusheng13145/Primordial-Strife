@@ -1,1 +1,2 @@
 id,blank,restriction_count,core_slot,materials,quality_probs,slot_type,required_realm,active_skill,passives,durability_points,price,_note
+art_xuanyu,item_xuanyu,3,item_lingshi,item_id=item_xuanyu;count=1|item_id=item_lingshi;count=3|item_id=item_ningxu;count=2,di=0.50;fan=0.40;tian=0.10,treasure,qili,spell_id=spell_xuanyu_ren;cooldown_key=medium,,100,item_id=item_lingshi;count=120,W4证明-新增玄玉佩 玄玉诀配套法宝 验证artifacts域管线零逻辑改动

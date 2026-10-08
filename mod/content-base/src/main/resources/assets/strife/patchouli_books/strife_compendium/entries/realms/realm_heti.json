@@ -1,0 +1,11 @@
+{
+  "name": "合体",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "合体：人法合一，渐入大道。"
+    }
+  ]
+}

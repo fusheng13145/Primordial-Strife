@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/pills.csv @ sha256:61dc09af4900bcff689c2ca3da509dbccd03864e53ea5b1caaca338f23460bf9",
+  "@generated": "from tables/pills.csv @ sha256:7b4197cfc506f519bfd3b0c759104081d9afb0125faea5515d12c69540d96a8f",
   "id": "pill_peiyuan",
   "quality_tier": "di",
   "pattern": "1x1=item_yuejian;2x2=item_ningxu",

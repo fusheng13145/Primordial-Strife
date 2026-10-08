@@ -1,0 +1,11 @@
+{
+  "name": "金砂诀",
+  "icon": "strife:item_ningxu",
+  "category": "techniques",
+  "pages": [
+    {
+      "type": "text",
+      "text": "金砂诀：金属锐法，攻守兼备。"
+    }
+  ]
+}

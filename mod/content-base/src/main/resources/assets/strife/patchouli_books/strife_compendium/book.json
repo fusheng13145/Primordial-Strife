@@ -1,0 +1,11 @@
+{
+  "name": "玄黄劫争 · 修真通鉴",
+  "landing_text": "欢迎踏入玄黄劫争的世界。本通鉴记载境界、功法、势力、法宝与征伐之道，供修行者参详。\n\n（Patchouli 为软依赖：缺 Patchouli 时本手册不加载，游戏功能不受影响。）",
+  "version": 1,
+  "creative_tab": true,
+  "show_toasts": true,
+  "i18n": false,
+  "dictionary": [
+    "strife"
+  ]
+}

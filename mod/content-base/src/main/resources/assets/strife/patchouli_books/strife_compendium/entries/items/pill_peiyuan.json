@@ -1,0 +1,11 @@
+{
+  "name": "培元丹",
+  "icon": "strife:pill_peiyuan",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "培元丹：固本培元。"
+    }
+  ]
+}

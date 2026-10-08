@@ -1,3 +1,4 @@
 id,display_name_key,alignment,home_region,relations,_note
 fac_qingshi,faction.strife.fac_qingshi,orthodox,qi_luoxia,fac_yuelai=10,M0 占位行 取值依据 LORE §4 势力卡与关系矩阵初稿 未经人名义确认 关系属 H7 仅登记结构
 fac_yuelai,faction.strife.fac_yuelai,neutral,qi_wenjiang,fac_qingshi=10,M0 占位行 同上 妖族与承梁王朝的态度边待 fac_yao fac_wangchao 行落地时补
+fac_xuanyu,faction.strife.fac_xuanyu,orthodox,qi_xuanyu,fac_qingshi=5;fac_yuelai=-5,W4证明-新增玄玉宗 玄玉家族配套势力 验证factions域管线零逻辑改动

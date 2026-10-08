@@ -1,1 +1,3 @@
 id,region_id,ambient_qi_ratio,_note
+qi_luoxia_field,qi_luoxia,1.20,W4/P3证明-新增灵气场 验证spirit_field域生成器 落霞镇区域环境系数（id 去重：地名 qi_luoxia 已由 tables/places.csv 占用 region_id 仍指落霞区域）
+qi_xuanyu,qi_xuanyu,1.35,W4/P3证明-新增玄玉境灵气场 玄玉家族配套区域环境系数

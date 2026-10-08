@@ -50,6 +50,9 @@ public final class DataGenMain {
     public static List<TableGenerator> generators(NumbersSource numbers) {
         return List.of(
                 new FactionGenerator(),
+                new SpiritFieldGenerator(),
+                new PeriodsGenerator(),
+                new WarsGenerator(),
                 new TechniqueGenerator(),
                 new SpellGenerator(numbers),
                 new PillGenerator(numbers),

@@ -1,0 +1,11 @@
+{
+  "name": "清心诀",
+  "icon": "strife:item_ningxu",
+  "category": "techniques",
+  "pages": [
+    {
+      "type": "text",
+      "text": "清心诀：木属静功，宁神静气。"
+    }
+  ]
+}

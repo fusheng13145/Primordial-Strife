@@ -1,0 +1,48 @@
+{
+  "@generated": "from tables/artifacts.csv @ sha256:09e50d7c823261119ae4120f9dd235b64db9c6551a0971006e4fbe6e642c7dd2",
+  "id": "art_xuanyu",
+  "blank": "item_xuanyu",
+  "restriction_count": 3,
+  "core_slot": "item_lingshi",
+  "materials": [
+    {
+    "item_id": "item_xuanyu",
+    "count": 1
+  },
+    {
+    "item_id": "item_lingshi",
+    "count": 3
+  },
+    {
+    "item_id": "item_ningxu",
+    "count": 2
+  }
+  ],
+  "quality_probs": [
+    {
+    "quality_tier": "di",
+    "prob": 0.5
+  },
+    {
+    "quality_tier": "fan",
+    "prob": 0.4
+  },
+    {
+    "quality_tier": "tian",
+    "prob": 0.1
+  }
+  ],
+  "slot_type": "treasure",
+  "required_realm": "qili",
+  "active_skill": {
+    "spell_id": "spell_xuanyu_ren",
+    "cooldown_key": "medium",
+    "cooldown_sec": 20
+  },
+  "passives": null,
+  "durability_points": 100,
+  "price": {
+    "item_id": "item_lingshi",
+    "count": 120
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "练气",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "练气：引灵气入经脉，可尝试突破。"
+    }
+  ]
+}

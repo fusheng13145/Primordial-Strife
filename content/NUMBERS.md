@@ -131,6 +131,7 @@ roll_weights: { tier_1: 2, tier_2: 8, tier_3: 25, tier_4: 65 } # [拟] 角色创
 pill_juqi:    { qi_rate_bonus: 0.25, duration_sec: 300,  repeat_step: 0.05, repeat_floor: 0.10 } # [拟] 聚气丹
 pill_peiyuan: { qi_rate_bonus: 0.60, duration_sec: 120, repeat_step: 0.10, repeat_floor: 0.20 } # [拟] 培元丹（短效高倍）
 pill_yanshou: { lifespan_years_gain: 10, max_gain_per_realm: 30 }                               # [拟] 延寿丹，续命路径，受单次境界封顶
+pill_xuanyu: { qi_rate_bonus: 0.50, duration_sec: 180, repeat_step: 0.08, repeat_floor: 0.15 } # [拟] 玄玉丹（玄玉诀配套地阶丹，Agent 起草待 C 审）
 # repeat_* 语义 [拟]：同种丹药在冷却窗内重复服用，加成按 repeat_step 递减至 repeat_floor（防堆叠挂机化）
 ```
 

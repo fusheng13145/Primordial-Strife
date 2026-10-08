@@ -1,0 +1,11 @@
+{
+  "name": "金丹",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "金丹：丹成于腹，寿元大增。"
+    }
+  ]
+}

@@ -1,1 +1,2 @@
 id,belligerents,cause_predicate,phases,peace_terms,consequences,form,_note
+war_luoxia_dispute,fac_qingshi;fac_yuelai,realm(qili)>=3,id=skirmish;entry_conditions=flag(war_luoxia_dispute);world_effects=ambient_qi:0.8;duration_ticks=1200,flag(truce_luoxia),type=reputation;args=fac_qingshi:-5|type=reputation;args=fac_yuelai:5,recurring,W4/P3证明-新增落霞争端 验证wars域生成器与势力引用门禁

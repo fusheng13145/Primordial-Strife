@@ -1,0 +1,11 @@
+{
+  "name": "玄玉宗",
+  "icon": "strife:item_yuejian",
+  "category": "factions",
+  "pages": [
+    {
+      "type": "text",
+      "text": "玄玉宗：掌玄玉灵脉，玉修一脉。"
+    }
+  ]
+}

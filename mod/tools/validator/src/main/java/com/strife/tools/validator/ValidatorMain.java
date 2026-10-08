@@ -750,6 +750,111 @@ public final class ValidatorMain {
     }
 
     /**
+     * V-RANGE sub-item for {@code strife_spirit_field} products (docs/04 §6): ambient_qi_ratio must
+     * stay inside NUMBERS @@world {@code [ambient_qi_min, ambient_qi_max]} and must never be 0 (05
+     * §2 forbids "zero growth with no explanation"). Bounds come from the truth source, not
+     * literals.
+     */
+    public static List<String> spiritFieldRanges(Options options) {
+        Path numbers = NumbersBlocks.numbersFile(options.contentRoot());
+        if (numbers == null) {
+            return List.of();
+        }
+        BigDecimal min = null;
+        BigDecimal max = null;
+        try {
+            for (NumbersBlocks.Line line : NumbersBlocks.yamlBlock(numbers, "world")) {
+                String content = NumbersBlocks.stripComment(line.text()).trim();
+                if (content.isEmpty() || content.startsWith("#")) {
+                    continue;
+                }
+                int colon = content.indexOf(':');
+                if (colon <= 0) {
+                    continue;
+                }
+                String key = content.substring(0, colon).trim();
+                String value = content.substring(colon + 1).trim();
+                if ("ambient_qi_min".equals(key)) {
+                    min = new BigDecimal(value);
+                } else if ("ambient_qi_max".equals(key)) {
+                    max = new BigDecimal(value);
+                }
+            }
+        } catch (IllegalStateException e) {
+            return List.of(numbers + ": " + e.getMessage());
+        } catch (NumberFormatException e) {
+            return List.of(numbers + ": ambient_qi_min/max are not numeric (NUMBERS §9)");
+        }
+        if (min == null || max == null) {
+            return List.of(
+                    numbers
+                            + ": @@world declares no ambient_qi_min/max, so spirit-field ratios"
+                            + " cannot be range-checked (NUMBERS §9)");
+        }
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!"strife_spirit_field".equals(domainOf(file, options))) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("ambient_qi_ratio")
+                    || !object.get("ambient_qi_ratio").isJsonPrimitive()) {
+                continue;
+            }
+            BigDecimal ratio = object.get("ambient_qi_ratio").getAsBigDecimal();
+            if (ratio.compareTo(min) < 0 || ratio.compareTo(max) > 0) {
+                problems.add(
+                        file
+                                + ": ambient_qi_ratio "
+                                + ratio
+                                + " is outside ["
+                                + min
+                                + ", "
+                                + max
+                                + "] (NUMBERS §9, V-RANGE)");
+            }
+        }
+        return problems;
+    }
+
+    /**
+     * V-RANGE sub-item for {@code strife_periods} products (docs/04 §6): {@code kind} must be one
+     * of the §5.1 enum values (tide/open_window/harvest/war_phase). The generator passes the value
+     * through; the Validator adjudicates the enum contract.
+     */
+    public static List<String> periodKindEnum(Options options) {
+        Set<String> kinds = Set.of("tide", "open_window", "harvest", "war_phase");
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!"strife_periods".equals(domainOf(file, options))) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("kind") || !object.get("kind").isJsonPrimitive()) {
+                continue;
+            }
+            String kind = object.get("kind").getAsString();
+            if (!kinds.contains(kind)) {
+                problems.add(
+                        file
+                                + ": kind '"
+                                + kind
+                                + "' is not a §5.1 enum value (tide/open_window/harvest/war_phase)"
+                                + " (V-RANGE)");
+            }
+        }
+        return problems;
+    }
+
+    /**
      * V-RANGE sub-items on the truth source itself (docs/04 §6), gated on content/ being merged
      * like V-GROWTH: success rates stay inside the success_rate bounds NUMBERS declares, and
      * lifespan_years must strictly increase along the realm chain — with the [占位] relaxation the
@@ -1414,6 +1519,34 @@ public final class ValidatorMain {
                         }
                     }
                 }
+                case "strife_wars" -> {
+                    String warId = stringOrNull(object.get("id"));
+                    String prefix = file + " war '" + warId + "'";
+                    for (JsonElement belligerent : arrayOrEmptyOf(object, "belligerents")) {
+                        String factionId =
+                                belligerent.isJsonPrimitive() ? belligerent.getAsString() : null;
+                        if (factionId == null) {
+                            continue;
+                        }
+                        checkId(problems, prefix, "faction", factionId, factionIds, whitelist);
+                    }
+                    for (JsonElement consequence : arrayOrEmptyOf(object, "consequences")) {
+                        if (!consequence.isJsonObject()) {
+                            continue;
+                        }
+                        JsonObject consequenceObject = consequence.getAsJsonObject();
+                        String type = stringOrNull(consequenceObject.get("type"));
+                        String args = stringOrNull(consequenceObject.get("args"));
+                        if (args == null) {
+                            continue;
+                        }
+                        if ("reputation".equals(type)) {
+                            String[] parts = args.trim().split("[:,]", -1);
+                            String head = parts.length > 0 ? parts[0].trim() : "";
+                            checkId(problems, prefix, "faction", head, factionIds, whitelist);
+                        }
+                    }
+                }
                 default -> {}
             }
         }
@@ -1738,6 +1871,10 @@ public final class ValidatorMain {
         problems.addAll(numericRanges(options));
         executed++;
         problems.addAll(NameConventions.check(options));
+        executed++;
+        problems.addAll(spiritFieldRanges(options));
+        executed++;
+        problems.addAll(periodKindEnum(options));
         executed++;
         notices.forEach(n -> System.out.println("validator: " + n));
         problems.forEach(p -> System.err.println("validator: " + p));

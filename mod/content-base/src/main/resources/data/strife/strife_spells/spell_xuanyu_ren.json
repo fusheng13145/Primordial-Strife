@@ -1,0 +1,28 @@
+{
+  "@generated": "from tables/spells.csv @ sha256:c5b968f8d80aa2b1bd8b4c2b5c5afb57aae9ec274adc8f23c402088238c35446",
+  "id": "spell_xuanyu_ren",
+  "element": "jin",
+  "required_technique": "tech_xuanyu_jue",
+  "cost_key": "medium",
+  "cost_qi": 18,
+  "cooldown_key": "medium",
+  "cooldown_sec": 4.0,
+  "damage_formula_key": "formula_pierce",
+  "damage_formula": {
+    "base": 4,
+    "scale": "realm_coeff",
+    "pen": 0.5
+  },
+  "projectile": {
+    "speed": 1.2,
+    "gravity": 0.0,
+    "range": 24.0,
+    "pierce_count": 1
+  },
+  "aoe_radius_blocks": null,
+  "effects": null,
+  "price": {
+    "item_id": "item_lingshi",
+    "count": 50
+  }
+}

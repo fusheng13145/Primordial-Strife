@@ -1,0 +1,11 @@
+{
+  "name": "凡人",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "凡人是修行的起点，未引气入体。"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "延寿丹",
+  "icon": "strife:pill_yanshou",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "延寿丹：延展阳寿。"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "炼虚",
+  "icon": "strife:item_lingshi",
+  "category": "realms",
+  "pages": [
+    {
+      "type": "text",
+      "text": "炼虚：虚实相生，法相初显。"
+    }
+  ]
+}

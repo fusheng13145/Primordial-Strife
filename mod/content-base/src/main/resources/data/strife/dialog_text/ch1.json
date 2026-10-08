@@ -1,0 +1,24 @@
+{
+  "@generated": "from tables/dialog_ch1_text.csv @ sha256:70229a9062a096a842b7c364099cc19fe900e3343417e6d74bcc5fdf9b0e0ab5",
+  "id": "dialog_text_ch1",
+  "chapter": "ch1",
+  "texts": {
+    "dialog.strife.nd_offer_welcome": "灯没灭，就是还收消息。石过滩的事我略知一二——你想听，先说说你踏勘见了什么。",
+    "dialog.strife.nd_offer_welcome_opt1": "打听石过滩的见闻",
+    "dialog.strife.nd_offer_welcome_opt2": "只是路过",
+    "dialog.strife.nd_offer_lead": "踏勘过了？那笔账就好算了。月来渡的规矩你懂：消息不是白给的。你替我跑一趟腿，探听西边矿脉的成色，回头我给你指条进坊市的路。",
+    "dialog.strife.nd_offer_lead_opt1": "接下这笔消息买卖",
+    "dialog.strife.nd_offer_lead_opt2": "再想想",
+    "dialog.strife.nd_offer_deal": "成。这是点盘缠，拿着。坊市的门路，等你办成了我再开口——空口白话，挑灯人不认。",
+    "dialog.strife.nd_offer_bye": "灯给你留着。慢走。",
+    "dialog.strife.nd_debt_gate": "你来了。改道的事……你那一改，灵气改了向，山里的畜生顺着味儿摸下来，踩了我半亩药圃。",
+    "dialog.strife.nd_debt_gate_opt1": "听您细说",
+    "dialog.strife.nd_debt_gate_opt2": "随便聊聊",
+    "dialog.strife.nd_debt_tale": "妖兽不是冲我来的，是冲那股改了道的灵气。你改道是为抄近路，可苦的是我这片园子。这笔账，你记着也好，不记也罢——但园子得有人补。",
+    "dialog.strife.nd_debt_tale_opt1": "是我对不住，日后补您",
+    "dialog.strife.nd_debt_tale_opt2": "此事容后再议",
+    "dialog.strife.nd_debt_chat": "种药和修行一个理：火候不到，催出来的东西没灵性。你既来了，多看两眼我摘草的手艺。",
+    "dialog.strife.nd_debt_chat_opt1": "回到正事",
+    "dialog.strife.nd_debt_bye": "园子你慢走，莫踩田垄。"
+  }
+}

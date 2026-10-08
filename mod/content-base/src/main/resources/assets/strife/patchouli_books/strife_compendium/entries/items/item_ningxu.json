@@ -1,0 +1,11 @@
+{
+  "name": "凝须草",
+  "icon": "strife:item_ningxu",
+  "category": "items",
+  "pages": [
+    {
+      "type": "text",
+      "text": "凝须草：常见灵草，丹方材料。"
+    }
+  ]
+}
