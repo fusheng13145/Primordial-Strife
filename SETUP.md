@@ -13,7 +13,7 @@
 ```bash
 ./gradlew spotlessCheck        # 格式门禁
 ./gradlew build                # 编译 + 依赖断言（本机中文路径下用 build -x test，见 §4）
-./gradlew validator            # 内容校验（11 项门禁：V-DUP/V-FRESH/V-DAG/V-REF×2/V-GROWTH/V-RANGE/V-TEXT/V-PROB/V-DSL/price）
+./gradlew validator            # 内容校验（14 项门禁：V-DUP/V-FRESH/V-DAG/V-REF×2/V-GROWTH/V-RANGE×3/V-TEXT/V-PROB/V-DSL/V-NAME/price）
 ./gradlew :tools:datagen:run   # 表 + NUMBERS → content-base 产物
 ./gradlew :platform:runClient  # 开发客户端（进游戏看效果）
 ./gradlew :platform:runServer  # 开发服务端（需自备 run/server/eula.txt）
@@ -48,8 +48,8 @@
 | **对话树** | `/strife npc spawn <npc_qingshi_zhizhi>` 放出一位 NPC → **右键** | 说话人 + 正文 + 选项按钮；选项按条件门显隐；Esc 关闭（不暂停世界）。序章四棵树：石执事三段门链 / 苏药农交付 / 挑灯人风味 / 吴长老择宗 |
 | **妖兽** | 原版环境下自然生成 | `StrifeMonster`：仇恨/追击/近战 AI；可被 `/strife spell cast` 命中 |
 | **矿石** | 原版主世界地形中自然生成 | 三种：`block_ore_lingyu` 灵玉矿（金属性 常见）/ `block_ore_chiyan` 赤炎矿（火属性 稀有）/ `block_ore_hanyu` 寒玉矿（水属性 灵品）。丝触掉方块本体，时运走物品。**进世界先跑 `/strife world ore status` 看四类缺口是否全 `[OK]`**，再挖一铲验掉落 |
-| **灵气场** | 任意已加载区块 | 区域灵气浓度场（噪声 + NUMBERS `world` 域），客户端面板与环境系数联动。数据表 `spirit_field.csv` 仍未接生成器，现走噪声路径 |
-| **宗门结构** | — | **未实现**：宗门结构生成（G-7 剩余项），需先定结构模板契约 |
+| **灵气场** | 任意已加载区块 | 区域灵气浓度场（噪声 + NUMBERS `world` 域），客户端面板与环境系数联动。数据表 `spirit_field.csv` 已接生成器（W4 P3），运行时灵气场仍走噪声路径 |
+| **宗门结构** | 主世界生成 `sect_hall` | **已实现**（ADR-022）：`sect_hall` 结构数据链 + `SectHallStructure`/`SectHallPiece`/`SectStructures` 运行时 |
 
 命令速查：
 

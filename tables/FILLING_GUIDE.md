@@ -13,16 +13,16 @@
 
 | 环节 | 契约里应该有 | 现在实际有 | 证据 |
 |---|---|---|---|
-| DataGen | 把 CSV 读成 JSON 产物 | **已接 12 个生成器实例 / 10 张表 + 5 个 NUMBERS 直出域**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`、`quests_<章>.csv` → `strife_quests`（一章一文件聚合产物）、`dialog_trees_<章>.csv` → `dialog_trees`（一章一文件）、`dialog_<章>_text.csv` → `dialog_text`（一章一文件，服务端权威文本通道）、`ores.csv` → `configured_feature` + `placed_feature` + `biome_modifier` + `loot_table` + `strife_ores`（**一行 5 产物**，M4 矿石 placement）。**境界无 CSV 也已接**：`strife_realms` 由 NUMBERS `@@realms` 生成（含 ordinal/tribulation/display_name_key/占位标记四个推导项，§4.1），另有 realm_rules / world_rules / core_rules / combat_rules 四张运行时数值表由 NUMBERS 直出。仍无生成器的是 `spirit_field` / `periods` / `wars` 三张 —— 但**只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器）；实测输出 `datagen: tables=17 rows=82 generators=12 numbers=5 products=45 problems=0` |
-| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜）+ 命名规范 | **12 项门禁全部实装**（`validator: ... checks=12 problems=0`）：`V-DUP`（ID 全域唯一，台账表与对话配对表豁免）、`V-FRESH`（源哈希比对，含 `content/NUMBERS.md` 源头）、`V-DAG`（任务图硬校验）、`V-REF 一期`（unlock 词表 + NUMBERS 块键 + `known-placeholders.csv` 白名单）、**`V-REF 二期`**（源表主键 / lang item 键 / LORE NPC 卡存在性）、`V-GROWTH` + `V-RANGE`（成长比 1.8–2.5、成功率域、寿元单调；`[占位]` 境界放宽）、`V-TEXT`（zh_cn/en_us 覆盖，对话域豁免）、`V-PROB`（概率和=1，容差 1e-6）、**`V-DSL`**（独立词法校验器 `DslSyntax`：8 谓词白名单 / 括号平衡 / effects args 正则）、**`V-NAME`**（**ID 用拼音、文本用中文**：ID 形状、禁中文 ID、lang key 形态、zh_cn 值必含汉字；见 [docs/11](../docs/11-命名与目录规范.md)）、H1 price 非负。`content/` 缺席时 NUMBERS 侧检查在输出中声明并跳过 | `mod/tools/validator/src/main/java/com/strife/tools/validator/`（`ValidatorMain` + `DslSyntax` + `NameConventions`） |
-| 产物 | `data/strife/**.json` + `lang` | **45 个产物在库**：realms 10（九境界 + `rules.json`）+ factions 2 + techniques 5 + spells 3 + pills 3 + 任务 DAG ×2（prologue 十节点 / ch1 六节点骨架）+ 对话树 1（prologue；ch1 表空不产）+ 对话文本 1（prologue 41 行）+ 五张运行时数值表（realms/world/core/combat rules）+ **矿石 ×15**（`strife_ores` 契约镜像 3 + `worldgen/configured_feature` 3 + `worldgen/placed_feature` 3 + `worldgen/biome_modifier` 3 + `loot_table/blocks` 3，M4 一行 5 产物）；lang 种子 `assets/strife/lang/zh_cn.json` + `en_us.json`（V-TEXT 守覆盖）；另有 8 张物品贴图 + 6 张实体皮肤 + 8 个物品模型 JSON + 3 张矿石贴图 + 3 个方块模型 + 3 个 blockstate + 3 个物品模型。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
+| DataGen | 把 CSV 读成 JSON 产物 | **已接 20 个生成器实例 / 20 张表 + 6 个 NUMBERS 直出域**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`、`quests_<章>.csv` → `strife_quests`（一章一文件聚合产物）、`dialog_trees_<章>.csv` → `dialog_trees`（一章一文件）、`dialog_<章>_text.csv` → `dialog_text`（一章一文件，服务端权威文本通道）、`ores.csv` → `configured_feature` + `placed_feature` + `biome_modifier` + `loot_table` + `strife_ores`（**一行 5 产物**，M4 矿石 placement）。**境界无 CSV 也已接**：`strife_realms` 由 NUMBERS `@@realms` 生成（含 ordinal/tribulation/display_name_key/占位标记四个推导项，§4.1），另有 realm_rules / world_rules / core_rules / combat_rules 四张运行时数值表由 NUMBERS 直出。`spirit_field` / `periods` / `wars` 三张现也已接生成器（W4 P3）—— **只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器）；实测输出 `datagen: tables=22 rows=119 generators=20 numbers=6 products=69 problems=0` |
+| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜）+ 命名规范 | **14 项门禁全部实装**（`validator: ... checks=14 problems=0`）：`V-DUP`（ID 全域唯一，台账表与对话配对表豁免）、`V-FRESH`（源哈希比对，含 `content/NUMBERS.md` 源头）、`V-DAG`（任务图硬校验）、`V-REF 一期`（unlock 词表 + NUMBERS 块键 + `known-placeholders.csv` 白名单）、**`V-REF 二期`**（源表主键 / lang item 键 / LORE NPC 卡存在性）、`V-GROWTH` + `V-RANGE`（成长比 1.8–2.5、成功率域、寿元单调；`[占位]` 境界放宽）、`V-TEXT`（zh_cn/en_us 覆盖，对话域豁免）、`V-PROB`（概率和=1，容差 1e-6）、**`V-DSL`**（独立词法校验器 `DslSyntax`：8 谓词白名单 / 括号平衡 / effects args 正则）、**`V-NAME`**（**ID 用拼音、文本用中文**：ID 形状、禁中文 ID、lang key 形态、zh_cn 值必含汉字；见 [docs/11](../docs/11-命名与目录规范.md)）、H1 price 非负。`content/` 缺席时 NUMBERS 侧检查在输出中声明并跳过 | `mod/tools/validator/src/main/java/com/strife/tools/validator/`（`ValidatorMain` + `DslSyntax` + `NameConventions`） |
+| 产物 | `data/strife/**.json` + `lang` | **69 个产物在库**：realms 10（九境界 + `rules.json`）+ factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 任务 DAG ×2（prologue 十节点 / ch1 六节点骨架）+ 对话树 2（prologue + ch1）+ 对话文本 2（prologue 41 行 + ch1 17 行）+ 五张运行时数值表（realms/world/core/combat rules）+ **矿石 ×15**（`strife_ores` 契约镜像 3 + `worldgen/configured_feature` 3 + `worldgen/placed_feature` 3 + `worldgen/biome_modifier` 3 + `loot_table/blocks` 3，M4 一行 5 产物）；另有上界域（维度 2 + 群系 1 + 宗门结构 2 + 上界装饰 2 + 地点 5）与 W4 域（灵气场 2 + 周期 1 + 战事 1 + 妖兽掉落 1）；lang 种子 `assets/strife/lang/zh_cn.json` + `en_us.json`（V-TEXT 守覆盖）；另有 8 张物品贴图 + 6 张实体皮肤 + 8 个物品模型 JSON + 3 张矿石贴图 + 3 个方块模型 + 3 个 blockstate + 3 个物品模型。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
 | 打进 jar | 生成的 JSON 必须随 MOD 一起进游戏（`docs/04` §1「构建进 jar」/ §9「内置内容」） | **已接通**：`platform` 把 `content-base/src/main/resources` 挂成自己的 resources 目录，所以 `:platform:jar` 里就有 `data/strife/**`，开发期 `runClient`/`runServer`/`runData` 也看见同一批文件。并有 `:platform:checkContentBundled`（挂在 `check` 上，CI 必跑）逐个比对磁盘产物与 jar 条目 | 本机实测：磁盘放一个探针文件时报 `checkContentBundled: 1 content file(s) present in the platform jar`；把那行 `srcDir` 注释掉后报 `platform jar does not ship generated content: [data/strife/strife_factions/fac_probe.json]` |
 | 内容热更 | `content-base-X.Y.Z.zip` 独立内容包（`docs/04` §9、`docs/07` §5 交付物） | **还没有**：内置内容这条路已通，"整合包作者换 zip 覆盖"这条导出任务还没建工单 | 仓库现状（无任何 `contentZip` 任务） |
 
 所以现在这些模板的用途是**填了就能真出产物**：
 
-- **已接生成器的 9 张表，填的每一行都会真的生成产物**，并随 MOD 的 jar 进游戏（见上表"打进 jar"那一行）；`periods` / `wars` / `spirit_field` / `ores` 四张填了行，DataGen 会红着告诉你"这张表还没有生成器"，需要开工单接上（`docs/04` §5）。逐表状态见 [`tables/README.md`](README.md)。
-- 现在**会**被拦住的（十一项门禁全覆盖）：
+- **已接生成器的 20 张表，填的每一行都会真的生成产物**，并随 MOD 的 jar 进游戏（见上表"打进 jar"那一行）；`id_migration` / `known-placeholders` 两张是台账表、不产内容（`id_migration` 无生成器）。逐表状态见 [`tables/README.md`](README.md)。
+- 现在**会**被拦住的（十四项门禁全覆盖）：
   1. 同一个 `id` 出现两次（跨表也算，源表与产物之间按来源归并后再判重）；
   2. 表头第一列不是 `id`、某一行少了格子（多打/少打逗号）、格子带英文双引号；
   3. 有数据行但那张表没有生成器；
@@ -370,9 +370,9 @@ d1,<节点正式文本>,<变体A>,<变体B>,本段引用设定：<LORE 卡名 �
 2. **版权红线**：任何进 lang 的字符串不得含网文专名与情节（"韩立式""荒古圣体"这类只允许出现在内部调研语里，`docs/05` §7）。禁用词清单在 `content/LORE.md` §7（初稿已起草，**尚未合入**，仍在等内容负责人名义确认）—— 定稿前这条仍要你人工自检，不要假定别人替你看过。
 3. zh_cn 是源语言，key 缺失 = 构建失败；en_us 允许占位但**不得为空串**（`docs/04` §6）。这两张表只管 zh_cn。
 
-### 3.9 `spirit_field.csv` —— 灵气场（4 列）
+### 3.9 `spirit_field.csv` —— 灵气场（4 列，**已接生成器（W4 P3）**）
 
-产物：`data/strife/worldgen/…`（契约 §4.8）
+产物：`data/strife/strife_spirit_field/`（契约 §4.8）
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
@@ -426,7 +426,7 @@ block_ore_lingyu,jin,biomes=minecraft:plains|minecraft:forest|minecraft:desert|m
 
 ### 3.11 `factions.csv` —— 势力（6 列，**本表已接生成器**）
 
-契约 §5.2。M0 只要求 2–3 行占位。**已接生成器（另有 techniques / spells / pills / artifacts 四张）**：填一行、跑一次
+契约 §5.2。M0 只要求 2–3 行占位。**已接生成器（共 20 张已接，见 §7）**：填一行、跑一次
 `./gradlew :tools:datagen:run`，就会在
 `mod/content-base/src/main/resources/data/strife/strife_factions/<id>.json` 落一个产物，
 **产物必须与源表同一个提交**（否则 CI 的 datagen 漂移检查红）。
@@ -465,9 +465,9 @@ fac_qingshi,faction.strife.fac_qingshi,orthodox,qi_demo,fac_yuelai=-5,示例行 
 
 注意 `rep_range` 不在产物里：契约 §5.2 明写它固定 `[-100,100]` 且不入表，而把这个数写进 DataGen 代码就成了"代码里的受管数值字面量"（`AGENTS.md` 硬规则），所以由平台侧提供。
 
-### 3.12 `periods.csv` —— 周期事件（H5，7 列，**本期不填**）
+### 3.12 `periods.csv` —— 周期事件（H5，7 列，**已接生成器（W4 P3）**）
 
-契约 §5.1，整节标 `[占位]`：结构现在定，内容本期不填。**留下表头，不要提交数据行**；要填得先改契约。
+契约 §5.1，整节标 `[占位]`：结构现在定。**W4 P3 已接入生成器并提交 1 行试跑数据（`per_lingmai_tide`）**；大批量内容待契约 §8 未决项 4 定稿。
 
 列：`id`(`per_<语义>`) / `kind`(`tide` 灵脉潮汐 / `open_window` 秘境开启窗口 / `harvest` 灵气丰歉年 / `war_phase` 战争阶段) / `period_ticks`(周期长度，刻) / `window_sec`(开启窗口时长，秒) / `condition`(条件 DSL，可空) / `effect_on_world`(`{type,args}` 列表：改 `ambient_qi_ratio`、生成结构、广播) / `_note`。
 
@@ -479,9 +479,9 @@ fac_qingshi,faction.strife.fac_qingshi,orthodox,qi_demo,fac_yuelai=-5,示例行 
 per_demo,tide,<周期刻数>,<窗口秒数>,,type=<效果类型 待H5定>;args=<参数>,示例行 本期禁止提交数据行
 ```
 
-### 3.13 `wars.csv` —— 势力冲突（H7，8 列，**本期不填**）
+### 3.13 `wars.csv` —— 势力冲突（H7，8 列，**已接生成器（W4 P3）**）
 
-契约 §5.3，同样 `[占位]`。列：`id`(`war_<语义>`) / `belligerents`（两个势力 ID，`;` 分隔，例 `fac_qingshi;fac_yuelai`）/ `cause_predicate`（条件 DSL）/ `phases`（`{id,entry_conditions,world_effects,duration_ticks}` 列表）/ `peace_terms`（DSL）/ `consequences`（`{type,args}` 列表）/ `form`（`once_mainline` 一次性主线 / `recurring` 可复现，**同一场战争两种形态写在同一张表里**，这是 ADR-016 的变形测试要求）/ `_note`。
+契约 §5.3，同样 `[占位]`（W4 P3 已接入生成器并提交 1 行试跑数据）。列：`id`(`war_<语义>`) / `belligerents`（两个势力 ID，`;` 分隔，例 `fac_qingshi;fac_yuelai`）/ `cause_predicate`（条件 DSL）/ `phases`（`{id,entry_conditions,world_effects,duration_ticks}` 列表）/ `peace_terms`（DSL）/ `consequences`（`{type,args}` 列表）/ `form`（`once_mainline` 一次性主线 / `recurring` 可复现，**同一场战争两种形态写在同一张表里**，这是 ADR-016 的变形测试要求）/ `_note`。
 
 本期只交付"状态机原语与表结构"，剧本不做（契约 §5 H7 行）。
 
@@ -563,10 +563,10 @@ cd mod
 
 预期输出（本机实测，**这就是 §0 说的现状**）：
 
-- `datagen: tables-root=… resources-root=… content-root=… tables=17 rows=82 generators=12 numbers=5 products=45 problems=0`
-  - `tables=17` 全部被读进来；`rows=82` = factions 2 + techniques 5 + spells 3 + pills 3 + 序章任务 10 + ch1 任务 6 + 对话树 4 + 对话文本 41 + **矿石 3** + 白名单台账 5；`generators=12`（10 张表 + quests/dialog_trees/dialog_text 各按章注册为独立实例）；`numbers=5` = realms / realm_rules / world_rules / core_rules / combat_rules 五个 NUMBERS 直出域；`products=45` = realms 10（九境界 + rules）+ factions 2 + techniques 5 + spells 3 + pills 3 + 任务 DAG 2 + dialog_trees 1（prologue；ch1 表空不产）+ dialog_text 1 + 四张运行时数值表 + **矿石 15（一行 5 产物）**。
-- `validator: data-root=… tables-root=… json-files=45 csv-files=17 checks=12 problems=0`
-  - `checks=12` = `V-DUP` + `V-FRESH`（含 content/ 源头）+ `V-DAG` + `V-REF` 一期 + `V-REF` 二期（源表主键 / lang item 键 / LORE NPC 卡）+ V-GROWTH + 真相源数值域 + `V-TEXT` + `V-PROB` + `V-DSL` + **`V-NAME`（命名规范）** + price 非负。`content/NUMBERS.md` 缺席时数值域侧自动跳过并在输出中声明。
+- `datagen: tables-root=… resources-root=… content-root=… tables=22 rows=119 generators=20 numbers=6 products=69 problems=0`
+  - `tables=22` 全部被读进来；`rows=119` = factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 序章任务 10 + ch1 任务 6 + 对话树 6（prologue 4 / ch1 2）+ 对话文本 58（prologue 41 / ch1 17）+ **矿石 3** + 地点 5 + 上界表 4（维度/群系/上界装饰/宗门结构 各 1）+ 灵气场 2 + 周期 1 + 战事 1 + 白名单台账 5；`generators=20`（20 张表，quests 与 dialog_trees / dialog_text 各按章注册为独立实例）；`numbers=6` = realms / realm_rules / world_rules / core_rules / combat_rules / beast_loot 六个 NUMBERS 直出域；`products=69` = realms 10（九境界 + rules）+ factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 任务 DAG 2 + dialog_trees 2（prologue + ch1）+ dialog_text 2（prologue + ch1）+ 三张运行时数值表 + **矿石 15（一行 5 产物）** + 上界域 12（维度 2 + 群系 1 + 宗门结构 2 + 上界装饰 2 + 地点 5）+ W4 域 5（灵气场 2 + 周期 1 + 战事 1 + 妖兽掉落 1）。
+- `validator: data-root=… tables-root=… json-files=71 csv-files=22 checks=14 problems=0`
+  - `checks=14` = `V-DUP` + `V-FRESH`（含 content/ 源头）+ `V-DAG` + `V-REF` 一期 + `V-REF` 二期（源表主键 / lang item 键 / LORE NPC 卡）+ V-GROWTH + 真相源数值域 + `V-RANGE`（含 `strife_spirit_field` 环境系数域 + `strife_periods` kind 枚举域）+ `V-TEXT` + `V-PROB` + `V-DSL` + **`V-NAME`（命名规范）** + price 非负。`content/NUMBERS.md` 缺席时数值域侧自动跳过并在输出中声明。
 
 往已接生成器的表填行后，`products` 与 `json-files` 会同步增长，产物落在
 `mod/content-base/src/main/resources/data/strife/<域>/<id>.json`，**必须连产物一起提交**（CI 的"生成器漂移"检查就是比对它）；新增内容 ID 时 `assets/strife/lang/zh_cn.json` 与 `en_us.json` 必须同步补 key（V-TEXT 会红）。
@@ -661,7 +661,7 @@ datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMa
 - DataGen 按列名读取，**列顺序无语义**，重排不破档（§2）。已实测确认，不再是"未验证"。
 - **空格子 = null、`()` = 空数组**已落进实现：DataGen 就是这么读的（§2）。
 - **嵌套语法 `|` 与 `( … )` 现在会被 DataGen 直接拒绝**并指到行号，不是"静默生成错产物"。要真用这语法，先让 C 拍板 §2 的 `[拟]`，再实现读取器。
-- **多余的列不报错、也不进产物**（DataGen 只按列名取自己要的）。**已接生成器的表**（factions / techniques / spells / pills / artifacts 五张）改错列名 = 当场红；**没接生成器的表**改错列名暂时不会被 DataGen 发现（V-DUP 只认第一列）。"多加一列是否要报错"见 §6.2 第 5 条。
+- **多余的列不报错、也不进产物**（DataGen 只按列名取自己要的）。**已接生成器的表**（20 张，见 §7）改错列名 = 当场红；**没接生成器的表**（两张台账表）改错列名暂时不会被 DataGen 发现（V-DUP 只认第一列）。"多加一列是否要报错"见 §6.2 第 5 条。
 
 ### 6.2 仍悬空，别按暂定口径大批量填
 
@@ -670,11 +670,11 @@ datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMa
 3. **`quests.chapter` 与文件名重复**：本轮**保留**必填列（产物路径与 DAG 校验都靠它，隐式推导不利于排错），C 若判冗余再删。
 4. **`alignment` / `chapter` / `objective_type` 三个枚举**待 `STORY.md` 定稿（契约 §8 未决项 5）；符箓/阵法/灵植三表（`tal_`/`form_`/`plant_`）按 §4.11 只占位不填，本批未建空表头。
 5. **§1.2 规则 2「严格未知字段」是否采纳**（契约 §8 未决项 1）。实现后的口径是这样，别再按"未定"猜：
-   - 已接生成器的表（factions / techniques / spells / pills / artifacts / ores 六张）：**列名拼错 = DataGen 报错到文件名**（`header has no 'x' column, contract drift?`），多余的列被读进来但没人消费，**既不报错也不进产物**。
+   - 已接生成器的表（20 张，见 §7）：**列名拼错 = DataGen 报错到文件名**（`header has no 'x' column, contract drift?`），多余的列被读进来但没人消费，**既不报错也不进产物**。
    - 还没接生成器的表：DataGen 只看首列（V-DUP 用它），其余列**根本不读**。
-   也就是说"改表头 = 改契约"这件事，现在六张表有代码兜底。规则 2 若判"多余列也算错"，需要给每张表加声明式列白名单，那是另一个工单。
+   也就是说"改表头 = 改契约"这件事，现在 20 张表有代码兜底。规则 2 若判"多余列也算错"，需要给每张表加声明式列白名单，那是另一个工单。
 6. **`known-placeholders.csv` 的 `issue` 列写的是 `A0-7`**（取自 NUMBERS §11 待审标题），**是否为可跳转的真实 issue 号未验证**，合入前补真号。
-7. **剩下 3 张表各自需要一张"接生成器"的工单**（`docs/04` §5 说是 A1/C1 的活；`spirit_field` / `periods` / `wars`，`ores` 已于 M4 接完）。在那之前往这些表填行，DataGen 会红着拒绝 —— 这是**特性不是故障**：它宁可不让你填，也不让内容静默消失。谁要开填，先把这张表的生成器工单立起来。
+7. **原"待接生成器"的表已全部接入**（`spirit_field` / `periods` / `wars` 于 W4 P3 接完，`ores` 于 M4 接完）；现仅两张台账表（`id_migration` / `known-placeholders`）不产内容。往没有生成器的表填行，DataGen 仍会红着拒绝 —— 这是**特性不是故障**：它宁可不让你填，也不让内容静默消失。
 
 ---
 
@@ -682,23 +682,28 @@ datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMa
 
 | 文件 | 列数 | 数据行 | 状态 |
 |---|---|---|---|
-| `techniques.csv` | 15 | 无 | 表头 = 契约 §4.2，**已接生成器** |
-| `spells.csv` | 11 | 无 | §4.3，**已接生成器**（展开需 NUMBERS §8） |
-| `pills.csv` | 11 | 无 | §4.4，**已接生成器**（展开需 NUMBERS §7） |
-| `artifacts.csv` | 13 | 无 | §4.5，**已接生成器**（展开需 NUMBERS §8） |
-| `quests_prologue.csv` | 16 | 无 | §4.6 |
-| `quests_ch1.csv` | 16 | 无 | §4.6 |
-| `dialog_trees_prologue.csv` | 7 | 无 | §4.7 |
-| `dialog_trees_ch1.csv` | 7 | 无 | §4.7 |
-| `dialog_prologue_text.csv` | 5 | 无 | §4.10 |
-| `dialog_ch1_text.csv` | 5 | 无 | §4.10 |
-| `spirit_field.csv` | 4 | 无 | §4.8（拆分见待确认 3） |
+| `techniques.csv` | 15 | **6 行** | 表头 = 契约 §4.2，**已接生成器** |
+| `spells.csv` | 11 | **4 行** | §4.3，**已接生成器**（展开需 NUMBERS §8） |
+| `pills.csv` | 11 | **4 行** | §4.4，**已接生成器**（展开需 NUMBERS §7） |
+| `artifacts.csv` | 13 | **1 行** | §4.5，**已接生成器**（展开需 NUMBERS §8） |
+| `quests_prologue.csv` | 16 | **10 行** | §4.6 |
+| `quests_ch1.csv` | 16 | **6 行** | §4.6 |
+| `dialog_trees_prologue.csv` | 7 | **4 行** | §4.7 |
+| `dialog_trees_ch1.csv` | 7 | **2 行** | §4.7 |
+| `dialog_prologue_text.csv` | 5 | **41 行** | §4.10 |
+| `dialog_ch1_text.csv` | 5 | **17 行** | §4.10 |
+| `spirit_field.csv` | 4 | **2 行** | §4.8，**已接生成器**（W4 P3；拆分见待确认 3） |
 | `ores.csv` | 7 | **3 行** | §4.8 **已接生成器**（一行 5 产物：configured/placed feature + biome_modifier + loot_table + 契约镜像） |
-| `factions.csv` | 6 | **2 行** | §5.2（M0 占位，取值依据 LORE §4 初稿）**已接生成器** |
-| `periods.csv` | 7 | 无 | §5.1，`[占位]` 本期不填 |
-| `wars.csv` | 8 | 无 | §5.3，`[占位]` 本期不填 |
+| `biomes.csv` | 10 | **1 行** | §4.15，**已接生成器** |
+| `dimensions.csv` | 7 | **1 行** | §4.14，**已接生成器** |
+| `realm_decor.csv` | 8 | **1 行** | §4.16，**已接生成器** |
+| `structures.csv` | 9 | **1 行** | §4.13，**已接生成器** |
+| `places.csv` | 10 | **5 行** | §4.17，**已接生成器** |
+| `factions.csv` | 6 | **3 行** | §5.2（M0 占位 + W4 玄玉宗，取值依据 LORE §4 初稿）**已接生成器** |
+| `periods.csv` | 7 | **1 行** | §5.1，**已接生成器**（W4 P3） |
+| `wars.csv` | 8 | **1 行** | §5.3，**已接生成器**（W4 P3） |
 | `id_migration.csv` | 7 | 无 | §6，本期无迁移项 |
 | `known-placeholders.csv` | 6 | **5 行** | §2 末条白名单，初值取自 NUMBERS §1/§11 |
 | `realms.csv` | **不建** | — | 境界无 CSV，见 §2；**产物已由 DataGen 从 NUMBERS `@@realms` 生成**（9 个境界 JSON，`content/` 合入前 CI 侧跳过） |
 
-每张表都以 `id` 开头、以 `_note` 结尾（契约 §2 强制两列）。除 factions 两行 M0 占位、ores 三行 M4 矿石与白名单台账外，模板都是空表，等你按格式填第一行。
+每张表都以 `id` 开头、以 `_note` 结尾（契约 §2 强制两列）。除两张台账表（`id_migration` / `known-placeholders`）外，其余表均已接入生成器并带数据行（见上表）；`id_migration` 无生成器，往其填行会被 DataGen 拦下。
