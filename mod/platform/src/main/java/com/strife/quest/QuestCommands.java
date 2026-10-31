@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
  *   <li>{@code talk <npc>} / {@code deliver <npc>}：面向 NPC 的任务交互（MVP 无 NPC 实体，此为交互原语； 服务端校验 = 引擎的
  *       DAG 前置与目标匹配，不匹配静默无效）；限速 ≤2/s（NUMBERS quest_per_sec）属 core 令牌桶（M3），MVP 未拦——已知简化。
  *   <li>{@code status}：任务一览（状态 + 目标进度），兼作 playtest 的断链排查入口。
+ *   <li>{@code track [on|off]}：任务追踪条开关（不带参数 = 切换；本会话生效）。
  * </ul>
  */
 public final class QuestCommands {
@@ -47,7 +48,30 @@ public final class QuestCommands {
                                                                         ctx,
                                                                         QuestBook.ObjectiveType
                                                                                 .DELIVER))))
-                .then(Commands.literal("status").executes(QuestCommands::status));
+                .then(Commands.literal("status").executes(QuestCommands::status))
+                .then(
+                        Commands.literal("track")
+                                .executes(context -> track(context, null))
+                                .then(
+                                        Commands.literal("on")
+                                                .executes(context -> track(context, Boolean.TRUE)))
+                                .then(
+                                        Commands.literal("off")
+                                                .executes(
+                                                        context -> track(context, Boolean.FALSE))));
+    }
+
+    /** {@code /strife quest track [on|off]}：追踪条开关（不带参数 = 切换）。 */
+    private static int track(CommandContext<CommandSourceStack> context, Boolean enable)
+            throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        boolean enabled =
+                enable == null
+                        ? QuestTracker.toggle(player)
+                        : QuestTracker.setEnabled(player, enable);
+        context.getSource()
+                .sendSuccess(() -> Component.literal("任务追踪：" + (enabled ? "开" : "关")), false);
+        return 1;
     }
 
     private static int interact(

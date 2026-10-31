@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -34,12 +35,11 @@ import net.minecraft.world.item.ItemStack;
  * 让进度随角色生死）。装配层<b>无跨事件缓存</b>——每个事件入口从附件重建 {@link QuestState}，改动经 {@link #save()}
  * 整体写回；这条"读-改-写"链对玩家是串行的（服务端主线程），不存在并发写丢。
  *
- * <p>MVP 脚手架：序章节点 1（talk npc_qingshi_zhizhi）没有 NPC 实体，登录即自动推进； 其余 talk/deliver 节点用 {@code /strife
- * quest talk|deliver <npc>} 交互（正式实现换成 NPC 对话事件与交付 UI，M3/M4）。 击杀口径：任意生物（妖兽实体与专属掉落是 M2）。
+ * <p>序章 #1（talk npc_qingshi_zhizhi）由世界 NPC 对话结束事件推进（tables/npcs.csv 摆位， NpcPlacementSpawner 生成）；其余
+ * talk/deliver 节点用 {@code /strife quest talk|deliver <npc>} 交互（交付 UI 属 M3/M4）。击杀口径：任意生物（妖兽实体与专属掉落是
+ * M2）。
  */
 public final class QuestAdapter implements RewardSink {
-
-    private static final String SCAFFOLD_FLAG = "quest_scaffold_talk_done";
 
     private final ServerPlayer player;
     private final QuestState state;
@@ -120,15 +120,9 @@ public final class QuestAdapter implements RewardSink {
     }
 
     static void onLogin(ServerPlayer player) {
-        QuestAdapter adapter = adapter(player);
-        if (!adapter.h3Flags.contains(SCAFFOLD_FLAG)) {
-            // MVP 脚手架：登录自动完成序章节点 1（教面板读法），正式 NPC 到位后撤掉
-            adapter.report(QuestBook.ObjectiveType.TALK, "npc_qingshi_zhizhi", 1);
-            adapter.h3Flags.add(SCAFFOLD_FLAG);
-            adapter.save();
-        }
-        // 登录即对账一轮：离线间拿到/被奖励的物品可能正好补齐 COLLECT 目标
-        adapter.syncCollect();
+        // 登录只对账一轮：离线间拿到/被奖励的物品可能正好补齐 COLLECT 目标。
+        // 任务节点不再由登录代推进——#1 由玩家与石执事的真实对话触发。
+        adapter(player).syncCollect();
     }
 
     /** 装配层入口（对话适配层等兄弟装配层复用 RewardSink 能力的唯一途径）。 */
@@ -160,6 +154,12 @@ public final class QuestAdapter implements RewardSink {
     public static String status(ServerPlayer player) {
         QuestAdapter instance = adapter(player);
         return prologueBook(player.server).describe(instance.state, instance.dslContext());
+    }
+
+    /** 追踪条的数据源：当前可接取任务的必做目标视图（与引擎共用同一可用性判定）。 */
+    public static Optional<QuestBook.QuestView> trackable(ServerPlayer player) {
+        QuestAdapter instance = adapter(player);
+        return prologueBook(player.server).trackable(instance.state, instance.dslContext());
     }
 
     private void report(QuestBook.ObjectiveType type, String target, long amount) {

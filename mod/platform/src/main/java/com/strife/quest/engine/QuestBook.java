@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -312,6 +313,64 @@ public final class QuestBook {
             }
         }
         return available;
+    }
+
+    /** 追踪条上的一个必做目标（进度已按 count 封顶）。 */
+    public record ObjectiveView(
+            String id,
+            ObjectiveType type,
+            String target,
+            long count,
+            boolean optional,
+            long progress) {}
+
+    /** 追踪条上的当前任务视图（只含必做目标）。 */
+    public record QuestView(String id, List<ObjectiveView> objectives) {
+
+        /** 必做目标的合并完成度，供追踪条进度条使用；无目标按 0（完成判定不会走到这里）。 */
+        public double progressRatio() {
+            long total = 0L;
+            long done = 0L;
+            for (ObjectiveView objective : objectives) {
+                total += objective.count();
+                done += Math.min(objective.progress(), objective.count());
+            }
+            return total == 0L ? 0.0 : (double) done / (double) total;
+        }
+    }
+
+    /**
+     * 追踪条选中的当前任务：按表序取第一个「可接取、未完成、非隐藏」的任务，只带必做目标。
+     *
+     * <p>不可接取判定与 {@link #report} 共用 {@link #isAvailable}（前置 + 激活 + conditions），避免 HUD
+     * 显示一个引擎不会推进的任务。
+     */
+    public Optional<QuestView> trackable(QuestState state, ConditionExpression.Context dslContext) {
+        for (QuestSpec quest : quests.values()) {
+            if (quest.hidden() || !isAvailable(state, quest.id(), dslContext)) {
+                continue;
+            }
+            List<ObjectiveView> objectives = new ArrayList<>();
+            for (ObjectiveSpec objective : quest.objectives()) {
+                if (objective.optional()) {
+                    continue;
+                }
+                long progress =
+                        Math.min(state.progress(quest.id(), objective.id()), objective.count());
+                objectives.add(
+                        new ObjectiveView(
+                                objective.id(),
+                                objective.type(),
+                                objective.target(),
+                                objective.count(),
+                                false,
+                                progress));
+            }
+            if (!objectives.isEmpty()) {
+                return Optional.of(new QuestView(quest.id(), List.copyOf(objectives)));
+            }
+        }
+        return Optional.empty();
     }
 
     /**

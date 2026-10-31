@@ -48,6 +48,7 @@ public class StrifeNpcEntity extends PathfinderMob {
     public final void setNpcId(String npcId) {
         this.entityData.set(DATA_NPC_ID, npcId);
         this.setCustomName(displayName(npcId));
+        this.setCustomNameVisible(true);
     }
 
     @Override
@@ -108,9 +109,9 @@ public class StrifeNpcEntity extends PathfinderMob {
     }
 
     private static Component displayName(String npcId) {
-        // 实体名词条统一（zh_cn 手种资产）；NPC 的"个性身份"由对话 speaker 与正文承担——
-        // 头顶名称只说明"这是 strife NPC"，避免为每个内容 NPC 维护一对 lang key。
-        return Component.translatable("entity.strife.npc");
+        // 每个内容 NPC 一个 lang 词条（npc.strife.<id>），V-TEXT 保证摆放表里的 NPC 不缺名；
+        // 头顶名称不再共用一句通用称谓，玩家需要一眼分辨石执事与苏药农。
+        return Component.translatable("npc.strife." + npcId);
     }
 
     /** 调试/诊断用：注册表里类型可查（启动自检口径）。 */

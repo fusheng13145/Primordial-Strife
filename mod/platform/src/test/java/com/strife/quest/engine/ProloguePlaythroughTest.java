@@ -1,6 +1,7 @@
 package com.strife.quest.engine;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.strife.quest.dsl.ConditionExpression;
@@ -167,7 +168,7 @@ class ProloguePlaythroughTest {
         Playthrough run = new Playthrough();
 
         // 玩家视角的完整序章（十节点 = STORY §4 的十行）：
-        // #1 读碑文 → 长老对话（脚手架在装配层自动触发，这里显式走同一入口）
+        // #1 读碑文 → 与石执事对话（世界 NPC 已由数据表摆进落霞山麓，talk 由对话结束事件上报）
         run.report(QuestBook.ObjectiveType.TALK, "npc_qingshi_zhizhi", 1);
         assertTrue(run.completed("quest_prologue_root_read_01"), "节点1 读碑文");
 
@@ -273,5 +274,18 @@ class ProloguePlaythroughTest {
                                 "pill_crafting")),
                 "六个解锁键必须全部经奖励缝发出，实际: " + unlockSet);
         assertTrue(run.sink.realmSteps == 0, "序章没有 realm_step 奖励，缝不得被误触");
+    }
+
+    @Test
+    @DisplayName("登录不再自动完成 #1：没有真实对话时任务停在起点")
+    void firstNodeNeedsAnActualTalk() {
+        Playthrough run = new Playthrough();
+
+        // 登录现在只做 COLLECT 对账（离线期间进包的物品补齐进度），不得替玩家推进对话节点。
+        run.syncCollect();
+        assertFalse(run.completed("quest_prologue_root_read_01"), "登录脚手架已撤：未与石执事对话前 #1 不得完成");
+
+        run.report(QuestBook.ObjectiveType.TALK, "npc_qingshi_zhizhi", 1);
+        assertTrue(run.completed("quest_prologue_root_read_01"), "真实对话事件（对话结束）应完成 #1");
     }
 }

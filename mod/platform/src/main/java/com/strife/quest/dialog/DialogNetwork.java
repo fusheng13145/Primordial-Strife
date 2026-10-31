@@ -36,7 +36,7 @@ public final class DialogNetwork {
                 DialogNetwork::onChoose);
     }
 
-    /** S2C：写 core 镜像（纯数据），client_fx 的 tick 轮询负责开/推进 Screen——与 StrifeClientMirror 同款隔离。 */
+    /** S2C：写 core 镜像（纯数据），clientfx 的 tick 轮询负责开/推进 Screen——与 StrifeClientMirror 同款隔离。 */
     private static void onOpen(DialogPayloads.Open payload, IPayloadContext context) {
         context.enqueueWork(() -> DialogClientMirror.accept(payload));
     }
