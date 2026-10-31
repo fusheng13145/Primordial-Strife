@@ -28,7 +28,7 @@ class ModuleDependencyRulesTest {
 
     @Test
     void clientFxMayNotReachIntoLogicPackages() {
-        assertEquals(Set.of("core", "client_fx"), ModuleDependencyRules.allowedTargets("client_fx"));
+        assertEquals(Set.of("core", "clientfx"), ModuleDependencyRules.allowedTargets("clientfx"));
     }
 
     @Test

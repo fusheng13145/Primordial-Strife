@@ -18,13 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
  */
 public final class StrifeCommands {
 
-    /**
-     * 模块子命令挂载点（03 §9"其余兜底命令随各自模块进表"）：模块入口在构造期把自己的子树 builder 加进来， 服务器重建命令树时统一并入 {@code /strife}
-     * 根——core 不反向 import 任何模块（03 §2 依赖链）。
-     *
-     * <p>禁区注记：本挂载点属 MVP 快速通道（quest 交付链 {@code /strife quest talk|deliver|status} 需要），随 owner
-     * 授权提交，<b>待 A 评审</b>。
-     */
+    /** 模块子命令挂载点：模块入口在构造期登记子树，服务器重建命令树时统一并入 {@code /strife} 根；core 不反向依赖任何模块。 */
     public static final java.util.concurrent.CopyOnWriteArrayList<
                     com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack>>
             MODULE_SUBTREES = new java.util.concurrent.CopyOnWriteArrayList<>();

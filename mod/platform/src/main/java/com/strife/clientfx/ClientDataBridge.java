@@ -1,4 +1,4 @@
-package com.strife.client_fx;
+package com.strife.clientfx;
 
 import com.strife.core.StrifeData;
 import com.strife.core.content.StrifeOrdinalIndex;
@@ -11,7 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
 /**
- * client_fx 的服务端权威数据桥：HUD 与面板共用的一条读取路径。
+ * clientfx 的服务端权威数据桥：HUD 与面板共用的一条读取路径。
  *
  * <p>数据来源是 {@link StrifeClientMirror}——服务端经 S2C 推送的镜像（docs/03 §5）。客户端既不读本地附件，也不读 integrated
  * server，因此<b>专用服与单机走的是同一条路径</b>，面板在两种环境下的表现一致（此前"只在单机可见"的做法已随 A1-5 落地移除）。

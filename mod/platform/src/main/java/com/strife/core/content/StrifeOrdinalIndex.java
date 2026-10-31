@@ -15,7 +15,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
  * "序号 → 内容 ID"的只读索引：把 DataGen 产物里的 {@code ordinal} 字段读成一张表。
  *
  * <p>存在的理由是一条纪律：链序（境界从低到高）的真相只允许存在于 NUMBERS.md，任何 Java 侧的副本都会在加境界时静默错位。 客户端也需要它（{@code
- * StrifeClientMirror} 里同步的是 ordinal，不是 ID），而 client_fx 按 03 §2 只能依赖 core—— 所以索引放在
+ * StrifeClientMirror} 里同步的是 ordinal，不是 ID），而 clientfx 按 03 §2 只能依赖 core—— 所以索引放在
  * core，且<b>按域泛化</b>：core 不认识"境界"是什么，只知道"某个域里的产物带 ordinal 字段"。
  *
  * <p>客户端与服务端读的是同一份 jar 内产物，因此两侧对同一个 ordinal 的解释必然一致（这正是不把 ID 塞进同步包的底气： 同步包只传序号，语义由内容层复原）。

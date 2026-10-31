@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  *
  * <pre>
  * combat / production / quest / world -&gt; realm -&gt; core
- * realm -&gt; core only; no horizontal dependencies; client_fx -&gt; nothing but core.
+ * realm -&gt; core only; no horizontal dependencies; clientfx -&gt; nothing but core.
  * </pre>
  *
  * Checks static imports of {@code com.strife.<pkg>...} in Java sources.
@@ -27,7 +27,7 @@ public final class ModuleDependencyRules {
     private static final Pattern IMPORT = Pattern.compile("^import\\s+(?:static\\s+)?(com\\.strife\\.[A-Za-z0-9_.]+)\\s*;");
 
     private static final Set<String> PACKAGES =
-            Set.of("core", "realm", "combat", "production", "quest", "world", "client_fx");
+            Set.of("core", "realm", "combat", "production", "quest", "world", "clientfx");
 
     /** Allowed com.strife target packages per source package. */
     public static Set<String> allowedTargets(String sourcePackage) {
@@ -35,7 +35,7 @@ public final class ModuleDependencyRules {
             case "core" -> Set.of("core");
             case "realm" -> Set.of("core", "realm");
             case "combat", "production", "quest", "world" -> Set.of("core", "realm", sourcePackage);
-            case "client_fx" -> Set.of("core", "client_fx");
+            case "clientfx" -> Set.of("core", "clientfx");
             default -> throw new IllegalArgumentException("unknown package: " + sourcePackage);
         };
     }

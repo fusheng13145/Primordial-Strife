@@ -3,10 +3,10 @@ package com.strife.core.net;
 import net.minecraft.nbt.CompoundTag;
 
 /**
- * 面板视图（S2C 协议 DTO）：服务端算好的"玩家当前修炼处境"，供 client_fx 直接显示。
+ * 面板视图（S2C 协议 DTO）：服务端算好的"玩家当前修炼处境"，供 clientfx 直接显示。
  *
- * <p>为什么放在 core 而不是 realm：它是 <b>S2C 协议的一部分</b>，而 03 §2 规定 client_fx 只允许依赖 core。core 不解释 这些字段的含义（和
- * {@code StrifeData} 一样，core 只承载、realm 生产、client_fx 消费），因此这里只有数据形状与编解码， 没有任何 realm 语义的计算。
+ * <p>为什么放在 core 而不是 realm：它是 <b>S2C 协议的一部分</b>，而 03 §2 规定 clientfx 只允许依赖 core。core 不解释 这些字段的含义（和
+ * {@code StrifeData} 一样，core 只承载、realm 生产、clientfx 消费），因此这里只有数据形状与编解码， 没有任何 realm 语义的计算。
  *
  * <p>为什么用"拉取式"而不是把派生值塞进同步包：05 §2 与 05 §4 要求面板能解释速率构成、显示本次成功率与失败后果——这些都是 <b>派生值</b>，03 §3
  * 明令派生值不入档。让服务端按需算一份视图发过来，客户端就不必复制 realm 的表与公式（复制出来的那份 一定会与真相源漂移），并且天然满足"服务端权威"。

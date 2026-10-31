@@ -1,4 +1,4 @@
-package com.strife.client_fx;
+package com.strife.clientfx;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.strife.core.StrifeMod;
@@ -25,19 +25,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * client_fx 分侧入口（docs/03 §7）。
+ * clientfx 分侧入口（docs/03 §7）。
  *
- * <p>{@code dist = CLIENT} 让专用服务端根本不构造本类；serverJar 又整体剔除 {@code com/strife/client_fx/**}（platform
+ * <p>{@code dist = CLIENT} 让专用服务端根本不构造本类；serverJar 又整体剔除 {@code com/strife/clientfx/**}（platform
  * build.gradle 的 exclude 规则先于本包落地）——两道隔离由 CI 的 headless 开服冒烟验证：若 client 类被服务端加载，冒烟当场红。
  *
  * <p>本类只做客户端注册编排：HUD 层进 {@link RegisterGuiLayersEvent}，按键进 {@link RegisterKeyMappingsEvent}， NPC
- * 渲染器进 {@link EntityRenderersEvent.RegisterRenderers}（实体类型按注册表资源 ID 查——client_fx 只依赖 core， 不 import
+ * 渲染器进 {@link EntityRenderersEvent.RegisterRenderers}（实体类型按注册表资源 ID 查——clientfx 只依赖 core， 不 import
  * quest 的实体注册类，03 §2），动作挂在客户端 tick。
  */
 @Mod(value = StrifeMod.MOD_ID, dist = Dist.CLIENT)
 public final class StrifeClientFx {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("strife/client_fx");
+    private static final Logger LOGGER = LoggerFactory.getLogger("strife/clientfx");
 
     /** 详情面板开关键（docs/07 §7 B1-1）；键位可在游戏内控制设置里改。 */
     private static final KeyMapping OPEN_PANEL =
@@ -66,12 +66,30 @@ public final class StrifeClientFx {
                     GLFW.GLFW_KEY_B,
                     "key.categories.strife");
 
+    /** 施法轮盘（03 §4 cast 意图；选择结果由服务端再判定一遍）。 */
+    private static final KeyMapping SPELL_WHEEL =
+            new KeyMapping(
+                    "key.strife.spell_wheel",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_R,
+                    "key.categories.strife");
+
+    /** 法宝面板：独立 GUI 槽位展示副手法宝。 */
+    private static final KeyMapping ARTIFACT_PANEL =
+            new KeyMapping(
+                    "key.strife.artifact",
+                    KeyConflictContext.IN_GAME,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_G,
+                    "key.categories.strife");
+
     /** 对话镜像的已处理版本号（tick 轮询，镜像惯例）。 */
     private long handledDialogRevision = -1L;
 
     public StrifeClientFx(IEventBus modEventBus, ModContainer container) {
         LOGGER.info(
-                "strife client_fx entry constructed (version {})",
+                "strife clientfx entry constructed (version {})",
                 container.getModInfo().getVersion());
         modEventBus.addListener(this::onRegisterGuiLayers);
         modEventBus.addListener(this::onRegisterKeyMappings);
@@ -89,10 +107,12 @@ public final class StrifeClientFx {
         event.register(OPEN_PANEL);
         event.register(TOGGLE_SIT);
         event.register(BREAKTHROUGH);
+        event.register(SPELL_WHEEL);
+        event.register(ARTIFACT_PANEL);
     }
 
     /**
-     * 实体渲染器注册（NPC/妖兽/法术弹道）：实体类型从注册表按资源 ID 取（注册期已完成，此处只读）， 不 import quest/combat 类型（03 §2 client_fx
+     * 实体渲染器注册（NPC/妖兽/法术弹道）：实体类型从注册表按资源 ID 取（注册期已完成，此处只读）， 不 import quest/combat 类型（03 §2 clientfx
      * 只依赖 core）。弹道缺失渲染器 = 进世界施法即崩客户端， 因此弹道（ThrownItemRenderer，渲染物 = 实体的 ItemSupplier）与 NPC 同为必注册项。
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -141,6 +161,16 @@ public final class StrifeClientFx {
         while (OPEN_PANEL.consumeClick()) {
             if (minecraft.screen == null && minecraft.player != null) {
                 minecraft.setScreen(new StrifePanelScreen());
+            }
+        }
+        while (SPELL_WHEEL.consumeClick()) {
+            if (minecraft.screen == null && minecraft.player != null) {
+                minecraft.setScreen(new SpellWheelScreen());
+            }
+        }
+        while (ARTIFACT_PANEL.consumeClick()) {
+            if (minecraft.screen == null && minecraft.player != null) {
+                minecraft.setScreen(new ArtifactScreen());
             }
         }
         if (minecraft.player == null || minecraft.screen != null) {

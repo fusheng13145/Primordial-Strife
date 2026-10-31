@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
  * <p>本入口只做事件编排与意图登记：登录/登出/每刻的生命周期挂到游戏总线，C2S 意图（打坐起止、突破、面板拉取）登记进 core 的分发入口 {@link
  * StrifeIntents}——校验、限速、大小闸门都在 core 侧统一做（03 §4），本类只接"校验已过"的业务调用。
  *
- * <p>与 core 的 {@code @Mod} 并列同 ID：NeoForge 会依次构造同 MOD 的多个入口（client_fx 分侧入口已在库内验证），serverJar 剔除
- * client_fx 不影响本类（realm 是双端安全的纯服务端逻辑，客户端构造的监听器按 side 守卫直接空转）。
+ * <p>与 core 的 {@code @Mod} 并列同 ID：NeoForge 会依次构造同 MOD 的多个入口（clientfx 分侧入口已在库内验证），serverJar 剔除
+ * clientfx 不影响本类（realm 是双端安全的纯服务端逻辑，客户端构造的监听器按 side 守卫直接空转）。
  */
 @Mod(value = StrifeMod.MOD_ID)
 public final class StrifeRealm {

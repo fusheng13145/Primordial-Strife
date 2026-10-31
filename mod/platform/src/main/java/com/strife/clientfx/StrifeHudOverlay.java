@@ -1,4 +1,4 @@
-package com.strife.client_fx;
+package com.strife.clientfx;
 
 import com.strife.core.StrifeData;
 import com.strife.core.net.StrifeClientMirror;

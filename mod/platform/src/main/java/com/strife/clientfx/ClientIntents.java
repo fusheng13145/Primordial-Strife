@@ -1,4 +1,4 @@
-package com.strife.client_fx;
+package com.strife.clientfx;
 
 import com.strife.core.net.StrifeIntentPayload;
 import net.minecraft.nbt.CompoundTag;
@@ -16,6 +16,11 @@ final class ClientIntents {
 
     /** 发送一个无参数意图。 */
     static void send(String intentId) {
-        PacketDistributor.sendToServer(new StrifeIntentPayload(intentId, new CompoundTag()));
+        send(intentId, new CompoundTag());
+    }
+
+    /** 发送带参数的意图（如 {@code cast} 的 spell id）；参数大小由服务端统一校验。 */
+    static void send(String intentId, CompoundTag args) {
+        PacketDistributor.sendToServer(new StrifeIntentPayload(intentId, args));
     }
 }

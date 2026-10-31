@@ -1,4 +1,4 @@
-package com.strife.client_fx;
+package com.strife.clientfx;
 
 import com.strife.core.net.DialogClientMirror;
 import com.strife.core.net.DialogPayloads;

@@ -1,4 +1,4 @@
-package com.strife.client_fx;
+package com.strife.clientfx;
 
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -11,7 +11,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 /**
  * 妖兽渲染：僵尸人形模型 + 通用妖兽皮肤（monster.png，64×64 皮肤布局；04 §7 占位资产——程序化生成， 妖形专用模型/贴图随美术管线迭代）。泛型用 {@link
- * Monster} 而非 combat 的实体类：client_fx 只允许依赖 core（03 §2），实体类型按注册表资源 ID 查（见 {@code
+ * Monster} 而非 combat 的实体类：clientfx 只允许依赖 core（03 §2），实体类型按注册表资源 ID 查（见 {@code
  * StrifeClientFx#onRegisterRenderers}）。
  */
 @OnlyIn(Dist.CLIENT)
