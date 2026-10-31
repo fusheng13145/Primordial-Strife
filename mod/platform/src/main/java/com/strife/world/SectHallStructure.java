@@ -11,15 +11,9 @@ import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePiecesBuilder;
 
 /**
- * 宗门厅堂结构（ADR-022 code 路线，原版 {@code ruined_portal} 同机制）。
+ * 宗门厅堂结构：与 {@code ruined_portal} 同机制，几何由代码生成，避免依赖未验证的 {@code .nbt} 模板导出链。
  *
- * <p><b>为什么 code 式而不是 jigsaw</b>：jigsaw 要 {@code .nbt} 模板，而导出链（WorldEdit schematic →
- * StructureBlock）在本机<b>未验证</b>；code 式零资产依赖，且宗门布局是<b>规则化</b>的（轴对称的厅堂骨架）， 代码表达比模板更可控。代价是外观朴素——形态属真相源
- * {@code LORE.md} §区域卡，待 C 补齐后 可整体替换为 jigsaw + 资产（结构 key 不变，存档兼容）。
- *
- * <p><b>配置为什么空</b>：群系列表 / step / terrain_adaptation 全由 {@code structure} 产物 JSON 决定 （{@link
- * Structure#simpleCodec} 负责解析），本类<b>不再写死任何群系</b>——写成代码常量就会出现 "改了表但结构还长在老地方"的双真相源漂移。这一条是 {@code
- * OreGenerator} 以来的同一纪律。
+ * <p>群系、step 与 terrain_adaptation 全部来自 {@code structure} 产物；代码不写死群系，避免"改了表但结构还长在老地方"的双真相源漂移。
  */
 public final class SectHallStructure extends Structure {
 

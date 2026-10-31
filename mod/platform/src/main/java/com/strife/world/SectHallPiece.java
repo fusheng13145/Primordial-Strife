@@ -15,17 +15,9 @@ import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSeriali
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
 
 /**
- * 宗门厅堂的单个建筑件（ADR-022 code 路线：几何由代码现场生成，无 {@code .nbt}）。
+ * 宗门厅堂建筑件：13×13 平面、高 8 的规则化厅堂骨架，几何由代码现场生成，无 {@code .nbt}。
  *
- * <p><b>本期形态</b>（规则化厅堂骨架，13×13 平面 / 高 8）：石砖平台地基 → 四角石柱 → 带门洞的墙体 → 外扩屋檐 + 平顶 → 内部灵石台与四盏灯 →
- * 门洞上方一块灵气结晶作"宗门灵石匾"。 形态属真相源 {@code LORE.md} §区域卡（待 C），本期只把<b>机制</b>立起来；后续换 jigsaw + 资产时 结构 key
- * 不变，存档兼容。
- *
- * <p><b>为什么要地基支撑柱</b>：{@code terrain_adaptation: beard_thin} 只在建筑正下方补很薄的一层，
- * 落在斜坡或水边时厅堂仍会悬空——这里显式往地下填 6 格石柱（四角 + 中心），把"浮空宗门"这种 一眼可见的破损堵在生成期。
- *
- * <p><b>为什么全用原版方块</b>：宗门主题资产（灵石灯/匾额/宗门纹样）属 04 §7 美术管线，本期只有 {@code block_qi_crystal}
- * 一个自研方块可用，其余用原版石砖/深色橡木/荧石，先保证"有建筑"这个事实 成立，不把 M4 收尾押在美术产出上。
+ * <p>地基下填 6 格石柱（四角 + 中心），避免 {@code terrain_adaptation: beard_thin} 在斜坡或水边留下悬空建筑。
  */
 public final class SectHallPiece extends StructurePiece {
 

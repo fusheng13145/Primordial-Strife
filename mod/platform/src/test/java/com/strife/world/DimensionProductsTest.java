@@ -30,15 +30,47 @@ class DimensionProductsTest {
     }
 
     @Test
-    void generatorBorrowsVanillaEndAssets() {
+    void generatorBorrowsVanillaFloatingIslandsPreset() {
         JsonObject generator = ShippedProducts.dimension(DIMENSION_ID).getAsJsonObject("generator");
 
-        // 地形借原版噪声（end_islands 浮岛），群系用自研「灵霄青冥」（biomes.csv 产物）——
-        // 若写回 minecraft:the_end 等于退回末地复制品观感，这条用例把世界设计钉住。
-        assertEquals("minecraft:end_islands", generator.get("settings").getAsString());
+        // 地形借原版浮岛预置，群系用自研「灵霄青冥」（biomes.csv 产物）。
+        // 原表写的是 minecraft:end_islands——1.21.1 原版不存在该 preset（只有 end / floating_islands 等），
+        // 实机进世界时注册表加载直接失败；且维度类型 height=256 与 floating_islands 的 256 对齐（end 是 128）。
+        assertEquals("minecraft:floating_islands", generator.get("settings").getAsString());
         JsonObject biomeSource = generator.getAsJsonObject("biome_source");
         assertEquals("minecraft:fixed", biomeSource.get("type").getAsString());
         assertEquals("strife:upper_realm_biome", biomeSource.get("biome").getAsString());
+    }
+
+    /**
+     * 噪声设置 id 必须在原版数据里真实存在，且高度区间与 dimension_type 一致。
+     *
+     * <p>引用一个不存在的 preset 不会在构建期报错，只会在进世界时让整个注册表加载失败。
+     */
+    @Test
+    void generatorNoiseSettingsPresetExistsAndMatchesDimensionHeight() {
+        String settingsId =
+                ShippedProducts.dimension(DIMENSION_ID)
+                        .getAsJsonObject("generator")
+                        .get("settings")
+                        .getAsString();
+        String path =
+                "data/minecraft/worldgen/noise_settings/"
+                        + settingsId.substring("minecraft:".length())
+                        + ".json";
+        JsonObject preset = ShippedProducts.vanillaData(path);
+        assertTrue(preset != null, "原版噪声设置不存在：" + settingsId + "（" + path + "）");
+
+        JsonObject type = ShippedProducts.dimensionType(DIMENSION_ID);
+        JsonObject noise = preset.getAsJsonObject("noise");
+        assertEquals(
+                type.get("height").getAsInt(),
+                noise.get("height").getAsInt(),
+                "噪声设置高度必须与 dimension_type.height 一致");
+        assertEquals(
+                type.get("min_y").getAsInt(),
+                noise.get("min_y").getAsInt(),
+                "噪声设置下界必须与 dimension_type.min_y 一致");
     }
 
     /**

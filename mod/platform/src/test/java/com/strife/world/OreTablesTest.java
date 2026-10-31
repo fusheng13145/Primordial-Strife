@@ -154,14 +154,36 @@ class OreTablesTest {
         assertEquals(10, placement.get("vein_size").getAsInt());
     }
 
-    /** biome_modifier 必须把矿挂到 UNDERGROUND_ORES 步的指定群系上，否则矿不生成或生成在错误阶段。 */
+    /**
+     * biome_modifier 必须把矿挂到 UNDERGROUND_ORES 步的指定群系上，否则矿不生成或生成在错误阶段。
+     *
+     * <p>必须读 {@code data/strife/neoforge/biome_modifier/} 下的真实产物：注册表 key 是 {@code
+     * neoforge:biome_modifier}，放在 {@code worldgen/biome_modifier/} 下的文件不会报错，只会被静默忽略。
+     */
     @Test
     void biomeModifierHooksTheOreIntoUndergroundOres() {
         for (String oreId : ORES) {
-            JsonObject modifier = ShippedProducts.ore(oreId);
-            assertNotNull(modifier.get("placement"), oreId + " 契约镜像缺 placement");
-            int biomeCount = modifier.getAsJsonObject("placement").getAsJsonArray("biomes").size();
-            assertTrue(biomeCount > 0, oreId + " 未列群系");
+            JsonObject modifier = ShippedProducts.biomeModifier(oreId);
+            assertEquals(
+                    "neoforge:add_features",
+                    modifier.get("type").getAsString(),
+                    oreId + " 的 biome modifier 类型必须是 add_features");
+            assertEquals(
+                    "strife:" + oreId,
+                    modifier.get("features").getAsString(),
+                    oreId + " 的 modifier 必须挂到自己的 placed feature");
+            assertEquals(
+                    "underground_ores",
+                    modifier.get("step").getAsString(),
+                    oreId + " 必须挂在 underground_ores 步");
+
+            JsonArray biomes = modifier.getAsJsonArray("biomes");
+            assertNotNull(biomes, oreId + " 的 modifier 缺 biomes");
+            JsonArray mirrorBiomes =
+                    ShippedProducts.ore(oreId)
+                            .getAsJsonObject("placement")
+                            .getAsJsonArray("biomes");
+            assertEquals(mirrorBiomes, biomes, oreId + " 的 modifier 群系必须与契约镜像 placement.biomes 一致");
         }
     }
 

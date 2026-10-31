@@ -64,6 +64,40 @@ public final class ShippedProducts {
         return json("/data/strife/strife_pills/" + pillId + ".json");
     }
 
+    /** 全部法术产物（枚举目录；新增产物未被运行时加载时用例变红）。 */
+    public static List<JsonObject> allSpells() {
+        return allIn("/data/strife/strife_spells/");
+    }
+
+    /** 全部丹方产物（枚举目录；新增产物未被运行时加载时用例变红）。 */
+    public static List<JsonObject> allPills() {
+        return allIn("/data/strife/strife_pills/");
+    }
+
+    /** 单张器图产物，如 {@code art_xuanyu}。 */
+    public static JsonObject artifact(String artifactId) {
+        return json("/data/strife/strife_artifacts/" + artifactId + ".json");
+    }
+
+    /** 全部器图产物（枚举目录；新增产物未被运行时加载时用例变红）。 */
+    public static List<JsonObject> allArtifacts() {
+        return allIn("/data/strife/strife_artifacts/");
+    }
+
+    /** 客户端语言文件，如 {@code zh_cn}。 */
+    public static JsonObject lang(String locale) {
+        return json("/assets/strife/lang/" + locale + ".json");
+    }
+
+    private static List<JsonObject> allIn(String dir) {
+        List<JsonObject> products = new ArrayList<>();
+        for (String resource : listResources(dir)) {
+            products.add(json(dir + resource));
+        }
+        assertFalse(products.isEmpty(), dir + " 目录为空：DataGen 没跑或产物未进 jar");
+        return products;
+    }
+
     /** 单部功法产物，如 {@code tech_qingxin_jue}。 */
     public static JsonObject technique(String techniqueId) {
         return json("/data/strife/strife_techniques/" + techniqueId + ".json");
@@ -104,6 +138,16 @@ public final class ShippedProducts {
         return json("/data/strife/worldgen/placed_feature/" + oreId + ".json");
     }
 
+    /**
+     * 单个 biome modifier 产物，如 {@code beast_overworld}。
+     *
+     * <p>目录必须是 {@code neoforge/biome_modifier}：该注册表的 key 是 {@code neoforge:biome_modifier}，数据包按
+     * {@code data/<包命名空间>/<注册表命名空间>/<注册表路径>/} 查找。放到 {@code worldgen/biome_modifier} 不会报错， 只会被静默忽略。
+     */
+    public static JsonObject biomeModifier(String modifierId) {
+        return json("/data/strife/neoforge/biome_modifier/" + modifierId + ".json");
+    }
+
     /** 单个维度物理属性产物（{@code data/strife/dimension_type/<id>.json}，ADR-021）。 */
     public static JsonObject dimensionType(String dimensionId) {
         return json("/data/strife/dimension_type/" + dimensionId + ".json");
@@ -137,6 +181,53 @@ public final class ShippedProducts {
     /** 单个地点产物（{@code data/strife/strife_places/<id>.json}，G-4 导航 + 灵气地点差异化）。 */
     public static JsonObject place(String placeId) {
         return json("/data/strife/strife_places/" + placeId + ".json");
+    }
+
+    /** 全部世界 NPC 摆放产物（枚举目录；新增摆放未被覆盖时用例变红）。 */
+    public static List<JsonObject> allNpcPlacements() {
+        return allIn("/data/strife/strife_npcs/");
+    }
+
+    /** 全部对话树章簿（{@code data/strife/dialog_trees/<章>.json}）。 */
+    public static List<JsonObject> allDialogTrees() {
+        return allIn("/data/strife/dialog_trees/");
+    }
+
+    /**
+     * 读原版数据包里的单个 JSON，路径形如 {@code data/minecraft/worldgen/noise_settings/end.json}。
+     *
+     * <p>原版数据不在测试类加载器的资源面上（moddev 把它们放进 client-extra jar 并从 ignoreList 排除）， 所以从 NeoForge 注入的 {@code
+     * legacyClassPath.file} 清单里定位该 jar，直接读 zip 条目。
+     *
+     * @return 找不到清单、jar 或条目时返回 {@code null}，由调用方给出带上下文的断言
+     */
+    public static JsonObject vanillaData(String path) {
+        String listFile = System.getProperty("legacyClassPath.file");
+        if (listFile == null) {
+            return null;
+        }
+        try {
+            for (String line : Files.readAllLines(Path.of(listFile))) {
+                String jarPath = line.trim();
+                if (!jarPath.contains("minecraft-resources")) {
+                    continue;
+                }
+                try (java.util.jar.JarFile jar = new java.util.jar.JarFile(jarPath)) {
+                    java.util.jar.JarEntry entry = jar.getJarEntry(path);
+                    if (entry == null) {
+                        continue;
+                    }
+                    try (InputStream stream = jar.getInputStream(entry)) {
+                        return JsonParser.parseReader(
+                                        new InputStreamReader(stream, StandardCharsets.UTF_8))
+                                .getAsJsonObject();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("cannot read vanilla data " + path, e);
+        }
+        return null;
     }
 
     private static List<String> listResources(String dir) {
