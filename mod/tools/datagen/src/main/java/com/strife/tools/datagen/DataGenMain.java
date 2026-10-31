@@ -22,6 +22,9 @@ import java.util.Map;
  */
 public final class DataGenMain {
 
+    /** Generated manifest that tells runtime loaders which products exist in the jar. */
+    public static final String INDEX_PATH = "data/strife/strife_index.json";
+
     /**
      * Ledger tables that are input to other tools, not content (docs/04 §6 V-DUP scope): they carry
      * rows by design and must never be expected to have a generator.
@@ -60,6 +63,7 @@ public final class DataGenMain {
                 new OreGenerator(),
                 new DimensionGenerator(),
                 new PlaceGenerator(),
+                new NpcGenerator(),
                 new BiomeGenerator(),
                 new RealmDecorGenerator(),
                 new StructureGenerator(),
@@ -150,7 +154,9 @@ public final class DataGenMain {
                             + numbersSkipped
                             + " generator(s) arm themselves when it lands");
         }
-        write(products, options.resourcesRoot());
+        List<Product> written = new ArrayList<>(products);
+        written.add(contentIndex(products));
+        write(written, options.resourcesRoot());
         return new Summary(
                 tables,
                 rows,
@@ -160,6 +166,20 @@ public final class DataGenMain {
                 products.size(),
                 problems,
                 notices);
+    }
+
+    /**
+     * Manifest of every product written in this run. Runtime loaders that start before the datapack
+     * ResourceManager exists read it instead of keeping a hand-maintained path list, so adding a
+     * row to a table is enough to make the content reachable.
+     */
+    static Product contentIndex(List<Product> products) {
+        List<String> paths =
+                products.stream().map(Product::relativePath).distinct().sorted().toList();
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("content_format", "strife_index/1");
+        fields.put("products", paths);
+        return new Product(INDEX_PATH, fields, "DataGen content index");
     }
 
     /** Writes each product under the resources root; order comes from the sorted table walk. */

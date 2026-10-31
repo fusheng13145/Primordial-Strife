@@ -67,7 +67,7 @@ class OreGeneratorTest {
                 List.of(
                         "data/strife/worldgen/configured_feature/block_ore_lingyu.json",
                         "data/strife/worldgen/placed_feature/block_ore_lingyu.json",
-                        "data/strife/worldgen/biome_modifier/block_ore_lingyu.json",
+                        "data/strife/neoforge/biome_modifier/block_ore_lingyu.json",
                         "data/strife/loot_table/blocks/block_ore_lingyu.json",
                         "data/strife/strife_ores/block_ore_lingyu.json"),
                 products.stream().map(Product::relativePath).toList());

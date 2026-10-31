@@ -390,6 +390,119 @@ class ValidatorMainTest {
         assertThrows(IllegalArgumentException.class, () -> ValidatorMain.parseArgs(new String[0]));
     }
 
+    // ===== V-INDEX content index coverage =====
+
+    private static final String INDEX_PATH = "strife/strife_index.json";
+
+    private static String index(String... products) {
+        StringBuilder entries = new StringBuilder();
+        for (String product : products) {
+            entries.append(entries.isEmpty() ? "" : ",").append('"').append(product).append('"');
+        }
+        return "{\"@generated\":\"DataGen content index\","
+                + "\"content_format\":\"strife_index/1\",\"products\":["
+                + entries
+                + "]}";
+    }
+
+    private static String generatedProduct(String id) {
+        return "{\"@generated\":\"from tables/factions.csv @ sha256:abc\",\"id\":\"" + id + "\"}";
+    }
+
+    @Test
+    void contentIndexMatchingEveryGeneratedProductPasses(@TempDir Path dataRoot)
+            throws IOException {
+        write(
+                dataRoot.resolve(INDEX_PATH),
+                index(
+                        "data/strife/strife_factions/fac_qingshi.json",
+                        "data/strife/strife_factions/fac_yuelai.json"));
+        write(
+                dataRoot.resolve("strife/strife_factions/fac_qingshi.json"),
+                generatedProduct("fac_qingshi"));
+        write(
+                dataRoot.resolve("strife/strife_factions/fac_yuelai.json"),
+                generatedProduct("fac_yuelai"));
+
+        assertEquals(
+                List.of(), ValidatorMain.contentIndex(productsOnly(dataRoot)), "complete index");
+    }
+
+    @Test
+    void aGeneratedProductMissingFromTheIndexIsAProblem(@TempDir Path dataRoot) throws IOException {
+        write(dataRoot.resolve(INDEX_PATH), index("data/strife/strife_factions/fac_qingshi.json"));
+        write(
+                dataRoot.resolve("strife/strife_factions/fac_qingshi.json"),
+                generatedProduct("fac_qingshi"));
+        write(
+                dataRoot.resolve("strife/strife_factions/fac_yuelai.json"),
+                generatedProduct("fac_yuelai"));
+
+        List<String> problems = ValidatorMain.contentIndex(productsOnly(dataRoot));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("fac_yuelai.json"), problems.get(0));
+        assertTrue(problems.get(0).contains("not listed"), problems.get(0));
+    }
+
+    @Test
+    void anIndexEntryWithoutAProductIsAProblem(@TempDir Path dataRoot) throws IOException {
+        write(
+                dataRoot.resolve(INDEX_PATH),
+                index(
+                        "data/strife/strife_factions/fac_qingshi.json",
+                        "data/strife/strife_factions/fac_missing.json"));
+        write(
+                dataRoot.resolve("strife/strife_factions/fac_qingshi.json"),
+                generatedProduct("fac_qingshi"));
+
+        List<String> problems = ValidatorMain.contentIndex(productsOnly(dataRoot));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("fac_missing.json"), problems.get(0));
+        assertTrue(problems.get(0).contains("no such generated product"), problems.get(0));
+    }
+
+    @Test
+    void aMissingIndexWithGeneratedProductsIsAProblem(@TempDir Path dataRoot) throws IOException {
+        write(
+                dataRoot.resolve("strife/strife_factions/fac_qingshi.json"),
+                generatedProduct("fac_qingshi"));
+
+        List<String> problems = ValidatorMain.contentIndex(productsOnly(dataRoot));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("strife_index.json"), problems.get(0));
+        assertTrue(problems.get(0).contains("rerun DataGen"), problems.get(0));
+    }
+
+    @Test
+    void aDuplicateIndexEntryIsAProblem(@TempDir Path dataRoot) throws IOException {
+        write(
+                dataRoot.resolve(INDEX_PATH),
+                index(
+                        "data/strife/strife_factions/fac_qingshi.json",
+                        "data/strife/strife_factions/fac_qingshi.json"));
+        write(
+                dataRoot.resolve("strife/strife_factions/fac_qingshi.json"),
+                generatedProduct("fac_qingshi"));
+
+        List<String> problems = ValidatorMain.contentIndex(productsOnly(dataRoot));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("twice"), problems.get(0));
+    }
+
+    @Test
+    void theIndexItselfIsNotSubjectToFreshness(@TempDir Path dataRoot) throws IOException {
+        write(dataRoot.resolve(INDEX_PATH), index("data/strife/strife_factions/fac_qingshi.json"));
+
+        assertEquals(
+                List.of(),
+                ValidatorMain.staleGeneratedHeaders(productsOnly(dataRoot)),
+                "the index is derived from all tables, so it has no single source hash");
+    }
+
     @Test
     void rejectsMissingTablesRootInsteadOfSkippingIt(@TempDir Path root) {
         IllegalArgumentException error =
@@ -970,5 +1083,152 @@ class ValidatorMainTest {
         Options options = new Options(root.resolve("data"), null, null, assets);
 
         assertTrue(ValidatorMain.referenceExistencePhase2(options).isEmpty());
+    }
+
+    // ===== V-REF 第二期：世界 NPC 摆放（点位必须落在地点半径内、维度一致、有对话树）=====
+
+    private static String placeProduct(String id, String dimension, int x, int z, int radius) {
+        return "{\"@generated\": \"from tables/places.csv @ sha256:stub\","
+                + " \"content_format\": 1, \"id\": \""
+                + id
+                + "\", \"dimension\": \""
+                + dimension
+                + "\", \"x\": "
+                + x
+                + ", \"z\": "
+                + z
+                + ", \"radius\": "
+                + radius
+                + ", \"qi_scale\": 1.0}";
+    }
+
+    private static String npcPlacement(String id, String place, String dimension, int x, int z) {
+        return "{\"@generated\": \"from tables/npcs.csv @ sha256:stub\","
+                + " \"content_format\": 1, \"id\": \""
+                + id
+                + "\", \"dimension\": \""
+                + dimension
+                + "\", \"place\": \""
+                + place
+                + "\", \"x\": "
+                + x
+                + ", \"z\": "
+                + z
+                + "}";
+    }
+
+    private static String dialogTreeFor(String npcId) {
+        return DIALOG_TREE_PRODUCT
+                + "{\"id\": \"t1\", \"npc\": \""
+                + npcId
+                + "\", \"root\": \"r1\", \"max_depth_levels\": 4, \"nodes\": ["
+                + "{\"id\": \"r1\", \"text_key\": \"k\"}]}]}";
+    }
+
+    private static Options placementOptions(Path root) throws IOException {
+        Path content = root.resolve("content");
+        write(
+                content.resolve("LORE.md"),
+                "## 6. NPC 卡\n| id | 名称 |\n|---|---|\n"
+                        + "| `npc_real` | 石执事 |\n| `npc_other` | 路人 |\n");
+        return new Options(root.resolve("data"), null, content, null);
+    }
+
+    @Test
+    void npcPlacementInsideItsPlacePasses(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_places/qi_real.json"),
+                placeProduct("qi_real", "minecraft:overworld", 100, 100, 50));
+        write(
+                root.resolve("data/strife/strife_npcs/npc_real.json"),
+                npcPlacement("npc_real", "qi_real", "minecraft:overworld", 110, 90));
+        write(root.resolve("data/strife/dialog_trees/prologue.json"), dialogTreeFor("npc_real"));
+
+        assertTrue(
+                ValidatorMain.referenceExistencePhase2(placementOptions(root)).isEmpty(),
+                "半径内、同维度且有对话树的摆放大应当放行");
+    }
+
+    @Test
+    void npcPlacementOutsideThePlaceRadiusFails(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_places/qi_real.json"),
+                placeProduct("qi_real", "minecraft:overworld", 100, 100, 10));
+        write(
+                root.resolve("data/strife/strife_npcs/npc_real.json"),
+                npcPlacement("npc_real", "qi_real", "minecraft:overworld", 120, 100));
+        write(root.resolve("data/strife/dialog_trees/prologue.json"), dialogTreeFor("npc_real"));
+
+        List<String> problems = ValidatorMain.referenceExistencePhase2(placementOptions(root));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("radius"), problems.get(0));
+    }
+
+    @Test
+    void npcPlacementInAnotherDimensionThanItsPlaceFails(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_places/qi_real.json"),
+                placeProduct("qi_real", "minecraft:overworld", 100, 100, 50));
+        write(
+                root.resolve("data/strife/strife_npcs/npc_real.json"),
+                npcPlacement("npc_real", "qi_real", "strife:upper_realm", 100, 100));
+        write(root.resolve("data/strife/dialog_trees/prologue.json"), dialogTreeFor("npc_real"));
+
+        List<String> problems = ValidatorMain.referenceExistencePhase2(placementOptions(root));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("dimension"), problems.get(0));
+    }
+
+    @Test
+    void npcPlacementReferencingAMissingPlaceFails(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_npcs/npc_real.json"),
+                npcPlacement("npc_real", "qi_ghost", "minecraft:overworld", 100, 100));
+        write(root.resolve("data/strife/dialog_trees/prologue.json"), dialogTreeFor("npc_real"));
+
+        List<String> problems = ValidatorMain.referenceExistencePhase2(placementOptions(root));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("place reference 'qi_ghost'"), problems.get(0));
+    }
+
+    @Test
+    void npcPlacementWithoutADialogTreeFails(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_places/qi_real.json"),
+                placeProduct("qi_real", "minecraft:overworld", 100, 100, 50));
+        write(
+                root.resolve("data/strife/strife_npcs/npc_real.json"),
+                npcPlacement("npc_real", "qi_real", "minecraft:overworld", 100, 100));
+        write(root.resolve("data/strife/dialog_trees/prologue.json"), dialogTreeFor("npc_other"));
+
+        List<String> problems = ValidatorMain.referenceExistencePhase2(placementOptions(root));
+
+        assertEquals(1, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("has no dialog tree"), problems.get(0));
+    }
+
+    @Test
+    void npcPlacementNeedsItsLangName(@TempDir Path root) throws IOException {
+        write(
+                root.resolve("data/strife/strife_npcs/npc_real.json"),
+                npcPlacement("npc_real", "qi_real", "minecraft:overworld", 100, 100));
+        Path assets = root.resolve("assets");
+        write(assets.resolve("strife/lang/zh_cn.json"), "{\"item.strife.item_x\": \"某物\"}");
+        write(assets.resolve("strife/lang/en_us.json"), "{\"item.strife.item_x\": \"something\"}");
+        Options options = new Options(root.resolve("data"), null, null, assets);
+
+        List<String> problems = ValidatorMain.langCoverage(options);
+
+        assertEquals(2, problems.size(), problems::toString);
+        assertTrue(problems.get(0).contains("npc.strife.npc_real"), problems.get(0));
+
+        write(assets.resolve("strife/lang/zh_cn.json"), "{\"npc.strife.npc_real\": \"石执事\"}");
+        write(
+                assets.resolve("strife/lang/en_us.json"),
+                "{\"npc.strife.npc_real\": \"Steward Shi\"}");
+        assertTrue(ValidatorMain.langCoverage(options).isEmpty());
     }
 }

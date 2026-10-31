@@ -19,8 +19,9 @@ import java.util.Map;
  *   <li>{@code data/strife/worldgen/configured_feature/<id>.json} —— 矿块 + 替换规则（stone → 矿）；
  *   <li>{@code data/strife/worldgen/placed_feature/<id>.json} —— 矿脉数/尺寸/高度/噪声，其中矿脉数乘 {@code
  *       density_ratio} 后取整（契约 §4.8 的密度倍率语义）；
- *   <li>{@code data/strife/worldgen/biome_modifier/<id>.json} —— 挂到 {@code placement.biomes}
- *       列出的群系，走 {@code UNDERGROUND_ORES} 步；
+ *   <li>{@code data/strife/neoforge/biome_modifier/<id>.json} —— 挂到 {@code placement.biomes}
+ *       列出的群系，走 {@code UNDERGROUND_ORES} 步（该注册表 key 为 {@code neoforge:biome_modifier}， 放在 {@code
+ *       worldgen/biome_modifier/} 下会被静默忽略）；
  *   <li>{@code data/strife/loot_table/<drop_table>.json} —— 原版 loot 2 掉落表（丝触掉矿块、时运走 {@code
  *       minecraft:ore_drops} 公式、爆炸衰减）；
  *   <li>{@code data/strife/strife_ores/<id>.json} —— strife
@@ -182,6 +183,10 @@ public final class OreGenerator implements TableGenerator {
      * <p>群系用 {@code neoforge:add_features} 修正器（该类型由 NeoForge 注册，1.21.251 的 {@code
      * BiomeModifiers.AddFeaturesBiomeModifier}）。用修正器而不是改写每个群系文件，是为了让"新增矿石"永远只动 {@code
      * tables/ores.csv} 一处。
+     *
+     * <p>目录必须是 {@code neoforge/biome_modifier}：数据包按 {@code data/<包命名空间>/<注册表命名空间>/<注册表路径>/}
+     * 查找注册表条目，而该注册表是 {@code neoforge:biome_modifier}。 放到 {@code worldgen/biome_modifier/}
+     * 不会报错，只会被原版忽略，矿石从此不生成。
      */
     private static Product biomeModifier(TableSource source, String id, List<String> biomes) {
         Map<String, Object> modifier = new LinkedHashMap<>();
@@ -190,7 +195,7 @@ public final class OreGenerator implements TableGenerator {
         modifier.put("features", "strife:" + id);
         modifier.put("step", "underground_ores");
         return new Product(
-                "data/strife/worldgen/biome_modifier/" + id + ".json",
+                "data/strife/neoforge/biome_modifier/" + id + ".json",
                 modifier,
                 source.generatedHeader());
     }

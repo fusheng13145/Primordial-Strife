@@ -272,6 +272,11 @@ public final class ValidatorMain {
                 continue;
             }
             JsonObject object = root.getAsJsonObject();
+            // The content index is derived from all products, so it has no single source hash;
+            // V-INDEX proves it is regenerated instead.
+            if (isContentIndex(object)) {
+                continue;
+            }
             String source = headerSource(object);
             if (source == null) {
                 if (object.has("@generated")) {
@@ -349,6 +354,111 @@ public final class ValidatorMain {
                     : null;
         }
         return null;
+    }
+
+    /** Index path relative to {@code --data-root}; must match {@code DataGenMain.INDEX_PATH}. */
+    static final String CONTENT_INDEX_PATH = "strife/strife_index.json";
+
+    static final String CONTENT_INDEX_FORMAT = "strife_index/1";
+
+    static boolean isContentIndex(JsonObject object) {
+        JsonElement format = object.get("content_format");
+        return format != null
+                && format.isJsonPrimitive()
+                && CONTENT_INDEX_FORMAT.equals(format.getAsString());
+    }
+
+    /**
+     * V-INDEX: the generated index must name every {@code @generated} product and nothing else.
+     * Runtime loaders that start before the datapack exists read the index instead of directory
+     * scanning, so a product missing here exists in the jar but is unreachable in game.
+     */
+    public static List<String> contentIndex(Options options) {
+        List<String> problems = new ArrayList<>();
+        Path dataRoot = options.dataRoot();
+        if (dataRoot == null) {
+            return problems;
+        }
+        Set<String> actual = generatedProductPaths(dataRoot);
+        Path indexFile = dataRoot.resolve(CONTENT_INDEX_PATH);
+        if (!Files.isRegularFile(indexFile)) {
+            if (!actual.isEmpty()) {
+                problems.add(
+                        indexFile
+                                + ": missing — "
+                                + actual.size()
+                                + " generated product(s) have no index, so runtime loaders"
+                                + " cannot see them (rerun DataGen)");
+            }
+            return problems;
+        }
+        JsonElement root = parse(indexFile);
+        if (!root.isJsonObject() || !isContentIndex(root.getAsJsonObject())) {
+            problems.add(
+                    indexFile
+                            + ": not a content index (expected content_format '"
+                            + CONTENT_INDEX_FORMAT
+                            + "' — rerun DataGen)");
+            return problems;
+        }
+        JsonElement productsElement = root.getAsJsonObject().get("products");
+        if (productsElement == null || !productsElement.isJsonArray()) {
+            problems.add(indexFile + ": has no 'products' array (rerun DataGen)");
+            return problems;
+        }
+        Set<String> listed = new LinkedHashSet<>();
+        for (JsonElement element : productsElement.getAsJsonArray()) {
+            if (!element.isJsonPrimitive()) {
+                problems.add(indexFile + ": 'products' contains a non-string entry");
+                continue;
+            }
+            String path = element.getAsString();
+            if (!listed.add(path)) {
+                problems.add(indexFile + ": lists '" + path + "' twice");
+            }
+        }
+        for (String path : actual) {
+            if (!listed.contains(path)) {
+                problems.add(
+                        indexFile
+                                + ": generated product '"
+                                + path
+                                + "' is not listed — runtime loaders will never see it"
+                                + " (rerun DataGen)");
+            }
+        }
+        for (String path : listed) {
+            if (!actual.contains(path)) {
+                problems.add(
+                        indexFile
+                                + ": lists '"
+                                + path
+                                + "' but no such generated product exists — stale index"
+                                + " (rerun DataGen)");
+            }
+        }
+        return problems;
+    }
+
+    /** Products as {@code data/<pack>/...} paths, excluding the index itself. */
+    private static Set<String> generatedProductPaths(Path dataRoot) {
+        Set<String> paths = new LinkedHashSet<>();
+        for (Path file : jsonFiles(dataRoot)) {
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            if (!object.has("@generated") || !object.get("@generated").isJsonPrimitive()) {
+                continue;
+            }
+            String relative = dataRoot.relativize(file).toString().replace('\\', '/');
+            if (CONTENT_INDEX_PATH.equals(relative)) {
+                continue;
+            }
+            paths.add("data/" + relative);
+        }
+        return paths;
     }
 
     /** True when any committed product was generated from the (possibly unmerged) truth source. */
@@ -436,6 +546,7 @@ public final class ValidatorMain {
             case "strife_spells" -> "spell.strife." + id;
             case "strife_pills" -> "item.strife." + id;
             case "strife_artifacts" -> "artifact.strife." + id;
+            case "strife_npcs" -> "npc.strife." + id;
             // 对话域刻意无 lang 规则：文本走独立产物 dialog_text/<章>.json（§4.10 运行时通道，[拟]），
             // 服务端随 S2C 下发成品文本；text_key ↔ 文本表条目的对应由 DialogTextGenerator 覆盖校验 + V-REF 二期把守。
             case "dialog_trees", "dialog_text" -> null;
@@ -1353,6 +1464,8 @@ public final class ValidatorMain {
         boolean checkNpc = npcIdsOptional.isPresent();
         Set<String> npcIds = npcIdsOptional.orElse(Set.of());
         Set<String> questIds = questIds(options);
+        Map<String, PlacePoint> places = placePoints(options);
+        Set<String> dialogNpcs = dialogNpcIds(options);
 
         for (Path file : jsonFiles(options.dataRoot())) {
             String domain = domainOf(file, options);
@@ -1547,6 +1660,66 @@ public final class ValidatorMain {
                         }
                     }
                 }
+                case "strife_npcs" -> {
+                    String npcId = stringOrNull(object.get("id"));
+                    String placeId = stringOrNull(object.get("place"));
+                    String dimension = stringOrNull(object.get("dimension"));
+                    String where = file + " npc placement '" + npcId + "'";
+                    if (npcId != null) {
+                        if (checkNpc) {
+                            checkId(problems, where, "npc", npcId, npcIds, whitelist);
+                        }
+                        if (!dialogNpcs.contains(npcId) && !whitelist.contains(npcId)) {
+                            problems.add(
+                                    where
+                                            + ": npc '"
+                                            + npcId
+                                            + "' has no dialog tree in data/strife/dialog_trees"
+                                            + " — a world NPC the player can right-click but cannot"
+                                            + " talk to (docs/04 §6 V-REF phase 2)");
+                        }
+                    }
+                    PlacePoint place = placeId == null ? null : places.get(placeId);
+                    if (place == null) {
+                        problems.add(
+                                where
+                                        + ": place reference '"
+                                        + placeId
+                                        + "' has no strife_places product"
+                                        + " (docs/04 §6 V-REF phase 2)");
+                        continue;
+                    }
+                    if (dimension != null && !dimension.equals(place.dimension())) {
+                        problems.add(
+                                where
+                                        + ": dimension '"
+                                        + dimension
+                                        + "' differs from place '"
+                                        + placeId
+                                        + "' dimension '"
+                                        + place.dimension()
+                                        + "' (docs/04 §6 V-REF phase 2)");
+                    }
+                    Integer x = intOrNull(object.get("x"));
+                    Integer z = intOrNull(object.get("z"));
+                    if (x != null && z != null) {
+                        long dx = (long) x - place.x();
+                        long dz = (long) z - place.z();
+                        if (dx * dx + dz * dz > (long) place.radius() * place.radius()) {
+                            problems.add(
+                                    where
+                                            + ": ("
+                                            + x
+                                            + ", "
+                                            + z
+                                            + ") is outside the "
+                                            + place.radius()
+                                            + "-block radius of '"
+                                            + placeId
+                                            + "' (docs/04 §6 V-REF phase 2)");
+                        }
+                    }
+                }
                 default -> {}
             }
         }
@@ -1668,6 +1841,70 @@ public final class ValidatorMain {
             }
         }
         return ids;
+    }
+
+    /** 地点产物里的几何事实，用于校验 NPC 摆位是否还在自己的地点圈内。 */
+    private record PlacePoint(String dimension, int x, int z, int radius) {}
+
+    /** {@code strife_places} 产物 → 地点中心/半径。形状不合法的产物这里跳过：坐标缺失是 V-FMT/V-FRESH 的职责，本检查只回答「摆位是否落在圈内」。 */
+    private static Map<String, PlacePoint> placePoints(Options options) {
+        Map<String, PlacePoint> points = new LinkedHashMap<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!"strife_places".equals(domainOf(file, options))) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            JsonObject object = root.getAsJsonObject();
+            String id = stringOrNull(object.get("id"));
+            String dimension = stringOrNull(object.get("dimension"));
+            Integer x = intOrNull(object.get("x"));
+            Integer z = intOrNull(object.get("z"));
+            Integer radius = intOrNull(object.get("radius"));
+            if (id != null && dimension != null && x != null && z != null && radius != null) {
+                points.put(id, new PlacePoint(dimension, x, z, radius));
+            }
+        }
+        return points;
+    }
+
+    /** 对话树产物里出现过的 NPC id 集合（世界摆位必须有对话可开）。 */
+    private static Set<String> dialogNpcIds(Options options) {
+        Set<String> ids = new LinkedHashSet<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            if (!"dialog_trees".equals(domainOf(file, options))) {
+                continue;
+            }
+            JsonElement root = parse(file);
+            if (!root.isJsonObject()) {
+                continue;
+            }
+            for (JsonElement treeElement : arrayOrEmptyOf(root.getAsJsonObject(), "trees")) {
+                if (!treeElement.isJsonObject()) {
+                    continue;
+                }
+                String npc = stringOrNull(treeElement.getAsJsonObject().get("npc"));
+                if (npc != null) {
+                    ids.add(npc);
+                }
+            }
+        }
+        return ids;
+    }
+
+    private static Integer intOrNull(JsonElement element) {
+        if (element == null
+                || !element.isJsonPrimitive()
+                || !element.getAsJsonPrimitive().isNumber()) {
+            return null;
+        }
+        try {
+            return element.getAsInt();
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /**
@@ -1871,6 +2108,8 @@ public final class ValidatorMain {
         problems.addAll(numericRanges(options));
         executed++;
         problems.addAll(NameConventions.check(options));
+        executed++;
+        problems.addAll(contentIndex(options));
         executed++;
         problems.addAll(spiritFieldRanges(options));
         executed++;

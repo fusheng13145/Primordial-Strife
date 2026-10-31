@@ -21,8 +21,9 @@ import java.util.Map;
  *       data/minecraft/dimension_type/the_end.json} 为基准（1.21.1 实证：{@code monster_spawn_light_level}
  *       是 uniform IntProvider、{@code effects} 决定天空渲染）；
  *   <li>{@code data/strife/dimension/<id>.json} —— 维度本体：type 引用上者，noise 生成器 + fixed 群系源。 {@code
- *       noise_settings} 引用的 {@code minecraft:end_islands} 等标准 preset 硬编码在原版 {@code
- *       NoiseRouterData}（jar 里无 JSON 属正常，引用注册表 key 即可）。
+ *       noise_settings} 必须引用真实存在的原版 preset：1.21.1 的原版数据在 {@code
+ *       data/minecraft/worldgen/noise_settings/} 下（如 {@code floating_islands.json}、{@code
+ *       end.json}）， 引用不存在的 id 会在进世界时让整个注册表加载失败。
  * </ol>
  *
  * <p><b>表列与受管数值的边界</b>（05 §1 精神）：灵气参数（成长数值）进 NUMBERS {@code @@world} （{@code upper_qi_min/max}，随

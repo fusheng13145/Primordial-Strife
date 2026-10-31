@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dimensions.csv @ sha256:350ab7971ddf74e58df3c4c551bc266b956a034137d17a4164b78ad0955e2f38",
+  "@generated": "from tables/dimensions.csv @ sha256:269ad9f8ce4b2dc8ebd6f7dbc1540fa03b837dcd534d8648e7a76d1169a94255",
   "ultrawarm": false,
   "natural": false,
   "piglin_safe": false,

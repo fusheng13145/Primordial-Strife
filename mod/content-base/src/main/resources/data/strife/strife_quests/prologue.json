@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/quests_prologue.csv @ sha256:517c8ef7577d13d0b7e19c0ca7b2a2e3cd89ff9455e0c528eaedf202696df08c",
+  "@generated": "from tables/quests_prologue.csv @ sha256:7cb3d59ff46ac5a84d3d555da75ac7e489e48498d4ce960a43a9dda7320379c5",
   "id": "quest_prologue_root_read_01",
   "chapter": "prologue",
   "quests": [

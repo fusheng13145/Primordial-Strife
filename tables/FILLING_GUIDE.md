@@ -1,6 +1,6 @@
 # tables/ 填表指南（人话版）
 
-> 读者：没有开发经验的内容策划。
+> 读者：做内容填表的本人或 Agent（Agent 产出须本人确认）。
 > 本指南只做一件事：把 `content/JSON_SCHEMA.md`（字段级契约）翻译成人话。
 > **口径冲突时一律以 `content/JSON_SCHEMA.md` 为准**，本指南不是契约，是说明书。
 > 数值真相源在 `content/NUMBERS.md`，流程与门禁在 `docs/04-内容管线.md`。
@@ -13,16 +13,16 @@
 
 | 环节 | 契约里应该有 | 现在实际有 | 证据 |
 |---|---|---|---|
-| DataGen | 把 CSV 读成 JSON 产物 | **已接 20 个生成器实例 / 20 张表 + 6 个 NUMBERS 直出域**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`、`quests_<章>.csv` → `strife_quests`（一章一文件聚合产物）、`dialog_trees_<章>.csv` → `dialog_trees`（一章一文件）、`dialog_<章>_text.csv` → `dialog_text`（一章一文件，服务端权威文本通道）、`ores.csv` → `configured_feature` + `placed_feature` + `biome_modifier` + `loot_table` + `strife_ores`（**一行 5 产物**，M4 矿石 placement）。**境界无 CSV 也已接**：`strife_realms` 由 NUMBERS `@@realms` 生成（含 ordinal/tribulation/display_name_key/占位标记四个推导项，§4.1），另有 realm_rules / world_rules / core_rules / combat_rules 四张运行时数值表由 NUMBERS 直出。`spirit_field` / `periods` / `wars` 三张现也已接生成器（W4 P3）—— **只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器）；实测输出 `datagen: tables=22 rows=119 generators=20 numbers=6 products=69 problems=0` |
-| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜）+ 命名规范 | **14 项门禁全部实装**（`validator: ... checks=14 problems=0`）：`V-DUP`（ID 全域唯一，台账表与对话配对表豁免）、`V-FRESH`（源哈希比对，含 `content/NUMBERS.md` 源头）、`V-DAG`（任务图硬校验）、`V-REF 一期`（unlock 词表 + NUMBERS 块键 + `known-placeholders.csv` 白名单）、**`V-REF 二期`**（源表主键 / lang item 键 / LORE NPC 卡存在性）、`V-GROWTH` + `V-RANGE`（成长比 1.8–2.5、成功率域、寿元单调；`[占位]` 境界放宽）、`V-TEXT`（zh_cn/en_us 覆盖，对话域豁免）、`V-PROB`（概率和=1，容差 1e-6）、**`V-DSL`**（独立词法校验器 `DslSyntax`：8 谓词白名单 / 括号平衡 / effects args 正则）、**`V-NAME`**（**ID 用拼音、文本用中文**：ID 形状、禁中文 ID、lang key 形态、zh_cn 值必含汉字；见 [docs/11](../docs/11-命名与目录规范.md)）、H1 price 非负。`content/` 缺席时 NUMBERS 侧检查在输出中声明并跳过 | `mod/tools/validator/src/main/java/com/strife/tools/validator/`（`ValidatorMain` + `DslSyntax` + `NameConventions`） |
-| 产物 | `data/strife/**.json` + `lang` | **69 个产物在库**：realms 10（九境界 + `rules.json`）+ factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 任务 DAG ×2（prologue 十节点 / ch1 六节点骨架）+ 对话树 2（prologue + ch1）+ 对话文本 2（prologue 41 行 + ch1 17 行）+ 五张运行时数值表（realms/world/core/combat rules）+ **矿石 ×15**（`strife_ores` 契约镜像 3 + `worldgen/configured_feature` 3 + `worldgen/placed_feature` 3 + `worldgen/biome_modifier` 3 + `loot_table/blocks` 3，M4 一行 5 产物）；另有上界域（维度 2 + 群系 1 + 宗门结构 2 + 上界装饰 2 + 地点 5）与 W4 域（灵气场 2 + 周期 1 + 战事 1 + 妖兽掉落 1）；lang 种子 `assets/strife/lang/zh_cn.json` + `en_us.json`（V-TEXT 守覆盖）；另有 8 张物品贴图 + 6 张实体皮肤 + 8 个物品模型 JSON + 3 张矿石贴图 + 3 个方块模型 + 3 个 blockstate + 3 个物品模型。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
+| DataGen | 把 CSV 读成 JSON 产物 | **已接 21 个生成器实例 / 21 张表 + 6 个 NUMBERS 直出域**：`factions.csv` → `strife_factions`、`techniques.csv` → `strife_techniques`、`spells.csv` → `strife_spells`、`pills.csv` → `strife_pills`、`artifacts.csv` → `strife_artifacts`、`quests_<章>.csv` → `strife_quests`（一章一文件聚合产物）、`dialog_trees_<章>.csv` → `dialog_trees`（一章一文件）、`dialog_<章>_text.csv` → `dialog_text`（一章一文件，服务端权威文本通道）、`ores.csv` → `configured_feature` + `placed_feature` + `biome_modifier` + `loot_table` + `strife_ores`（**一行 5 产物**，M4 矿石 placement）、`npcs.csv` → `strife_npcs`（世界内 NPC 摆放）。**境界无 CSV 也已接**：`strife_realms` 由 NUMBERS `@@realms` 生成（含 ordinal/tribulation/display_name_key/占位标记四个推导项，§4.1），另有 realm_rules / world_rules / core_rules / combat_rules 四张运行时数值表由 NUMBERS 直出。`spirit_field` / `periods` / `wars` 三张现也已接生成器（W4 P3）—— **只要往没有生成器的表里填了行，DataGen 会直接报错并指名这张表**，不会静默丢弃。`*_key` 列的值由 DataGen 从 NUMBERS `@@块` 内联展开进产物（键与值同时写，§3）；必填列留空 = 构建失败并指出表:行 | `mod/tools/datagen/src/main/java/com/strife/tools/datagen/`（`DataGenMain` 注册表 + 各生成器）；实测输出 `datagen: tables=23 rows=122 generators=21 numbers=6 products=72 problems=0` |
+| Validator | 八项校验（引用存在性、DAG、概率归一、越界、文本、重复 ID、DSL、产物新鲜）+ 命名规范 | **15 项门禁全部实装**（`validator: ... checks=15 problems=0`）：`V-DUP`（ID 全域唯一，台账表与对话配对表豁免）、`V-FRESH`（源哈希比对，含 `content/NUMBERS.md` 源头）、`V-INDEX`（内容索引与产物一一对应）、`V-DAG`（任务图硬校验）、`V-REF 一期`（unlock 词表 + NUMBERS 块键 + `known-placeholders.csv` 白名单）、**`V-REF 二期`**（源表主键 / lang item 键与 `npc.strife.<id>` / LORE NPC 卡存在性；NPC 摆放查地点、维度、半径与对话树）、`V-GROWTH` + `V-RANGE`（成长比 1.8–2.5、成功率域、寿元单调；`[占位]` 境界放宽）、`V-TEXT`（zh_cn/en_us 覆盖，对话域豁免）、`V-PROB`（概率和=1，容差 1e-6）、**`V-DSL`**（独立词法校验器 `DslSyntax`：8 谓词白名单 / 括号平衡 / effects args 正则）、**`V-NAME`**（**ID 用拼音、文本用中文**：ID 形状、禁中文 ID、lang key 形态、zh_cn 值必含汉字；见 [docs/11](../docs/11-命名与目录规范.md)）、H1 price 非负。`content/` 缺席时 NUMBERS 侧检查在输出中声明并跳过 | `mod/tools/validator/src/main/java/com/strife/tools/validator/`（`ValidatorMain` + `DslSyntax` + `NameConventions`） |
+| 产物 | `data/strife/**.json` + `lang` | **72 个产物在库**：realms 10（九境界 + `rules.json`）+ factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 任务 DAG ×2（prologue 十节点 / ch1 六节点骨架）+ 对话树 2（prologue + ch1）+ 对话文本 2（prologue 41 行 + ch1 17 行）+ world/core/combat 三张运行时数值表（realms 的 `rules.json` 已含在 realms 10 内）+ **矿石 ×15**（`strife_ores` 契约镜像 3 + `worldgen/configured_feature` 3 + `worldgen/placed_feature` 3 + `neoforge/biome_modifier` 3 + `loot_table/blocks` 3，M4 一行 5 产物）+ **NPC 摆放 3**；另有上界域（维度 2 + 群系 1 + 宗门结构 2 + 上界装饰 2 + 地点 5）与 W4 域（灵气场 2 + 周期 1 + 战事 1 + 妖兽掉落 1）；lang 种子 `assets/strife/lang/zh_cn.json` + `en_us.json`（V-TEXT 守覆盖）；另有 8 张物品贴图 + 6 张实体皮肤 + 8 个物品模型 JSON + 3 张矿石贴图 + 3 个方块模型 + 3 个 blockstate + 3 个物品模型。填一行进已接生成器的表、跑一次 datagen，产物就落在 `mod/content-base/src/main/resources/data/` | 仓库现状 + 本机实测 |
 | 打进 jar | 生成的 JSON 必须随 MOD 一起进游戏（`docs/04` §1「构建进 jar」/ §9「内置内容」） | **已接通**：`platform` 把 `content-base/src/main/resources` 挂成自己的 resources 目录，所以 `:platform:jar` 里就有 `data/strife/**`，开发期 `runClient`/`runServer`/`runData` 也看见同一批文件。并有 `:platform:checkContentBundled`（挂在 `check` 上，CI 必跑）逐个比对磁盘产物与 jar 条目 | 本机实测：磁盘放一个探针文件时报 `checkContentBundled: 1 content file(s) present in the platform jar`；把那行 `srcDir` 注释掉后报 `platform jar does not ship generated content: [data/strife/strife_factions/fac_probe.json]` |
-| 内容热更 | `content-base-X.Y.Z.zip` 独立内容包（`docs/04` §9、`docs/07` §5 交付物） | **还没有**：内置内容这条路已通，"整合包作者换 zip 覆盖"这条导出任务还没建工单 | 仓库现状（无任何 `contentZip` 任务） |
+| 内容热更 | `content-base-X.Y.Z.zip` 独立内容包（`docs/04` §9、`docs/07` §7 发布矩阵） | **还没有**：内置内容这条路已通，"整合包作者换 zip 覆盖"这条导出任务还没建工单 | 仓库现状（无任何 `contentZip` 任务） |
 
 所以现在这些模板的用途是**填了就能真出产物**：
 
-- **已接生成器的 20 张表，填的每一行都会真的生成产物**，并随 MOD 的 jar 进游戏（见上表"打进 jar"那一行）；`id_migration` / `known-placeholders` 两张是台账表、不产内容（`id_migration` 无生成器）。逐表状态见 [`tables/README.md`](README.md)。
-- 现在**会**被拦住的（十四项门禁全覆盖）：
+- **已接生成器的 21 张表，填的每一行都会真的生成产物**，并随 MOD 的 jar 进游戏（见上表"打进 jar"那一行）；`id_migration` / `known-placeholders` 两张是台账表、不产内容（`id_migration` 无生成器）。逐表状态见 [`tables/README.md`](README.md)。
+- 现在**会**被拦住的（十五项门禁全覆盖）：
   1. 同一个 `id` 出现两次（跨表也算，源表与产物之间按来源归并后再判重）；
   2. 表头第一列不是 `id`、某一行少了格子（多打/少打逗号）、格子带英文双引号；
   3. 有数据行但那张表没有生成器；
@@ -35,7 +35,7 @@
   10. 概率和 ≠ 1（容差 1e-6）、境界成长比越出 1.8–2.5、寿元非单调、price 为负；
   11. zh_cn 缺词条（V-TEXT）。
 - 表头（列名、列的多少）就是契约本身。改表头 = 改契约 = 破档风险（`JSON_SCHEMA.md` §1.2 规则 5），**必须先改 `content/JSON_SCHEMA.md` 并在同一个提交里对齐 DataGen 与 Validator**（`docs/04` §2 末）。
-- 因此：**不要自己加列、删列、改列名、调整列的语义**。有想法写进本指南末尾的"待确认清单"，由 C 拍板。
+- 因此：**不要自己加列、删列、改列名、调整列的语义**。有想法写进本指南末尾的"待确认清单"，由本人拍板。
 
 ---
 
@@ -147,7 +147,7 @@
 
 每张表给：用途 → 列清单（`必` = 必填，留空会失败；`可` = 可留空走默认值）→ 一行格式示例 → 这张表最容易错在哪。
 
-> 示例行里的取值只为演示格式。其中**真实存在的名字**只有这些来源：`JSON_SCHEMA.md` §1.4 枚举词表（`jin/mu/shui/huo/tu`、`fan/di/tian/xian`、`huang/xuan/di/tian`、`light/medium/heavy`、`formula_basic/formula_pierce/formula_burst`、`matched/neutral/conflict`、`debuff_heavy_wound/debuff_weak`、`meditation` 等解锁键、任务目标类型）、`NUMBERS.md` 里已有的键（`fanren/qili/zhuji/…`、`bs_*`、`pill_juqi/pill_peiyuan/pill_yanshou`）、以及契约与 `docs/04` §4 出现过的示例 ID（`tech_qingxin_jue`、`quest_prologue_meditation_01`、`ch2_pearl_water`、`fac_qingshi`、`fac_yuelai`、`item_lingshi`、`herb_ningxu`）。其余带 `<…>` 的尖括号表示"这里必须填真实值，但还没定名，等 C 定"，**不许照抄进表**。名字带 `demo` 的是明显的假 ID，同样不许当真填进去。
+> 示例行里的取值只为演示格式。其中**真实存在的名字**只有这些来源：`JSON_SCHEMA.md` §1.4 枚举词表（`jin/mu/shui/huo/tu`、`fan/di/tian/xian`、`huang/xuan/di/tian`、`light/medium/heavy`、`formula_basic/formula_pierce/formula_burst`、`matched/neutral/conflict`、`debuff_heavy_wound/debuff_weak`、`meditation` 等解锁键、任务目标类型）、`NUMBERS.md` 里已有的键（`fanren/qili/zhuji/…`、`bs_*`、`pill_juqi/pill_peiyuan/pill_yanshou`）、以及契约与 `docs/04` §4 出现过的示例 ID（`tech_qingxin_jue`、`quest_prologue_meditation_01`、`ch2_pearl_water`、`fac_qingshi`、`fac_yuelai`、`item_lingshi`、`herb_ningxu`）。其余带 `<…>` 的尖括号表示"这里必须填真实值，但还没定名，等本人定"，**不许照抄进表**。名字带 `demo` 的是明显的假 ID，同样不许当真填进去。
 
 ### 3.1 `techniques.csv` —— 功法（15 列，**已接生成器**）
 
@@ -226,7 +226,7 @@ spell_prologue_demo,mu,tech_qingxin_jue,medium,light,formula_basic,,0,,,示例�
 格式示例：
 
 ```csv
-pill_juqi,fan,1x1=herb_ningxu;2x2=<副药ID>,<主药ID 待C定名>,item_id=herb_ningxu;count=3,0.30;0.70,item_id=pill_juqi;count=1;prob=1.0;quality=fan,pill_juqi,,,示例行 数值与物品名仅演示 outputs 概率和须为 1
+pill_juqi,fan,1x1=herb_ningxu;2x2=<副药ID>,<主药ID 待本人定名>,item_id=herb_ningxu;count=3,0.30;0.70,item_id=pill_juqi;count=1;prob=1.0;quality=fan,pill_juqi,,,示例行 数值与物品名仅演示 outputs 概率和须为 1
 ```
 
 容易错：`outputs` 概率和 ≠ 1（`V-PROB` 会红）；给 NUMBERS §7 里没有的丹名直接建表（那样 `effect_key` 无处可查，`V-REF` 会红）。
@@ -234,6 +234,8 @@ pill_juqi,fan,1x1=herb_ningxu;2x2=<副药ID>,<主药ID 待C定名>,item_id=herb_
 ### 3.4 `artifacts.csv` —— 器图/炼器（13 列，**已接生成器**）
 
 产物：`strife_artifacts`（契约 §4.5）。`active_skill.cooldown_sec` 从 NUMBERS §8 `@@combat` 的 `artifact_cooldown_sec` 展开；`quality_probs` 的实际值仍以 `quality_tier=prob` 映射简写填表，产物按契约转成对象数组。
+
+运行时（2026-10-25）：`/strife craft artifact <id>` 读取本表产物，校验 `required_realm` 与实扣材料后按 `quality_probs` 抽签；产出物为 `blank` 物品 + `artifact_id`/`quality`/`slot_type`/`active_spell` 数据。`slot_type`/`active_skill.spell_id` 已被执行期消费（副手即法宝槽，`/strife artifact info|cast`；法宝冷却统一取 `artifact_cooldown_sec`）；`durability_points` 已消费（每次成功激发 -1，0 时拒绝，`/strife craft repair` 消耗 `core_slot`×1 回满）；`passives` 尚无玩法消费，`active_skill.cooldown_key` 仅解析保留。
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
@@ -245,7 +247,7 @@ pill_juqi,fan,1x1=herb_ningxu;2x2=<副药ID>,<主药ID 待C定名>,item_id=herb_
 | `quality_probs` | 必 | `{quality_tier,prob}` 列表，**和 = 1**（`V-PROB`） |
 | `slot_type` | 必 | 装备槽：`weapon`/`armor`/`treasure` |
 | `required_realm` | 必 | 境界 ID |
-| `active_skill` | 必（可 null） | `{spell_id,cooldown_key}`；留空 = 无主动技能。运行时限速走 `rl:artifact_per_sec`（NUMBERS §10） |
+| `active_skill` | 必（可 null） | `{spell_id,cooldown_key}`；留空 = 无主动技能。`spell_id` 必须能在法术产物中解析，炼器时写入器胚 `active_spell` 供副手使用；法宝冷却统一取 NUMBERS §8 `artifact_cooldown_sec`，`cooldown_key` 暂不参与判定；限速走 `rl:artifact_per_sec`（NUMBERS §10） |
 | `passives` | 可 | 被动效果 ID 列表 |
 | `durability_points` | 必 | 耐久基值（点），整数 >0 |
 | `price` | 必（可 null） | H1 |
@@ -254,14 +256,14 @@ pill_juqi,fan,1x1=herb_ningxu;2x2=<副药ID>,<主药ID 待C定名>,item_id=herb_
 格式示例：
 
 ```csv
-art_demo,<器胚ID 待C定名>,3,<核心材料ID 待C定名>,item_id=<材料ID>;count=2,fan=0.70;di=0.25;tian=0.05,weapon,qili,spell_id=spell_prologue_demo;cooldown_key=heavy,,120,,示例行 品质概率和须=1 耐久数值仅演示
+art_demo,<器胚ID 待本人定名>,3,<核心材料ID 待本人定名>,item_id=<材料ID>;count=2,fan=0.70;di=0.25;tian=0.05,weapon,qili,spell_id=spell_prologue_demo;cooldown_key=heavy,,120,,示例行 品质概率和须=1 耐久数值仅演示
 ```
 
-容易错：`quality_probs` 用 `di`（品质 tiers 里的"地"）却和 `slot_type` 的 `treasure` 混填；`cooldown_key` 只能填 `light/medium/heavy` 三档。
+容易错：`quality_probs` 用 `di`（品质 tiers 里的"地"）却和 `slot_type` 的 `treasure` 混填；`cooldown_key` 目前只是保留字段，法宝冷却实际由 NUMBERS `artifact_cooldown_sec` 决定。
 
 ### 3.5 `quests_prologue.csv` / `quests_ch1.csv` —— 任务 DAG（各 16 列，**已接生成器**，一章一文件聚合产物）
 
-产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §4.6）。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名一致；空表合法。`objectives`/`rewards` 为对象数组（`|` 分隔），`reputation_delta` 用映射简写（生成器转对象数组）。序章表已有 STORY §4 十节点转译的初稿行，**奖励数值与物品命名待 C 审定**（`item_lingshi/item_ningxu/item_yuejian/item_duanxue/item_yaocai` 五件已由 production 注册成真物品，lang 词条在库，定名改 lang 即可）。
+产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §4.6）。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名一致；空表合法。`objectives`/`rewards` 为对象数组（`|` 分隔），`reputation_delta` 用映射简写（生成器转对象数组）。序章表已有 STORY §4 十节点转译的初稿行，**奖励数值与物品命名待本人审定**（`item_lingshi/item_ningxu/item_yuejian/item_duanxue/item_yaocai` 五件已由 production 注册成真物品，lang 词条在库，定名改 lang 即可）。
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
@@ -308,7 +310,7 @@ quest_prologue_meditation_01,prologue,true,,id=1;type=sit;count=1;optional=false
 | 列 | 必/可 | 填什么 |
 |---|---|---|
 | `id` | 必 | `dlg_<章>_<语义>` |
-| `npc` | 必 | 说话人 `npc_` 开头的 ID（`docs/09` D 世系）。目前还没有任何合法 NPC ID 登记，等 C/剧情定名 |
+| `npc` | 必 | 说话人 `npc_` 开头的 ID（`docs/09` D 世系）。合法 NPC ID 以 `tables/npcs.csv` 与 LORE NPC 卡为准，定名待本人/剧情确认 |
 | `root` | 必 | 入口节点的 id |
 | `nodes` | 必 | `{id,speaker,text_key,conditions,next,options}` 列表；`options` 是 `{text_key,conditions,next,effects}` 列表。`text_key` 按 §4.10 规则由节点 id 派生：`dialog.strife.<节点id>` |
 | `effects` | 可 | 树级效果 `{type,args}`，`type` ∈ `set_flag / reputation / give_item / start_quest / complete_node / play_sound / teleport` |
@@ -318,7 +320,7 @@ quest_prologue_meditation_01,prologue,true,,id=1;type=sit;count=1;optional=false
 格式示例：
 
 ```csv
-dlg_prologue_demo,<npc ID 待C定名>,d1,id=d1;speaker=<npc ID>;text_key=dialog.strife.d1;next=d2|id=d2;speaker=<npc ID>;text_key=dialog.strife.d2;options=(text_key=dialog.strife.d2_a;conditions=realm>=qili;next=end),type=start_quest;args=quest_prologue_meditation_01,16,示例行 节点文本另填 dialog_序章_text.csv
+dlg_prologue_demo,<npc ID 待本人定名>,d1,id=d1;speaker=<npc ID>;text_key=dialog.strife.d1;next=d2|id=d2;speaker=<npc ID>;text_key=dialog.strife.d2;options=(text_key=dialog.strife.d2_a;conditions=realm>=qili;next=end),type=start_quest;args=quest_prologue_meditation_01,16,示例行 节点文本另填 dialog_序章_text.csv
 ```
 
 容易错：`nodes` 里的 `text_key` 和 `dialog_<章>_text.csv` 里的 id 对不上（`V-TEXT`/`V-REF`）；分支绕回根节点形成无限循环；`effects` 里 `start_quest` 的任务 ID 不存在。
@@ -354,7 +356,7 @@ dlg_prologue_demo,<npc ID 待C定名>,d1,id=d1;speaker=<npc ID>;text_key=dialog.
 |---|---|---|
 | `id` | 必 | **对话节点 id**（就是 `nodes` 里那个 `id`），lang key 由它派生为 `dialog.strife.<id>`，所以**不要**再开一列写 key |
 | `text` | 必 | 唯一进 `zh_cn.json` 的正式文本 |
-| `variant_a` | 必 | 变体 A。不进游戏，供人工润色时挑选 |
+| `variant_a` | 必 | 变体 A。不进游戏，供本人润色时挑选 |
 | `variant_b` | 必 | 变体 B，同上 |
 | `_note` | 可 | 写明这段用到的设定引用清单（`docs/05` §7 要求 Agent 产文必须附引用清单，防吃书） |
 
@@ -367,7 +369,7 @@ d1,<节点正式文本>,<变体A>,<变体B>,本段引用设定：<LORE 卡名 �
 三条红线：
 
 1. **每节点必须 `text` + 2 个变体**，三格都不许空（契约要求"文本 + 变体 2 个"）。
-2. **版权红线**：任何进 lang 的字符串不得含网文专名与情节（"韩立式""荒古圣体"这类只允许出现在内部调研语里，`docs/05` §7）。禁用词清单在 `content/LORE.md` §7（初稿已起草，**尚未合入**，仍在等内容负责人名义确认）—— 定稿前这条仍要你人工自检，不要假定别人替你看过。
+2. **版权红线**：任何进 lang 的字符串不得含网文专名与情节（"韩立式""荒古圣体"这类只允许出现在内部调研语里，`docs/05` §7）。禁用词清单在 `content/LORE.md` §7（已入库但仍是初稿，待本人名义确认）—— 定稿前这条仍要本人自检，不要假定别人替你看过。
 3. zh_cn 是源语言，key 缺失 = 构建失败；en_us 允许占位但**不得为空串**（`docs/04` §6）。这两张表只管 zh_cn。
 
 ### 3.9 `spirit_field.csv` —— 灵气场（4 列，**已接生成器（W4 P3）**）
@@ -426,7 +428,7 @@ block_ore_lingyu,jin,biomes=minecraft:plains|minecraft:forest|minecraft:desert|m
 
 ### 3.11 `factions.csv` —— 势力（6 列，**本表已接生成器**）
 
-契约 §5.2。M0 只要求 2–3 行占位。**已接生成器（共 20 张已接，见 §7）**：填一行、跑一次
+契约 §5.2。M0 只要求 2–3 行占位。**已接生成器（共 21 张已接，见 §7）**：填一行、跑一次
 `./gradlew :tools:datagen:run`，就会在
 `mod/content-base/src/main/resources/data/strife/strife_factions/<id>.json` 落一个产物，
 **产物必须与源表同一个提交**（否则 CI 的 datagen 漂移检查红）。
@@ -500,7 +502,7 @@ war_demo,fac_qingshi;fac_yuelai,reputation(fac_qingshi:<=-50),id=p1;entry_condit
 **本期没有任何迁移项**，表头留着即可。格式（不要提交）：
 
 ```csv
-mig_0001,<旧 ID>,<新 ID>,<产物域目录名>,<ADR 编号>,<主版本号>,ID 重命名必须先有 ADR 与 C/A 签字
+mig_0001,<旧 ID>,<新 ID>,<产物域目录名>,<ADR 编号>,<主版本号>,ID 重命名必须先有 ADR 与本人签字
 ```
 
 DataGen 在保留期内会同时写新旧两个键并标 `@deprecated_key`（契约 §6）。
@@ -516,9 +518,31 @@ DataGen 在保留期内会同时写新旧两个键并标 `@deprecated_key`（契
 用这张表的规矩：
 
 - 加一行前，先确认这个键在 `content/NUMBERS.md` 里**确实存在并标了 `[占位]`**。白名单是放行，不是造键。
-- `issue` 必须是**真实工单/issue 号**。本批初值写的 `A0-7` 取自 NUMBERS §11 的待审标题，它是否等于可跳转的 issue 号**未验证**，请 C 补成真实号。
+- `issue` 必须是**真实工单/issue 号**。本批初值写的 `A0-7` 取自 NUMBERS §11 的待审标题，它是否等于可跳转的 issue 号**未验证**，请本人补成真实号。
 - 占位键一旦定稿（例如后三段境界改名为正式名），要**同时**删掉 NUMBERS 里的 `[占位]` 标注和本表白名单行，否则等于留了根永远不放行的拐杖。
 - 位置已定：契约 §2 认这张 `tables/known-placeholders.csv`（与源表同一编辑入口）。Validator 已经接 `--tables-root`（现在用它扫源表 ID），但**还没读这张白名单** —— 因为放行逻辑属于 `V-REF`，那条检查本身尚未实现。等 `V-REF` 上线时必须一并读它，否则后三段境界的占位键会让构建红。
+
+### 3.16 `npcs.csv` —— 世界内 NPC 摆放（5 列，**已接生成器**）
+
+契约 §4.18。产物 `data/strife/strife_npcs/<id>.json`。一张表决定 NPC 在世界里的落点；玩家靠近时由平台按需生成（不是常驻实体）。
+
+| 列 | 必/可 | 填什么 |
+|---|---|---|
+| `id` | 必 | `npc_<语义>`，必须与 `dialog_trees_<章>.csv` 的 `npc` 列、LORE NPC 卡、lang `npc.strife.<id>` 四者同名 |
+| `dimension` | 必 | `minecraft:` 或 `strife:` 开头的维度 ID（构建期只查命名空间；维度是否真实注册由运行时判定） |
+| `place` | 必 | 地点 ID，必须存在于 `places.csv`；只作校验锚点，运行时仍读本行绝对坐标 |
+| `x` / `z` | 必 | 整数绝对坐标。必须落在 `place` 的 `radius` 内且维度一致，否则 Validator 红 |
+| `_note` | 可 | 备注 |
+
+格式示例（真实在库行）：
+
+```csv
+npc_qingshi_zhizhi,minecraft:overworld,qi_luoxia,258,252,石执事：落霞山麓·青石观山门前
+```
+
+最容易错：只改 `place` 不改 `x/z`（NPC 会被放到别处，Validator 用半径拦）；新增 NPC 忘了补对话树或 lang 名（V-REF 二期 + V-TEXT 都会红）；`y` 不填——高度由运行时按地表算，不写进表。
+
+运行时口径：每 40 刻对 64 格内的玩家检查一次，按 `npcId` 在 ±8 格内幂等去重，地面高度取 `MOTION_BLOCKING_NO_LEAVES`；实体 invulnerable + persistent。`/strife npc spawn` 仍可用于立即补位。
 
 ---
 
@@ -540,7 +564,7 @@ DataGen 在保留期内会同时写新旧两个键并标 `@deprecated_key`（契
 | 产物路径与 ID 规则 | `docs/04-内容管线.md` §2、§4 | 域目录枚举、命名规范 |
 | 内容 ID 命名示例 | `docs/04` §4：`tech_qingxin_jue`、`quest_prologue_meditation_01`、`ch2_pearl_water` | 只有这三个是手册给的真示例 |
 | 功法/法术/丹药/器图/势力/矿石已有条目 | 本目录对应的 CSV 本身 | 现在除了白名单全是空表 |
-| NPC 名单、世界观、章节大纲 | `content/STORY.md`（章节与序章十节点骨架）、`content/LORE.md`（设定卡、区域卡、势力卡、NPC 卡、禁用词表） | 两份**初稿已起草但尚未合入**（真相源须内容负责人名义确认）。在它们定稿前，涉及定名的格子仍留 `<待定名>`，不要自造名字当既成事实 |
+| NPC 名单、世界观、章节大纲 | `content/STORY.md`（章节与序章十节点骨架）、`content/LORE.md`（设定卡、区域卡、势力卡、NPC 卡、禁用词表） | 两份**已入库但仍是初稿**（真相源须本人名义确认）。在它们定稿前，涉及定名的格子仍留 `<待定名>`，不要自造名字当既成事实 |
 
 ---
 
@@ -563,10 +587,10 @@ cd mod
 
 预期输出（本机实测，**这就是 §0 说的现状**）：
 
-- `datagen: tables-root=… resources-root=… content-root=… tables=22 rows=119 generators=20 numbers=6 products=69 problems=0`
-  - `tables=22` 全部被读进来；`rows=119` = factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 序章任务 10 + ch1 任务 6 + 对话树 6（prologue 4 / ch1 2）+ 对话文本 58（prologue 41 / ch1 17）+ **矿石 3** + 地点 5 + 上界表 4（维度/群系/上界装饰/宗门结构 各 1）+ 灵气场 2 + 周期 1 + 战事 1 + 白名单台账 5；`generators=20`（20 张表，quests 与 dialog_trees / dialog_text 各按章注册为独立实例）；`numbers=6` = realms / realm_rules / world_rules / core_rules / combat_rules / beast_loot 六个 NUMBERS 直出域；`products=69` = realms 10（九境界 + rules）+ factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 任务 DAG 2 + dialog_trees 2（prologue + ch1）+ dialog_text 2（prologue + ch1）+ 三张运行时数值表 + **矿石 15（一行 5 产物）** + 上界域 12（维度 2 + 群系 1 + 宗门结构 2 + 上界装饰 2 + 地点 5）+ W4 域 5（灵气场 2 + 周期 1 + 战事 1 + 妖兽掉落 1）。
-- `validator: data-root=… tables-root=… json-files=71 csv-files=22 checks=14 problems=0`
-  - `checks=14` = `V-DUP` + `V-FRESH`（含 content/ 源头）+ `V-DAG` + `V-REF` 一期 + `V-REF` 二期（源表主键 / lang item 键 / LORE NPC 卡）+ V-GROWTH + 真相源数值域 + `V-RANGE`（含 `strife_spirit_field` 环境系数域 + `strife_periods` kind 枚举域）+ `V-TEXT` + `V-PROB` + `V-DSL` + **`V-NAME`（命名规范）** + price 非负。`content/NUMBERS.md` 缺席时数值域侧自动跳过并在输出中声明。
+- `datagen: tables-root=… resources-root=… content-root=… tables=23 rows=122 generators=21 numbers=6 products=72 problems=0`
+  - `tables=23` 全部被读进来；`rows=122` = factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 序章任务 10 + ch1 任务 6 + 对话树 6（prologue 4 / ch1 2）+ 对话文本 58（prologue 41 / ch1 17）+ **矿石 3** + 地点 5 + **NPC 3** + 上界表 4（维度/群系/上界装饰/宗门结构 各 1）+ 灵气场 2 + 周期 1 + 战事 1 + 白名单台账 5；`generators=21`（21 张表，quests 与 dialog_trees / dialog_text 各按章注册为独立实例）；`numbers=6` = realms / realm_rules / world_rules / core_rules / combat_rules / beast_loot 六个 NUMBERS 直出域；`products=72` = realms 10（九境界 + rules）+ factions 3 + techniques 6 + spells 4 + pills 4 + artifacts 1 + 任务 DAG 2 + dialog_trees 2（prologue + ch1）+ dialog_text 2（prologue + ch1）+ world/core/combat 三张运行时数值表 + **矿石 15（一行 5 产物）** + **NPC 3** + 上界域 12（维度 2 + 群系 1 + 宗门结构 2 + 上界装饰 2 + 地点 5）+ W4 域 5（灵气场 2 + 周期 1 + 战事 1 + 妖兽掉落 1）。
+- `validator: data-root=… tables-root=… json-files=75 csv-files=23 checks=15 problems=0`
+  - `checks=15` = `V-DUP` + `V-FRESH`（含 content/ 源头）+ `V-INDEX`（内容索引与产物一一对应）+ `V-DAG` + `V-REF` 一期 + `V-REF` 二期（源表主键 / lang item 键与 `npc.strife.<id>` / LORE NPC 卡 + NPC 摆放的地点/维度/半径/对话树）+ V-GROWTH + 真相源数值域 + `V-RANGE`（含 `strife_spirit_field` 环境系数域 + `strife_periods` kind 枚举域）+ `V-TEXT` + `V-PROB` + `V-DSL` + **`V-NAME`（命名规范）** + price 非负。`content/NUMBERS.md` 缺席时数值域侧自动跳过并在输出中声明。
 
 往已接生成器的表填行后，`products` 与 `json-files` 会同步增长，产物落在
 `mod/content-base/src/main/resources/data/strife/<域>/<id>.json`，**必须连产物一起提交**（CI 的"生成器漂移"检查就是比对它）；新增内容 ID 时 `assets/strife/lang/zh_cn.json` 与 `en_us.json` 必须同步补 key（V-TEXT 会红）。
@@ -639,11 +663,11 @@ datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMa
 | `V-FMT`（拟稿） | `content_format` 落在支持区间、未知字段报错 | 列名拼错、多加了契约没有的列 |
 | `V-DRIFT`（拟稿） | `*_key` 与展开值一致 | 正常填表不会碰到，DataGen 内部一致性 |
 
-还有一条演练用例（W4）：故意在表里留一个悬空引用，构建**必须**失败。目前它还做不到 —— 这也说明 §0 的判断：现在处在"把契约钉死"的阶段，不是"填表出内容"的阶段。
+还有一条演练用例（W4）：故意在表里留一个悬空引用，构建**必须**失败。该演练已执行并通过（记录见 [`docs/appendix/W4-演练记录.md`](../docs/appendix/W4-演练记录.md)，时点见 `docs/07` §6）。
 
 ---
 
-## 6. 待确认清单（未验证 / 需 C 拍板，A 终审破档项）
+## 6. 待确认清单（未验证 / 待本人拍板，含破档项）
 
 本表 15 条疑点已与契约对过一轮账。**逐条的处理结果与依据都在 `content/JSON_SCHEMA.md` §8.1（对账表）**，这里只留结论：
 
@@ -660,19 +684,19 @@ datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMa
 - `breakthrough_success_key` 写键名原值，不加 `bs:` 前缀（§4.1）。
 - DataGen 按列名读取，**列顺序无语义**，重排不破档（§2）。已实测确认，不再是"未验证"。
 - **空格子 = null、`()` = 空数组**已落进实现：DataGen 就是这么读的（§2）。
-- **嵌套语法 `|` 与 `( … )` 现在会被 DataGen 直接拒绝**并指到行号，不是"静默生成错产物"。要真用这语法，先让 C 拍板 §2 的 `[拟]`，再实现读取器。
-- **多余的列不报错、也不进产物**（DataGen 只按列名取自己要的）。**已接生成器的表**（20 张，见 §7）改错列名 = 当场红；**没接生成器的表**（两张台账表）改错列名暂时不会被 DataGen 发现（V-DUP 只认第一列）。"多加一列是否要报错"见 §6.2 第 5 条。
+- **嵌套语法 `|` 与 `( … )` 现在会被 DataGen 直接拒绝**并指到行号，不是"静默生成错产物"。要真用这语法，先让本人拍板 §2 的 `[拟]`，再实现读取器。
+- **多余的列不报错、也不进产物**（DataGen 只按列名取自己要的）。**已接生成器的表**（21 张，见 §7）改错列名 = 当场红；**没接生成器的表**（两张台账表）改错列名暂时不会被 DataGen 发现（V-DUP 只认第一列）。"多加一列是否要报错"见 §6.2 第 5 条。
 
 ### 6.2 仍悬空，别按暂定口径大批量填
 
-1. **§4.8 灵气场与矿石的列归属**：契约是一张合并字段表，本批按语义拆成 `spirit_field.csv` / `ores.csv`（`regen_period_key` 只归矿石）。拆分是否被认可需 C 确认。
+1. **§4.8 灵气场与矿石的列归属**：契约是一张合并字段表，本批按语义拆成 `spirit_field.csv` / `ores.csv`（`regen_period_key` 只归矿石）。拆分是否被认可需本人确认。
 2. **`id_migration.csv` 的 7 列结构**属模板起草，契约 §6 只说"要有这张表、保留一个主版本"。真发生破档前不定稿。
-3. **`quests.chapter` 与文件名重复**：本轮**保留**必填列（产物路径与 DAG 校验都靠它，隐式推导不利于排错），C 若判冗余再删。
+3. **`quests.chapter` 与文件名重复**：本轮**保留**必填列（产物路径与 DAG 校验都靠它，隐式推导不利于排错），本人若判冗余再删。
 4. **`alignment` / `chapter` / `objective_type` 三个枚举**待 `STORY.md` 定稿（契约 §8 未决项 5）；符箓/阵法/灵植三表（`tal_`/`form_`/`plant_`）按 §4.11 只占位不填，本批未建空表头。
 5. **§1.2 规则 2「严格未知字段」是否采纳**（契约 §8 未决项 1）。实现后的口径是这样，别再按"未定"猜：
-   - 已接生成器的表（20 张，见 §7）：**列名拼错 = DataGen 报错到文件名**（`header has no 'x' column, contract drift?`），多余的列被读进来但没人消费，**既不报错也不进产物**。
+   - 已接生成器的表（21 张，见 §7）：**列名拼错 = DataGen 报错到文件名**（`header has no 'x' column, contract drift?`），多余的列被读进来但没人消费，**既不报错也不进产物**。
    - 还没接生成器的表：DataGen 只看首列（V-DUP 用它），其余列**根本不读**。
-   也就是说"改表头 = 改契约"这件事，现在 20 张表有代码兜底。规则 2 若判"多余列也算错"，需要给每张表加声明式列白名单，那是另一个工单。
+   也就是说"改表头 = 改契约"这件事，现在 21 张表有代码兜底。规则 2 若判"多余列也算错"，需要给每张表加声明式列白名单，那是另一个工单。
 6. **`known-placeholders.csv` 的 `issue` 列写的是 `A0-7`**（取自 NUMBERS §11 待审标题），**是否为可跳转的真实 issue 号未验证**，合入前补真号。
 7. **原"待接生成器"的表已全部接入**（`spirit_field` / `periods` / `wars` 于 W4 P3 接完，`ores` 于 M4 接完）；现仅两张台账表（`id_migration` / `known-placeholders`）不产内容。往没有生成器的表填行，DataGen 仍会红着拒绝 —— 这是**特性不是故障**：它宁可不让你填，也不让内容静默消失。
 
@@ -699,6 +723,7 @@ datagen: tables/pills.csv has 1 rows but no generator is registered in DataGenMa
 | `realm_decor.csv` | 8 | **1 行** | §4.16，**已接生成器** |
 | `structures.csv` | 9 | **1 行** | §4.13，**已接生成器** |
 | `places.csv` | 10 | **5 行** | §4.17，**已接生成器** |
+| `npcs.csv` | 5 | **3 行** | §4.18，**已接生成器**（世界内 NPC 摆放，y 由运行时地表决定） |
 | `factions.csv` | 6 | **3 行** | §5.2（M0 占位 + W4 玄玉宗，取值依据 LORE §4 初稿）**已接生成器** |
 | `periods.csv` | 7 | **1 行** | §5.1，**已接生成器**（W4 P3） |
 | `wars.csv` | 8 | **1 行** | §5.3，**已接生成器**（W4 P3） |
