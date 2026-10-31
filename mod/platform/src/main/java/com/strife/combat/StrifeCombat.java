@@ -36,12 +36,14 @@ public final class StrifeCombat {
         RewardBridges.registerTechniqueGranter(Techniques::learn);
         StrifeCommands.MODULE_SUBTREES.add(Techniques.command());
         StrifeCommands.MODULE_SUBTREES.add(Spells.command());
+        StrifeCommands.MODULE_SUBTREES.add(Artifacts.command());
         // M2：法术弹道系统（产物表 + cast 意图）与 combat 域实体（弹道/妖兽）。
         StrifeCombatEntities.ENTITY_TYPES.register(modEventBus);
         modEventBus.addListener(StrifeMonster::onAttributes);
         // 妖兽刷怪放置：主世界夜间（Monster 的光照/地面判定）+ 上界同款放置。
         modEventBus.addListener(RegisterSpawnPlacementsEvent.class, this::registerBeastSpawn);
         Spells.register();
+        Artifacts.register();
     }
 
     /**

@@ -43,7 +43,7 @@ public final class SpellTables {
     }
 
     /** NUMBERS @@combat 的运行时规则（realm_coeff 按 `<域>_<章>_<语义>` 外的境界 ID 查）。 */
-    public record CombatRules(Map<String, Double> realmCoeff) {}
+    public record CombatRules(Map<String, Double> realmCoeff, double artifactCooldownSec) {}
 
     private static final java.util.Set<String> SPELL_KEYS =
             java.util.Set.of(
@@ -86,11 +86,33 @@ public final class SpellTables {
         return rules;
     }
 
-    /** 注册期加载：从本 jar 的 resources 读全部法术产物与战斗规则（一次成型，之后只读）。 */
+    /** 注册期加载：路径来自 DataGen 产出的内容索引，索引即真相（不再维护手写清单）。 */
     public static SpellTables load() {
+        return loadFromPaths(indexPaths());
+    }
+
+    /** 索引中属于法术域的全部产物路径。 */
+    static java.util.List<String> indexPaths() {
+        JsonObject index = readJson(CONTENT_INDEX_PATH);
+        java.util.List<String> paths = new java.util.ArrayList<>();
+        for (JsonElement element : array(index, "products")) {
+            String path = element.getAsString();
+            if (path.startsWith(SPELL_PREFIX)) {
+                paths.add(path);
+            }
+        }
+        if (paths.isEmpty()) {
+            throw new IllegalStateException(
+                    "strife_index lists no spells under " + SPELL_PREFIX + "（DataGen 产物缺失）");
+        }
+        return paths;
+    }
+
+    /** 只加载给定路径；索引漏掉的产品不会进入运行表（由 V-INDEX 负责发现漂移）。 */
+    static SpellTables loadFromPaths(java.util.List<String> paths) {
         CombatRules rules = loadRules();
         SpellTables tables = new SpellTables(rules);
-        for (String path : SPELL_INDEX) {
+        for (String path : paths) {
             JsonObject product = readJson(path);
             tables.spellsById.putAll(parseSpell(product));
         }
@@ -100,11 +122,9 @@ public final class SpellTables {
         return tables;
     }
 
-    private static final java.util.List<String> SPELL_INDEX =
-            java.util.List.of(
-                    "data/strife/strife_spells/spell_prologue_huodan.json",
-                    "data/strife/strife_spells/spell_prologue_jinren.json",
-                    "data/strife/strife_spells/spell_prologue_tubi.json");
+    private static final String CONTENT_INDEX_PATH = "data/strife/strife_index.json";
+
+    private static final String SPELL_PREFIX = "data/strife/strife_spells/";
 
     /** 法术产物是"一法术一文件"（§4.3 产物形态），这里把单文件包装成兼容解析入口。 */
     private static Map<String, SpellSpec> parseSpell(JsonObject object) {
@@ -191,7 +211,12 @@ public final class SpellTables {
         for (Map.Entry<String, JsonElement> entry : realmCoeff.entrySet()) {
             coeff.put(entry.getKey(), entry.getValue().getAsDouble());
         }
-        return new CombatRules(Map.copyOf(coeff));
+        if (!combat.has("artifact_cooldown_sec")) {
+            throw new IllegalStateException(
+                    "strife_combat/rules.json missing 'artifact_cooldown_sec'（NUMBERS §8）");
+        }
+        return new CombatRules(
+                Map.copyOf(coeff), combat.get("artifact_cooldown_sec").getAsDouble());
     }
 
     private static JsonObject readJson(String path) {

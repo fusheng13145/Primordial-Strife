@@ -106,6 +106,15 @@ public final class Spells {
         player.setData(StrifeAttachmentTypes.PLAYER_DATA, data);
 
         // 弹道生成（当刻；延迟契约路径）
+        fire(player, spec);
+    }
+
+    /** 弹道生成：法术与法宝主动技能共用（调用方已完成解锁/修为/冷却判定）。 */
+    static void fire(ServerPlayer player, SpellTables.SpellSpec spec) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         RealmTables.RealmEntry realm = RealmTables.get(player.server).realm(data.realmOrdinal());
         double damage = SpellMath.damage(spec, tables().rules(), realm.id());
         SpellProjectile projectile = StrifeCombatEntities.SPELL_PROJECTILE.get().create(level);
@@ -113,7 +122,7 @@ public final class Spells {
             return;
         }
         projectile.setup(
-                spellId,
+                spec.id(),
                 player,
                 player.getViewVector(1.0f),
                 damage,
@@ -126,13 +135,13 @@ public final class Spells {
     }
 
     /** 同屏弹道数（全服扫描——64 上限场景实体数小，O(n) 每施法一次可接受，无计数泄漏风险）。 */
-    private static int countAlive(ServerLevel level) {
+    static int countAlive(ServerLevel level) {
         return level.getEntitiesOfClass(
                         SpellProjectile.class, new AABB(-512, -64, -512, 512, 512, 512))
                 .size();
     }
 
-    /** {@code /strife spell cast <id>}：施法的兜底命令入口（03 §9；施法轮盘 UI 属 client_fx 立项）。 */
+    /** {@code /strife spell cast <id>}：施法的兜底命令入口（03 §9；施法轮盘 UI 属 clientfx 立项）。 */
     public static com.mojang.brigadier.builder.LiteralArgumentBuilder<
                     net.minecraft.commands.CommandSourceStack>
             command() {

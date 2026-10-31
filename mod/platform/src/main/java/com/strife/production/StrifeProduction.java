@@ -9,15 +9,16 @@ import net.minecraft.commands.Commands;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * production 分侧入口（docs/03 §7 模块入口模式）。
  *
- * <p>本入口编排三件事：注册物品（材料与可服用的丹药）、把<b>丹药加成</b>接进 05 §2 的四因子公式 （{@link
- * CultivationFactors#registerPill}）、统一配方机第一类——炼丹（{@link Alchemy}：产物表 + {@code /strife craft pill}
- * 命令，docs/07 §7 M2）。炼器（artifacts 表空）随内容填充后接同一框架。
+ * <p>本入口编排四件事：注册物品（材料与可服用的丹药）、把<b>丹药加成</b>接进 05 §2 的四因子公式 （{@link
+ * CultivationFactors#registerPill}）、统一配方机第一类——炼丹（{@link Alchemy}）、第二类——炼器（{@link
+ * ArtifactForge}）。两者共用材料计数与扣除口径，产物查询挂在同一 {@code /strife recipe} 根下。
  */
 @Mod(value = StrifeMod.MOD_ID)
 public final class StrifeProduction {
@@ -31,12 +32,14 @@ public final class StrifeProduction {
         StrifeItems.ITEMS.register(modEventBus);
         CultivationFactors.registerPill(StrifePills::coefficient);
         Alchemy.register();
+        ArtifactTables.register();
+        NeoForge.EVENT_BUS.addListener(ArtifactForge::onTooltip);
         StrifeCommands.MODULE_SUBTREES.add(craftCommand());
         StrifeCommands.MODULE_SUBTREES.add(Alchemy.recipeCommand());
         LOGGER.info("strife production wired cultivation factor: pill=consumable buffs");
     }
 
-    /** {@code /strife craft pill <id>}：统一配方机的炼丹入口（兜底命令，03 §9）。 */
+    /** {@code /strife craft pill|artifact <id>}：统一配方机的兜底命令（03 §9）。 */
     private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack>
             craftCommand() {
         return Commands.literal("craft")
@@ -54,6 +57,29 @@ public final class StrifeProduction {
                                                                     StringArgumentType.getString(
                                                                             ctx, "pillId"));
                                                             return 1;
-                                                        })));
+                                                        })))
+                .then(
+                        Commands.literal("artifact")
+                                .then(
+                                        Commands.argument("artifactId", StringArgumentType.word())
+                                                .executes(
+                                                        ctx -> {
+                                                            var player =
+                                                                    ctx.getSource()
+                                                                            .getPlayerOrException();
+                                                            ArtifactForge.craft(
+                                                                    player,
+                                                                    StringArgumentType.getString(
+                                                                            ctx, "artifactId"));
+                                                            return 1;
+                                                        })))
+                .then(
+                        Commands.literal("repair")
+                                .executes(
+                                        ctx -> {
+                                            ArtifactRepair.repair(
+                                                    ctx.getSource().getPlayerOrException());
+                                            return 1;
+                                        }));
     }
 }

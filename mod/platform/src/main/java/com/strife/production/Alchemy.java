@@ -30,20 +30,51 @@ public final class Alchemy {
 
     private static final Map<String, AlchemyRecipe> RECIPES = new LinkedHashMap<>();
 
-    private static final java.util.List<String> PILL_INDEX =
-            java.util.List.of(
-                    "data/strife/strife_pills/pill_juqi.json",
-                    "data/strife/strife_pills/pill_peiyuan.json",
-                    "data/strife/strife_pills/pill_yanshou.json");
+    private static final String CONTENT_INDEX_PATH = "data/strife/strife_index.json";
+
+    private static final String PILL_PREFIX = "data/strife/strife_pills/";
 
     private Alchemy() {}
 
-    /** production 入口构造期调用：加载丹方产物（一次成型只读；读不到即 fail-fast）。 */
+    /** production 入口构造期调用：路径来自内容索引，索引即真相（读不到即 fail-fast）。 */
     public static synchronized void register() {
         if (!RECIPES.isEmpty()) {
             return;
         }
-        for (String path : PILL_INDEX) {
+        RECIPES.putAll(loadRecipes(indexPaths()));
+        LOGGER.info("strife production alchemy recipes loaded: {}", RECIPES.keySet());
+    }
+
+    /** 索引中属于丹方域的全部产物路径。 */
+    static java.util.List<String> indexPaths() {
+        try (var stream = Alchemy.class.getResourceAsStream("/" + CONTENT_INDEX_PATH)) {
+            if (stream == null) {
+                throw new IllegalStateException(CONTENT_INDEX_PATH + " not in jar（DataGen 产物缺失）");
+            }
+            JsonObject index =
+                    JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
+                            .getAsJsonObject();
+            java.util.List<String> paths = new java.util.ArrayList<>();
+            for (var element : index.getAsJsonArray("products")) {
+                String path = element.getAsString();
+                if (path.startsWith(PILL_PREFIX)) {
+                    paths.add(path);
+                }
+            }
+            if (paths.isEmpty()) {
+                throw new IllegalStateException(
+                        "strife_index lists no pills under " + PILL_PREFIX + "（DataGen 产物缺失）");
+            }
+            return paths;
+        } catch (Exception e) {
+            throw new IllegalStateException("cannot load " + CONTENT_INDEX_PATH, e);
+        }
+    }
+
+    /** 只加载给定路径；索引漏掉的丹方不会进入运行表（由 V-INDEX 负责发现漂移）。 */
+    static Map<String, AlchemyRecipe> loadRecipes(java.util.List<String> paths) {
+        Map<String, AlchemyRecipe> recipes = new LinkedHashMap<>();
+        for (String path : paths) {
             try (var stream = Alchemy.class.getResourceAsStream("/" + path)) {
                 if (stream == null) {
                     throw new IllegalStateException(path + " not in jar（DataGen 产物缺失）");
@@ -53,12 +84,15 @@ public final class Alchemy {
                                         new InputStreamReader(stream, StandardCharsets.UTF_8))
                                 .getAsJsonObject();
                 AlchemyRecipe recipe = AlchemyRecipe.parse(product);
-                RECIPES.put(recipe.id(), recipe);
+                recipes.put(recipe.id(), recipe);
             } catch (Exception e) {
                 throw new IllegalStateException("cannot load alchemy recipe " + path, e);
             }
         }
-        LOGGER.info("strife production alchemy recipes loaded: {}", RECIPES.keySet());
+        if (recipes.isEmpty()) {
+            throw new IllegalStateException("strife_pills: no pill products in jar");
+        }
+        return recipes;
     }
 
     public static Map<String, AlchemyRecipe> recipes() {
@@ -73,6 +107,7 @@ public final class Alchemy {
                     net.minecraft.commands.CommandSourceStack>
             recipeCommand() {
         return net.minecraft.commands.Commands.literal("recipe")
+                .then(ArtifactForge.recipeBranch())
                 .then(
                         net.minecraft.commands.Commands.literal("list")
                                 .executes(

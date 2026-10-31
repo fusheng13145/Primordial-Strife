@@ -1,6 +1,8 @@
 package com.strife.combat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.strife.testing.ShippedProducts;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -50,5 +52,25 @@ class StrifeMonsterTest {
         var entry = pool.getAsJsonArray("entries").get(0).getAsJsonObject();
         assertEquals("minecraft:item", entry.get("type").getAsString());
         assertEquals("strife:item_yaocai", entry.get("name").getAsString());
+    }
+
+    /**
+     * 妖兽的自然生成修饰符必须用 NeoForge 的 {@code spawners} 键。
+     *
+     * <p>这是实机进世界时崩溃的根因：写成 {@code spawns} 时注册表加载失败，单人模式点进去即崩。
+     */
+    @Test
+    void shippedSpawnModifierUsesNeoForgeSpawnersKey() {
+        var modifier = ShippedProducts.biomeModifier("beast_overworld");
+        assertEquals("neoforge:add_spawns", modifier.get("type").getAsString());
+        assertFalse(
+                modifier.has("spawns"), "neoforge:add_spawns 的字段名是 spawners；写成 spawns 会让注册表加载失败");
+        var spawners = modifier.getAsJsonArray("spawners");
+        assertNotNull(spawners, "缺 spawners 数组");
+        assertFalse(spawners.isEmpty(), "spawners 为空时妖兽不会自然生成");
+        assertEquals(
+                "strife:monster",
+                spawners.get(0).getAsJsonObject().get("type").getAsString(),
+                "生成条目必须指向已注册的妖兽实体");
     }
 }

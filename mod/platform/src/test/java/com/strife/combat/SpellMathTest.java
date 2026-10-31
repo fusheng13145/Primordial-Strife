@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class SpellMathTest {
 
     private static final SpellTables.CombatRules RULES =
-            new SpellTables.CombatRules(Map.of("fanren", 1.0, "qili", 1.5, "zhuji", 2.4));
+            new SpellTables.CombatRules(Map.of("fanren", 1.0, "qili", 1.5, "zhuji", 2.4), 20.0);
 
     private static final SpellSpec HUODAN =
             new SpellSpec(
