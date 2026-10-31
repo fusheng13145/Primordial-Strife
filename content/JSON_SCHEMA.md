@@ -1,8 +1,8 @@
 # JSON_SCHEMA.md — 内容层字段级契约
 
-> **状态：Agent 初稿，待 C 审字段语义、A 终审破档项。** 本文件是 `tables/*.csv → content-base JSON` 的唯一字段契约（04 分册 §2 末）；三者（本文件、DataGen、Validator）的变更必须在同一提交内对齐。
+> **状态：Agent 初稿，待本人审字段语义与破档项。** 本文件是 `tables/*.csv → content-base JSON` 的唯一字段契约（04 分册 §2 末）；三者（本文件、DataGen、Validator）的变更必须在同一提交内对齐。
 >
-> 标注口径与 NUMBERS.md 一致：`[锚]` = 手册已定，照抄不议；`[拟]` = 初稿提案，需人确认；`[占位]` = 结构现在定、内容本期不填。
+> 标注口径与 NUMBERS.md 一致：`[锚]` = 手册已定，照抄不议；`[拟]` = 初稿提案，需本人确认；`[占位]` = 结构现在定、内容本期不填。
 
 ## 1. 总则
 
@@ -10,9 +10,9 @@
 
 | 层 | 位置 | 谁能编辑 | 能否手改 |
 |---|---|---|---|
-| 源表 | `tables/*.csv`、`content/NUMBERS.md`、`content/STORY.md` | C（+Agent 起草） | 是（唯一入口） |
+| 源表 | `tables/*.csv`、`content/NUMBERS.md`、`content/STORY.md` | 本人（Agent 起草） | 是（唯一入口） |
 | 产物 | `mod/content-base/src/main/resources/data\|assets/strife/**` | DataGen | **否**（`@generated` 头，手改即 CI 漂移失败） |
-| 契约 | 本文件 | C 起草 / A 终审 | 是 |
+| 契约 | 本文件 | Agent 起草 / 本人终审 | 是 |
 
 ### 1.2 五条硬规则
 
@@ -20,11 +20,11 @@
 2. **严格未知字段**（`[拟]`）：`data/strife/**` 下自定义域（realms/techniques/spells/pills/artifacts/quests/dialog_trees/factions/wars/spirit_field）的加载器对未知字段 **fail-fast 报错**，不静默忽略——拼错字段名的后果是"内容凭空消失"，只有报错可自助修复（04 §6 末：报错须给文件路径 + JSON pointer + 人话说明）。原版格式（`loot_table`/`recipe`/`advancement`/`lang`）例外，走原版宽松语义。
 3. **单位写在字段名后缀**（与 NUMBERS §0 同源）：`_sec` 秒、`_ticks` 刻、`_pct` 0–1 小数、`_years` 修行年、`_ratio` 无量纲倍率、`_prob` 0–1 概率、`_blocks` 格（方块）、`_nodes` 节点数、`_points` 点数（耐久/生命值等无量纲计数）、`_count` 个数。**禁止无后缀的裸数值单位字段**（`[锚]` 04 §6 数值越界项依赖此约定才能定位区间）。
 4. **数值型字段引用而非内联**：凡 NUMBERS.md 管辖的数值（速率、成功率、冷却、消耗、加成、权重、区间），表里写 `*_key`（指向 NUMBERS 块键），不写数字。反例：`cooldown_sec: 4.0`；正例：`cooldown_key: "medium"`。
-5. **破档分级**：新增可选字段 = 不破档（必须带默认值）；新增必填字段 = 破档（须给迁移映射）；删除/重命名字段 = 破档；字段语义变更 = 破档。破档项在 §6 表内登记，合入须 A 名义确认（AGENTS 真相源条款）。
+5. **破档分级**：新增可选字段 = 不破档（必须带默认值）；新增必填字段 = 破档（须给迁移映射）；删除/重命名字段 = 破档；字段语义变更 = 破档。破档项在 §6 表内登记，合入须本人确认（AGENTS 真相源条款）。
 
 ### 1.3 文件与 ID 约定
 
-- 路径：`data/strife/<域目录>/<id>.json`；`域目录` 取 04 §2 枚举（`strife_realms` / `strife_techniques` / `strife_spells` / `strife_pills` / `strife_artifacts` / `strife_quests` / `dialog_trees` / `strife_factions` / `strife_wars` / `strife_periods` / `worldgen` / `loot_table` / `recipe` / `advancement`）。
+- 路径：`data/strife/<域目录>/<id>.json`；`域目录` 取 04 §2 枚举（`strife_realms` / `strife_techniques` / `strife_spells` / `strife_pills` / `strife_artifacts` / `strife_quests` / `dialog_trees` / `strife_factions` / `strife_wars` / `strife_periods` / `strife_places` / `strife_npcs` / `worldgen` / `loot_table` / `recipe` / `advancement`）。
 - **文件名 = 内容 ID**（不带命名空间前缀），运行时 ID 为 `strife:<id>`。
 - ID 格式（04 §4 `[锚]`）：`<域前缀>_<章>_<语义>`，全小写下划线。域前缀固定枚举：`tech_ / spell_ / pill_ / qi_ / quest_ / dlg_ / npc_ / block_ / item_ / ch<N>_`；另登记 `[拟]` 扩展前缀：`realm_`（境界内部 ID 例外，见 §4.1）、`art_`（器图）、`fac_`（势力）、`war_`（冲突）、`per_`（周期事件）、`flag_` 不用于内容 ID（flag 是运行时键，见 §5 H3）。
 - 一文件一对象；`strife_quests` 与 `dialog_trees` 为**一章一文件**（04 §2 `[锚]`），文件内 `id` 是该章入口节点 ID。
@@ -177,7 +177,7 @@ DataGen 只从 NUMBERS.md 读以下块，其余键视为未定义：
 | `required_realm` | realm id | 必 | |
 | `active_skill` | `{spell_id, cooldown_key}` \| null | 必（可 null） | 主动技能，限速 `rl:artifact_per_sec` |
 | `passives` | effect id[] | 可 | |
-| `durability_points` | int | 必 | >0（点，无量纲计数） |
+| `durability_points` | int | 必 | >0（点，无量纲计数）；每次成功激发消耗 1 点（[拟] 待本人确认），0 时主动技能拒绝，修复回满 |
 | `price` | H1 | 必（可 null） | |
 
 ### 4.6 `strife_quests` — 任务 DAG（`tables/quests_<章>.csv`，一章一表一产物文件）
@@ -202,9 +202,9 @@ DataGen 只从 NUMBERS.md 读以下块，其余键视为未定义：
 
 DAG 完备性（04 §6 `[锚]`）：无环、章节入口可达全部必做节点、每个 `rewards` 引用存在、`fail_goto`/`timer.fail_goto` 不指向已完成节点之外。
 
-`rewards.type` 语义补注（`[拟]`，待 C 审定）：`realm_step` = 小境界推进一档——修为直接置为下一档阈值（与 §4.1 `stage_count` 的等分口径一致，`qi_max × stage / stage_count`）；已在满段时给到 `qi_max`（境界圆满，获得主动押注突破资格，不自动突破）。境界序号、寿元、突破失败计数均不变。
+`rewards.type` 语义补注（`[拟]`，待本人审定）：`realm_step` = 小境界推进一档——修为直接置为下一档阈值（与 §4.1 `stage_count` 的等分口径一致，`qi_max × stage / stage_count`）；已在满段时给到 `qi_max`（境界圆满，获得主动押注突破资格，不自动突破）。境界序号、寿元、突破失败计数均不变。
 
-对话树 effects 语义补注（`[拟]`，待 C 审定；§4.7 `effects` 八型，args 语法逐型冻结）：
+对话树 effects 语义补注（`[拟]`，待本人审定；§4.7 `effects` 八型，args 语法逐型冻结）：
 
 | type | args 语法 | 语义 |
 |---|---|---|
@@ -273,10 +273,10 @@ CMP     := '>=' | '<=' | '==' | '!='
 
 ### 4.10 `lang` — 文本（`assets/strife/lang/zh_cn.json` 为源，`en_us.json` 占位）
 
-- key 与内容 ID 一一映射（04 §4 `[锚]`）：`item.strife.<id>` / `block.strife.<id>` / `entity.strife.<id>`（妖兽与 NPC 实体，含 `npc_` 前缀 ID）/ `effect.strife.<id>` / `quest.strife.<id>.title` / `quest.strife.<id>.desc` / `dialog.strife.<node_id>` / `realm.strife.<id>` / `[拟]` `faction.strife.<id>` / `[拟]` `region.strife.<id>`（灵气场与 LORE 区域卡共用）/ `[拟]` `technique.strife.<id>` / `[拟]` `spell.strife.<id>` / `[拟]` `artifact.strife.<id>`。丹药按物品处理：`pill_` 前缀 ID 用 `item.strife.<id>`。Validator 的 V-TEXT 按"产物域 → 上述前缀"反查 zh_cn/en_us 覆盖（quest/dialog 的键规则随 M3 生成器接入）。
+- key 与内容 ID 一一映射（04 §4 `[锚]`）：`item.strife.<id>` / `block.strife.<id>` / `entity.strife.<id>`（妖兽与 NPC 实体类型）/ `npc.strife.<id>`（具体 NPC 的显示名，`strife_npcs` 的每行一个）/ `effect.strife.<id>` / `quest.strife.<id>.title` / `quest.strife.<id>.desc` / `dialog.strife.<node_id>` / `realm.strife.<id>` / `[拟]` `faction.strife.<id>` / `[拟]` `region.strife.<id>`（灵气场与 LORE 区域卡共用）/ `[拟]` `technique.strife.<id>` / `[拟]` `spell.strife.<id>` / `[拟]` `artifact.strife.<id>`。丹药按物品处理：`pill_` 前缀 ID 用 `item.strife.<id>`。Validator 的 V-TEXT 按"产物域 → 上述前缀"反查 zh_cn/en_us 覆盖（quest/dialog 的键规则随 M3 生成器接入；`strife_npcs` 反查 `npc.strife.<id>`）。
 - 上述前缀是 lang key 的**唯一**生成来源：`display_name_key` 一类字段只写已登记前缀拼出的 key，Validator 按 §7 `V-TEXT` 反查；缺前缀 = 契约漏项，走 ADR 补登记，不得在表里自造新前缀。
 - zh_cn 缺失 = 构建失败；en_us 允许占位但**不得为空串**（04 §6）。
-- 对话文本源在 `tables/dialog_<章>_text.csv`（05 §7 流程产物），每节点要求 `text` + `variant_a` + `variant_b`（05 §7"文本 + 变体 2 个"），只有 `text` 进 lang，变体进台账供人工润色挑选。
+- 对话文本源在 `tables/dialog_<章>_text.csv`（05 §7 流程产物），每节点要求 `text` + `variant_a` + `variant_b`（05 §7"文本 + 变体 2 个"），只有 `text` 进 lang，变体进台账供本人润色挑选。
 - 对话文本的**运行时通道**（`[拟]`，本轮起草）：DataGen 由 `dialog_<章>_text.csv` 生成独立产物 `data/strife/dialog_text/<章>.json`（`texts` 映射 = `dialog.strife.<条目id>` → 正文），服务端在对话打开/推进时把成品文本随 S2C 包下发，客户端零 lang 依赖。理由：lang 文件是人工润色资产（无 `@generated` 头、不参与 V-FRESH），生成器合并写它会把"生成"与"手种"两种来源混进一个不可审计的文件。条目 id 约定：节点行 = 节点 id；选项行 = `<node_id>_opt<N>`（N 按 options 序从 1 起）。`V-TEXT` 对该产物反查与 `dialog_trees` 的 text_key 对应。
 - 版权红线（05 §7）：任何进 lang 的字符串不得含网文专名（调研用语清单见 LORE §7 禁用词表）。
 
@@ -298,10 +298,10 @@ CMP     := '>=' | '<=' | '==' | '!='
 
 `strife_core/rules.json` 还带一个 `derived` 块：由其他块在**生成期算一次**的换算值，目前只有 `ticks_per_year`（= `@@lifespan.seconds_per_year` × 20 刻/秒）。放这里的理由：它不是独立事实，写进 NUMBERS 就有了两个可互相矛盾的真相，写进代码就是受管字面量；生成期换算是唯一不会漂移的位置。派生值只允许出现在 `derived` 内，且必须注明它由哪个块算出。
 
-### 4.13 宗门结构（**已生效**——ADR-022，A 批准 2026-10-02：`kind=code` 路线实现）
+### 4.13 宗门结构（**已生效**——ADR-022，本人批准 2026-10-02：`kind=code` 路线实现）
 
-M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-022 裁决走 `code` 路线并实现（前提：表 + DataGen 产出 + Java `Structure` 子类 + codec 注册）。
-**内容形态仍待 C**：宗门建筑的具体样式/规模属真相源 `LORE.md` §区域卡，本节只定机制不定内容——本期建筑是「规则化厅堂骨架」，美术形态随 C 的真相源与 04 §7 资产管线迭代。
+M4 宗门结构的字段契约。**本节已生效**：本人于 2026-10-02 按 ADR-022 裁决走 `code` 路线并实现（前提：表 + DataGen 产出 + Java `Structure` 子类 + codec 注册）。
+**内容形态仍待本人补**：宗门建筑的具体样式/规模属真相源 `LORE.md` §区域卡，本节只定机制不定内容——本期建筑是「规则化厅堂骨架」，美术形态随真相源与 04 §7 资产管线迭代。
 
 **为什么单列一节而不并入 §4.8**：§4.8 是灵气场与矿石（世界生成噪声层），宗门结构是**离散建筑放置**，两者在原版侧走不同机制（`biome_modifier` vs `structure_set`），字段没有交集。
 
@@ -323,10 +323,10 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 
 | 路线 | 需要什么 | 特点 |
 |---|---|---|
-| **A. 代码生成式** | 写一个 `Structure` 子类 + codec 注册（Java 侧） | 宗门建筑是规则化布局（门/院/塔），代码生成更可控，**且无资产依赖** |
-| **B. jigsaw 式拼图** | `.nbt` 模板 + template pool 目录 | 需外部工具（WorldEdit schematic → StructureBlock 导出）产资产，是 §6.1 阻塞点①的真正所指 |
+| **方案一. 代码生成式** | 写一个 `Structure` 子类 + codec 注册（Java 侧） | 宗门建筑是规则化布局（门/院/塔），代码生成更可控，**且无资产依赖** |
+| **方案二. jigsaw 式拼图** | `.nbt` 模板 + template pool 目录 | 需外部工具（WorldEdit schematic → StructureBlock 导出）产资产，是 §6.1 阻塞点①的真正所指 |
 
-**建议走 A**：不必等 C 提供 `.nbt` 资产就能推进。代价是 `world` 包要引入一个 `Structure` 实现类——**不与 03 §2 的分层冲突**（`Structure` 属 world，core 不 import world）。
+**建议走方案一**：不必等 `.nbt` 资产就能推进。代价是 `world` 包要引入一个 `Structure` 实现类——**不与 03 §2 的分层冲突**（`Structure` 属 world，core 不 import world）。
 
 #### 4.13.2 表结构（草案，`tables/structures.csv`）
 
@@ -349,11 +349,11 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 - `worldgen/structure/<id>.json` —— `kind=code` 时 `type` 填本命名空间注册名（需 Java 侧先注册 codec）
 - `worldgen/structure_set/<id>.json` —— `placement` 三字段 + `structures[]` 单元素带 `weight`
 
-#### 4.13.4 未决 → ADR-022 裁决（2026-10-02，A）
+#### 4.13.4 未决 → ADR-022 裁决（2026-10-02，本人）
 
 1. **`kind` 路线**：**裁决 `code`**。jigsaw 式需 `.nbt` 模板，而导出链未验证（第 4 项），不能让 M4 收尾等一个未验证的外部工具链；code 式（原版 ruined_portal / nether_fossil 同机制）零资产依赖。`.nbt` 保留为后续美术管线的可选升级路径。
 2. `spacing`/`separation`/`salt` 归属：**裁决为内容参数进 `tables/structures.csv`**（与本节草案倾向的"受管进 NUMBERS"不同）。理由：三者与**单个结构强绑定**（每结构一套值，是结构定义的一部分；进 NUMBERS 会让"加一个新结构"必须同时动两张真相源，且 NUMBERS 的 `@@world` 是全局块，放逐结构参数会稀释其语义）。若后续需要按难度/境界调密度，再升为受管数值并另开 ADR。
-3. 宗门建筑的具体形态属真相源（`content/LORE.md` §区域卡），**本节只定机制不定内容**——本期生成的是规则化厅堂骨架，形态待 C。
+3. 宗门建筑的具体形态属真相源（`content/LORE.md` §区域卡），**本节只定机制不定内容**——本期生成的是规则化厅堂骨架，形态待本人补。
 4. `.nbt` 路线（jigsaw 式）的 WorldEdit schematic → StructureBlock 导出链**仍未验证**，本期不走，不阻塞。
 
 ### 4.14 维度（ADR-021，2026-10-02 已实现）
@@ -370,7 +370,7 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 - 表：`tables/biomes.csv`（列：`id,sky_color,fog_color,water_color,water_fog_color,grass_color,temperature,downfall,features,_note`）
 - 产物：`worldgen/biome/<id>.json`（格式基准 = 原版 jar 内 `the_end.json`：`features` 11 步数组、颜色十进制 int）
 - `features` 列形状 `ores=a;b;`（k=v;，值必须 `strife:` 产物）落 index 6（UNDERGROUND_ORES）
-- 颜色/降水/刷怪均为材质属性（04 §7 管线调），非受管数值；`[拟]` 待 C 审定配色
+- 颜色/降水/刷怪均为材质属性（04 §7 管线调），非受管数值；`[拟]` 待本人审定配色
 
 ### 4.16 上界装饰（ADR-021，2026-10-02 已实现）
 
@@ -387,6 +387,16 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
   - **灵气地点差异化**：`qi_scale` 是地点环境系数（05 §2 公式第二项），玩家落在半径内覆盖全局噪声场——闭合 docs/10 §3.3 的 `spirit_field.csv` 欠账。
 - 校验（构建期红）：`id` 小写蛇形；`dimension` 须带已知命名空间（`minecraft:`/`strife:`，自定义命名空间无法随注册表校验）；`x/y/z` 整数；`radius>0`；`qi_scale>0 且 ≤10`（>0 是 05 §2「系数恒正」硬约束，越界判误填）；`chapter` 空则省略、非空须 `^[a-z0-9_]+$`。
 - 归属判定（运行时）：仅水平面比较（高度不参与），同维度内取最近（更小）圈；`name` 为玩家可见中文，不入 lang（少数固定地点，直接写表）。
+
+### 4.18 世界内 NPC 摆放（`tables/npcs.csv`，`[拟]` 实现已随 F3 落地）
+
+- 表：`tables/npcs.csv`（列：`id,dimension,place,x,z,_note`）
+- 产物（每行一份）：`data/strife/strife_npcs/<id>.json`，字段仅 `id / dimension / place / x / z`（**没有 `y`**）。
+- `id` 必须 `^npc_[a-z0-9_]+$`，并与对话树的 `npc`、LORE NPC 卡、lang `npc.strife.<id>` 同名。
+- `dimension` 只接受已知命名空间（`minecraft:` / `strife:`；构建期无法确认维度注册，运行期由服务端判定）。
+- `place` 必须存在于 `strife_places`；仅作校验锚点，**运行时仍用本行绝对坐标**（quest 模块不能 import world，因此不通过地点在运行时换算坐标）。
+- 构建期校验：`x`/`z` 为整数、与 `place` 同维度、落在该地点 `radius` 内；该 NPC 必须有对话树；`npc.strife.<id>` 的 zh_cn/en_us 必须存在。
+- 高度不入表：运行时按 `Heightmap.Types.MOTION_BLOCKING_NO_LEAVES` 取地表，避免换种子后手填 `y` 悬空。生成器幂等（玩家 64 格内每 40 刻扫描一次，±8 格内同 `npcId` 不重复生成），实体 `invulnerable + persistent`。
 
 ## 5. 七钩子在 schema 中的落点（03 §10，H1–H7 必须从 M0 就存在）
 
@@ -406,7 +416,7 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 |---|---|---|---|
 | `id` | `per_<语义>` | 必 | |
 | `kind` | enum `tide/open_window/harvest/war_phase` | 必 | 灵脉潮汐 / 秘境开启窗口 / 灵气丰歉年 / 战争阶段 |
-| `period_ticks` | int | 必 | 周期长度（刻），引用 NUMBERS 键或字面量（本域不受 §1.2 规则 4 约束，`[拟]` 待 A 定） |
+| `period_ticks` | int | 必 | 周期长度（刻），引用 NUMBERS 键或字面量（本域不受 §1.2 规则 4 约束，`[拟]` 待本人定） |
 | `window_sec` | int | 必 | 开启窗口时长 |
 | `condition` | DSL string | 可 | 触发谓词（境界/flag） |
 | `effect_on_world` | `{type, args}`[] | 必 | 世界后果（改 `ambient_qi_ratio`、生成结构、广播） |
@@ -444,17 +454,17 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 | `V-FMT` `[拟]` | `content_format` 落在平台 jar 支持区间；未知字段（严格域）报错 | 04 §9 + §1.2 规则 2 |
 | `V-DRIFT` `[拟]` | `_key` 与展开值一致（§3 末） | 本文件 §3 |
 
-`[拟]` 两条需 A 确认后进 04 §6 清单（那条是 `[锚]` 的门禁枚举，扩项要同一提交里改）。
+`[拟]` 两条需本人确认后进 04 §6 清单（那条是 `[锚]` 的门禁枚举，扩项要同一提交里改）。
 
-## 8. 未决项（需人拍板）
+## 8. 未决项（需本人拍板）
 
 1. §1.2 规则 2 的"严格未知字段"是否采纳（影响所有自定义域的加载器写法与调试体验）。
 2. `strife_realms.id` 破例不加 `realm_` 前缀（§4.1）——涉及 04 §4 域前缀枚举的例外条款。
 3. §3 的"`_key` 展开进产物"是否与 04 §5"确定性产物"口径完全一致（我按可审计方向拟的）。
 4. H5 `period_ticks` 是否受 05 §1 数值管辖（若受管，需进 NUMBERS 新增 `@@periods` 块）。
 5. `alignment` / `chapter` / `objective_type` 枚举取值需与 STORY 定稿对齐——见 `STORY.md` §8 待审清单。
-6. `pattern` DSL（§4.4.1）语法由炼丹玩法实现方（B）确认，M2 前冻结。
-7. **§4.13 宗门结构契约草案是否采纳**（M4 剩余项的前置）。草案已把原版机制查实（两份产物；`.nbt` 仅 jigsaw 式需要，代码生成式不需要），待拍板：① `kind` 只做 `code` 还是含 `jigsaw`；② `spacing`/`separation`/`salt` 归 NUMBERS 受管还是归内容表；③ 建筑形态内容需 C 提供。**在拍板前 DataGen 不生成、Validator 不检查该表。**
+6. `pattern` DSL（§4.4.1）语法由本人确认，M2 前冻结。
+7. ~~§4.13 宗门结构契约草案是否采纳~~ **已裁决（ADR-022，见 §4.13.4）**：`kind=code`；`spacing`/`separation`/`salt` 进 `tables/structures.csv`；建筑形态内容待本人补。本节其余项仍待拍板。
 
 ### 8.1 与 `tables/FILLING_GUIDE.md` §6 待确认清单的对账
 
@@ -464,7 +474,7 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 |---|---|---|
 | 1 境界 `ordinal`/`display_name_key`/`tribulation` 无源 | **已定** | §4.1 改为 DataGen 推导项（块顺序 / lang 映射规则 / `unlocks` 含 `tribulation`），不再要求 NUMBERS 增设列 |
 | 2 占位白名单路径二选一 | **已定** | 白名单落 `tables/known-placeholders.csv`（§2）。`--tables-root` 参数已接（V-DUP 用它扫源表），读白名单本身随 `V-REF` 一并接 |
-| 3 §4.8 灵气场/矿石列归属 | **待定** | 表侧按语义拆表的口径可接受，但 §4.8 是一张合并字段表，需 C 明确"一表一段"还是"两段两表"；`regen_period_key` 只属矿石已在本表确认 |
+| 3 §4.8 灵气场/矿石列归属 | **待定** | 表侧按语义拆表的口径可接受，但 §4.8 是一张合并字段表，需本人明确"一表一段"还是"两段两表"；`regen_period_key` 只属矿石已在本表确认 |
 | 4 裸数值列无单位后缀 | **已定** | §1.2 规则 3 补 `_blocks`/`_nodes`/`_levels`/`_points`/`_count`，字段随之更名：`aoe_radius_blocks`、`durability_points`、`max_depth_levels`（表头同步改） |
 | 5 空格 vs null | **已定** | §2：空单元格恒等于缺省（null）；显式空数组写 `()`。DataGen 已按此实现（空格子 → 产物里显式 `null`，`()` → 空容器） |
 | 6 `required_spiritroot` 悖论 | **已定** | §4.2 降为可选列，留空 = 无灵根要求（走 `affinity_neutral`） |
@@ -472,9 +482,9 @@ M4 宗门结构的字段契约。**本节已生效**：A 于 2026-10-02 按 ADR-
 | 8 `bs:` 命名空间写法 | **已定** | §4.1：字段值直接写 NUMBERS 键名原值（`bs_fanren_qili`），`bs:` 仅为 §3 的内部记法 |
 | 9 嵌套值字面量语法 | **已定（`[拟]`）** | §2 把 `\|`、`( )`、`()` 写入契约并标破档。实现侧现状：`;` 列表与 `k=v` 映射已按此实现，`\|` 与 `( … )`（`()` 除外）DataGen **明确拒绝并报错**，不猜语义 |
 | 10 基表 `quests.csv` | **已定** | §4.6 取消基表：跨章共用任务归入其所属章，避免"两表同一 DAG" |
-| 11 `chapter` 列与文件名重复 | **待定** | 保留必填列（DAG 与产物路径都靠它，推导会增加隐式耦合），C 若判定冗余再删 |
+| 11 `chapter` 列与文件名重复 | **待定** | 保留必填列（DAG 与产物路径都靠它，推导会增加隐式耦合），本人若判定冗余再删 |
 | 12 `id_migration.csv` 列结构 | **待定** | 表侧 7 列属起草，破档真发生时才需定稿 |
 | 13 列顺序是否有语义 | **已定（已实测）** | DataGen 按列名读取，顺序无语义（§2 首行表头即契约）；重排列不算破档。唯一有位置含义的是**首列必须是 `id`**，DataGen 与 Validator 都会当场拒绝 |
-| 14 严格未知字段（同 §8 项 1） | **待定** | 影响"填错会怎样"的答案，需 A 拍板；未拍板前 §1.2 规则 2 保持 `[拟]`。实现侧现状：**已接生成器的表**列名拼错 = DataGen 报错（多余列静默忽略）；**未接生成器的表**只有首列被读，且填了行会被"无生成器"门禁拦住 |
+| 14 严格未知字段（同 §8 项 1） | **待定** | 影响"填错会怎样"的答案，需本人拍板；未拍板前 §1.2 规则 2 保持 `[拟]`。实现侧现状：**已接生成器的表**列名拼错 = DataGen 报错（多余列静默忽略）；**未接生成器的表**只有首列被读，且填了行会被"无生成器"门禁拦住 |
 
 另：`known-placeholders.csv` 里 5 行的 `issue` 写的是 `A0-7`（取自 NUMBERS §11 待审标题），**是否为可跳转的真实 issue 号未验证**，合入前须补真实号。

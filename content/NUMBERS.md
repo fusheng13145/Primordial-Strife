@@ -1,8 +1,8 @@
 # NUMBERS.md — 全部数值的唯一真相源（ADR-005 / 05 分册 §1）
 
-> **状态：A0-7 骨架表初稿（Agent 起草，未经 A/C 审定，不构成定稿）。**
+> **状态：A0-7 骨架表初稿（Agent 起草，未经本人审定，不构成定稿）。**
 > 本文件是数值与字段的唯一真相源：任何受管数值只允许写在这里，代码与 config 不得出现第二份（05 分册 §1）。
-> 表内标 `[锚]` 的值来自 05 分册已拍板口径；标 `[拟]` 的值是本轮初稿提案，需 A+C 审定后方可作为基线。
+> 表内标 `[锚]` 的值来自 05 分册已拍板口径；标 `[拟]` 的值是本轮初稿提案，需本人审定后方可作为基线。
 
 ## 0. 解析约定（草案，最终契约以 `content/JSON_SCHEMA.md` 为准）
 
@@ -131,7 +131,7 @@ roll_weights: { tier_1: 2, tier_2: 8, tier_3: 25, tier_4: 65 } # [拟] 角色创
 pill_juqi:    { qi_rate_bonus: 0.25, duration_sec: 300,  repeat_step: 0.05, repeat_floor: 0.10 } # [拟] 聚气丹
 pill_peiyuan: { qi_rate_bonus: 0.60, duration_sec: 120, repeat_step: 0.10, repeat_floor: 0.20 } # [拟] 培元丹（短效高倍）
 pill_yanshou: { lifespan_years_gain: 10, max_gain_per_realm: 30 }                               # [拟] 延寿丹，续命路径，受单次境界封顶
-pill_xuanyu: { qi_rate_bonus: 0.50, duration_sec: 180, repeat_step: 0.08, repeat_floor: 0.15 } # [拟] 玄玉丹（玄玉诀配套地阶丹，Agent 起草待 C 审）
+pill_xuanyu: { qi_rate_bonus: 0.50, duration_sec: 180, repeat_step: 0.08, repeat_floor: 0.15 } # [拟] 玄玉丹（玄玉诀配套地阶丹，Agent 起草待本人审）
 # repeat_* 语义 [拟]：同种丹药在冷却窗内重复服用，加成按 repeat_step 递减至 repeat_floor（防堆叠挂机化）
 ```
 
@@ -163,10 +163,10 @@ ambient_qi_max: 2.00   # [拟] 上限（灵脉/宗门核心区）
 ambient_region_chunks: 16      # [拟] 灵气场粗粒度：16×16 区块一值（03 §6 的"区域粗粒度缓存"），细化层在其上加局部差异
 ambient_refine_weight: 0.25    # [拟] 细化层权重：局部差异占最终环境系数的比例（0 = 完全粗粒度，1 = 只看局部）
 ore_drop_weights: { common: 70, rare: 25, spirit: 5 }  # [拟] 矿石品质权重（和 = 100）
-upper_qi_min: 1.50   # [拟] 上界维度（strife:upper_realm）环境系数下限——灵气浓度整体高于人界（人界 0.50–2.00），ADR-021 授权后实现；数值待 C 复核
+upper_qi_min: 1.50   # [拟] 上界维度（strife:upper_realm）环境系数下限——灵气浓度整体高于人界（人界 0.50–2.00），ADR-021 授权后实现；数值待本人复核
 upper_qi_max: 3.00   # [拟] 上界维度环境系数上限
 beast_loot_rolls: 3    # [拟] 妖兽掉落表默认 roll 次数
-herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }  # [拟] 草丛采集 MVP：破坏草类方块时各草药独立掷此概率（序章 #3/#8 的采集来源；键 = 物品内容 ID 全名），待 C 审定
+herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }  # [拟] 草丛采集 MVP：破坏草类方块时各草药独立掷此概率（序章 #3/#8 的采集来源；键 = 物品内容 ID 全名），待本人审定
 ```
 
 ## 10. 限速参数（03 分册 §4 表内基线；运行时真值以本块为准）
@@ -183,7 +183,7 @@ panel_per_sec: 4     # [拟] 面板视图拉取（03 §5 拉取式：C2S 请求 
 
 ## 11. 待审项（A0-7 交审清单）
 
-- `[拟]` 值共 6 处成块：§1 境界量级、§3 小境界成功率梯度、§4 寿元流速、§6 灵根系数、§7 丹药耐药、§8 战斗量级。请 A（节奏/可行性）+ C（内容口径）审定后把 `[拟]` 标注去除或改值。
+- `[拟]` 值共 6 处成块：§1 境界量级、§3 小境界成功率梯度、§4 寿元流速、§6 灵根系数、§7 丹药耐药、§8 战斗量级。请本人按节奏/可行性与内容口径审定后把 `[拟]` 标注去除或改值。
 - §4 `seconds_per_year` 与 §1 的时长曲线强耦合，先定 §4 再回校 §1。（原键 `years_per_realtime_sec: 0.000833` 是 1/1200 的十进制近似，反推得到 24010 刻/年而非 24000——已改为精确的"每秒多少现实秒"，由 DataGen 派生 `ticks_per_year`。）
 - 后三段境界（炼虚/合体/渡劫）四个必填字段齐但命名与 `unlocks` 待 STORY.md 定稿（05 §3）；M0 仅占位，Validator 需对 `bs_placeholder_high_*` / `unlock_placeholder_*` 这类占位键开白名单，否则 §2 引用存在性检查会红。
-- 本文件与 `content/JSON_SCHEMA.md`（C 出）的解析契约需在同一 PR 内对齐（04 §2 末：表结构变更 = SCHEMA + DataGen + Validator 三处同 PR）。
+- 本文件与 `content/JSON_SCHEMA.md`（Agent 起草、本人确认）的解析契约需在同一 PR 内对齐（04 §2 末：表结构变更 = SCHEMA + DataGen + Validator 三处同 PR）。
