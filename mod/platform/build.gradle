@@ -62,6 +62,8 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    // 测试 JVM 的工作目录由 moddev 决定，不等于模块目录；边界守卫按项目根定位源文件。
+    systemProperty 'strife.projectDir', projectDir.absolutePath
 }
 
 jar {
@@ -69,10 +71,10 @@ jar {
 }
 
 // docs/03 §7 纯净服务端 jar (A0-8). The exclusion patterns are deliberately in place before the
-// first client-only class exists, so client_fx gets stripped by default rather than by someone
+// first client-only class exists, so clientfx gets stripped by default rather than by someone
 // remembering to add a filter later. They match nothing today: the platform module only has
 // com.strife.core, and the 分侧 ModEntrypoint half of 03 §7 is core work (docs/06 禁区) that
-// needs no build-side change until client_fx lands — verified by the CI headless smoke, which
+// needs no build-side change until clientfx lands — verified by the CI headless smoke, which
 // boots this artifact on a dedicated server (log line: "Service=ModLauncher Env=SERVER").
 tasks.register('serverJar', Jar) {
     group = 'build'
@@ -80,8 +82,8 @@ tasks.register('serverJar', Jar) {
     archiveBaseName = "${providers.gradleProperty('mod_id').get()}-server"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from sourceSets.main.output
-    exclude 'com/strife/client_fx/**'
-    exclude 'assets/strife/client_fx/**'
+    exclude 'com/strife/clientfx/**'
+    exclude 'assets/strife/clientfx/**'
 }
 
 processResources {
@@ -93,6 +95,8 @@ processResources {
             minecraft_version: providers.gradleProperty('minecraft_version').get(),
             neoforge_loader_range: providers.gradleProperty('neoforge_loader_range').get(),
             neoforge_version: providers.gradleProperty('neoforge_version').get(),
+            patchouli_version_range: providers.gradleProperty('patchouli_version_range').get(),
+            jei_version_range: providers.gradleProperty('jei_version_range').get(),
             java_version: providers.gradleProperty('java_version').get())
     filesMatching('META-INF/neoforge.mods.toml') {
         expand(inputs.properties)

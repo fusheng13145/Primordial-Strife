@@ -23,3 +23,19 @@ type = "required"
 versionRange = "[${minecraft_version},)"
 ordering = "NONE"
 side = "BOTH"
+
+# 客户端软依赖（D-P0-2 / G-2）：有库则接，无库走命令与纯文本兜底。
+# P0 只声明 optional 边界；坐标与版本范围在 P1 接入时按核准值收紧。
+[[dependencies.${mod_id}]]
+modId = "patchouli"
+type = "optional"
+versionRange = "${patchouli_version_range}"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.${mod_id}]]
+modId = "jei"
+type = "optional"
+versionRange = "${jei_version_range}"
+ordering = "NONE"
+side = "CLIENT"
