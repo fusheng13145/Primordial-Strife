@@ -255,7 +255,8 @@ class QuestTrackerTest {
                         null);
         assertEquals(Component.literal("文津渡"), resolved, "追踪条应显示地点表中文名，而不是 region.strife.* 原始键");
 
-        // 桥未接线（查不到）：退回 region 键（旧行为，键受 V-TEXT 覆盖）。
+        // 桥未接线（查不到）：退回 region 键（旧行为）。注：该键不在 V-TEXT 反查范围、zh_cn 也无词条——
+        // 降级态玩家会看到原始键；真实收口需 V-TEXT 扩展或补词条，挂后续批次（2026-11-01 复核记录）。
         Component fallback =
                 QuestTracker.targetName("qi_wenjiang", (server, id) -> Optional.empty(), null);
         assertTrue(

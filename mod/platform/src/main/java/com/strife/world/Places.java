@@ -124,13 +124,16 @@ public final class Places {
     /**
      * core {@link PlaceBridges} 的 world 侧实现（G-4 / ADR-023）：按内容 ID 查地点只读快照。
      *
-     * <p>产物缺失（{@link #getOrThrow} 抛错）与未知 ID 都降级为 empty——导航是锦上添花，不能因为表缺失把调用方（任务 追踪条）打崩；故障信号由 ERROR
-     * 日志承载（只报一次，与 {@code WorldTables} 同口径）。
+     * <p>产物缺失（{@link #getOrThrow} 抛错）与未知 ID 都降级为 empty——导航是锦上添花，不能因为表缺失把调用方（任务 追踪条）打崩。catch
+     * <b>只包加载</b>不包查表： {@link #lookupIn} 是纯 stream
+     * 过滤，它若抛错说明解析器有真实缺陷，必须原样炸出来而不是被吞成"表不可用"。失败日志只报一次（静态标记防刷屏； {@code WorldTables.getOrNull}
+     * 是每次失败都报，此处刻意不同——追踪条每 20 刻刷新，once 才是正确口径）。该 catch 分支当前无单测钉住（需开服上下文），属已知覆盖缺口。
      */
     public static Optional<PlaceBridges.PlaceCoords> lookup(
             MinecraftServer server, String placeId) {
+        List<Place> all;
         try {
-            return lookupIn(getOrThrow(server), placeId);
+            all = getOrThrow(server);
         } catch (RuntimeException e) {
             if (!lookupFailureLogged) {
                 lookupFailureLogged = true;
@@ -138,6 +141,7 @@ public final class Places {
             }
             return Optional.empty();
         }
+        return lookupIn(all, placeId);
     }
 
     /** 按表查地点（包内可见，用例直接喂解析结果，不依赖开服）。 */
