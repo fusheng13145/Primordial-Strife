@@ -34,6 +34,29 @@ public final class ProductionTables {
 
         /** 寿元延长：{@code lifespan_years_gain}，按境界封顶 {@code max_gain_per_realm}。 */
         record Lifespan(int yearsGain, int maxGainPerRealm) implements Effect {}
+
+        /** 即时回血（回春丹/疗伤丹）。 */
+        record Heal(double health, boolean clearDebuff) implements Effect {}
+
+        /** 战斗增益（暴血丹/金刚丹/疾风丹）：属性平加，限时，同类互斥。 */
+        record CombatBuff(
+                double attackFlat, double defenseFlat, double speedFlat, long durationTicks)
+                implements Effect {}
+
+        /** 清除负面状态（解毒丹）。 */
+        record ClearPoison() implements Effect {}
+
+        /** 突破辅助（破境丹/稳元丹）：一次性消耗，下文生效。 */
+        record BreakthroughAid(double successBonus, double failKeepBonus) implements Effect {}
+
+        /** 神识恢复加速（凝神丹）：配合 EP1 神识系统。 */
+        record SenseRegen(int bonus) implements Effect {}
+
+        /** 清除因果标记（洗尘丹）：H3 联动。 */
+        record ClearCausality(int count) implements Effect {}
+
+        /** 灵根品阶升级（洗髓丹）：一次性，上限 tier1。 */
+        record SpiritRootUpgrade() implements Effect {}
     }
 
     public record Pill(String id, Effect effect) {}
@@ -125,8 +148,53 @@ public final class ProductionTables {
                             require(effect, "lifespan_years_gain").getAsInt(),
                             require(effect, "max_gain_per_realm").getAsInt()));
         }
+        if (effect.has("heal_health")) {
+            return new Pill(
+                    id,
+                    new Effect.Heal(
+                            require(effect, "heal_health").getAsDouble(),
+                            effect.has("clear_debuff")
+                                    && effect.get("clear_debuff").getAsBoolean()));
+        }
+        if (effect.has("attack_flat") || effect.has("defense_flat") || effect.has("speed_flat")) {
+            return new Pill(
+                    id,
+                    new Effect.CombatBuff(
+                            effect.has("attack_flat") ? effect.get("attack_flat").getAsDouble() : 0,
+                            effect.has("defense_flat")
+                                    ? effect.get("defense_flat").getAsDouble()
+                                    : 0,
+                            effect.has("speed_flat") ? effect.get("speed_flat").getAsDouble() : 0,
+                            effect.has("duration_sec")
+                                    ? Math.round(
+                                            effect.get("duration_sec").getAsDouble()
+                                                    * StrifeTime.TICKS_PER_SECOND)
+                                    : 2400));
+        }
+        if (effect.has("clear_poison")) {
+            return new Pill(id, new Effect.ClearPoison());
+        }
+        if (effect.has("breakthrough_bonus")) {
+            return new Pill(
+                    id,
+                    new Effect.BreakthroughAid(
+                            effect.get("breakthrough_bonus").getAsDouble(),
+                            effect.has("fail_keep_ratio_bonus")
+                                    ? effect.get("fail_keep_ratio_bonus").getAsDouble()
+                                    : 0));
+        }
+        if (effect.has("sense_regen_bonus")) {
+            return new Pill(id, new Effect.SenseRegen(effect.get("sense_regen_bonus").getAsInt()));
+        }
+        if (effect.has("clear_causality")) {
+            return new Pill(
+                    id, new Effect.ClearCausality(effect.get("clear_causality").getAsInt()));
+        }
+        if (effect.has("spiritroot_upgrade")) {
+            return new Pill(id, new Effect.SpiritRootUpgrade());
+        }
         throw new IllegalStateException(
-                "丹方产物 " + id + " 的 effect 既不是增益型也不是延寿型（pills.csv 的 effect_key 指错了？）");
+                "丹方产物 " + id + " 的 effect 无匹配类型（pills.csv effect_key 指错或 NUMBERS 键缺失）");
     }
 
     private static com.google.gson.JsonElement require(JsonObject block, String key) {

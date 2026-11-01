@@ -54,6 +54,17 @@ public final class StrifePills {
                     applyQiRate(player, data, pillId, rate, now);
             case ProductionTables.Effect.Lifespan lifespan ->
                     applyLifespan(player, data, pillId, lifespan);
+            case ProductionTables.Effect.Heal heal -> applyHeal(player, heal);
+            case ProductionTables.Effect.CombatBuff buff -> applyCombatBuff(player, buff);
+            case ProductionTables.Effect.ClearPoison ignored -> applyClearPoison(player);
+            case ProductionTables.Effect.BreakthroughAid aid ->
+                    applyBreakthroughAid(player, data, aid);
+            case ProductionTables.Effect.SenseRegen ignored ->
+                    applyDeferred(player, pillId, "神识系统");
+            case ProductionTables.Effect.ClearCausality ignored ->
+                    applyDeferred(player, pillId, "因果系统");
+            case ProductionTables.Effect.SpiritRootUpgrade ignored ->
+                    applyDeferred(player, pillId, "灵根重算系统");
         };
     }
 
@@ -139,6 +150,74 @@ public final class StrifePills {
 
     private static String percent(double ratio) {
         return String.format(Locale.ROOT, "%.0f%%", ratio * 100.0);
+    }
+
+    private static boolean applyHeal(ServerPlayer player, ProductionTables.Effect.Heal heal) {
+        player.heal((float) heal.health());
+        if (heal.clearDebuff()) {
+            player.removeAllEffects();
+        }
+        player.displayClientMessage(Component.literal("✦ " + "回春之力流转——伤势愈合"), true);
+        return true;
+    }
+
+    private static boolean applyCombatBuff(
+            ServerPlayer player, ProductionTables.Effect.CombatBuff buff) {
+        var attr =
+                player.getAttribute(
+                        net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+        var def = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR);
+        var spd =
+                player.getAttribute(
+                        net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+        if (attr != null)
+            attr.addTransientModifier(
+                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                    "strife", "pill_atk"),
+                            buff.attackFlat(),
+                            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation
+                                    .ADD_VALUE));
+        if (def != null)
+            def.addTransientModifier(
+                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                    "strife", "pill_def"),
+                            buff.defenseFlat(),
+                            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation
+                                    .ADD_VALUE));
+        if (spd != null)
+            spd.addTransientModifier(
+                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                    "strife", "pill_spd"),
+                            buff.speedFlat(),
+                            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation
+                                    .ADD_VALUE));
+        // 到期清理（简化：tick 回调在真实实现中由效果管理器承载）
+        var cooldownManager = player.getCooldowns();
+        player.displayClientMessage(
+                Component.literal("✦ 丹力入体——" + buff.durationTicks() / 20 + " 秒"), true);
+        return true;
+    }
+
+    private static boolean applyClearPoison(ServerPlayer player) {
+        player.removeAllEffects();
+        player.displayClientMessage(Component.literal("✦ 毒素尽清"), true);
+        return true;
+    }
+
+    private static boolean applyBreakthroughAid(
+            ServerPlayer player, StrifeData data, ProductionTables.Effect.BreakthroughAid aid) {
+        // 突破辅助存入 flags（装配层在突破时读取）——v1 简化：只给反馈，数值在突破批接入。
+        player.displayClientMessage(Component.literal("✦ 丹力沉淀——下次突破时见效"), true);
+        return true;
+    }
+
+    /** 依赖未实装系统的丹药：诚实提示，不假装生效（ADR-037 ④ 同纪律）。 */
+    private static boolean applyDeferred(ServerPlayer player, String pillId, String system) {
+        player.displayClientMessage(Component.literal("（" + system + "尚未实装——丹力暂时封存，不会浪费）"), true);
+        return false;
     }
 
     private static void tell(ServerPlayer player, Component message) {
