@@ -25,6 +25,16 @@ public final class StrifeAttachmentTypes {
      * <p>{@code copyOnDeath()} 是<b>必须</b>的而非可选：NeoForge 21.1 在 {@code PlayerEvent.Clone} 里 只复制声明了
      * serializer 且 {@code copyOnDeath} 的附件，缺这一行就违反 MVP 用例 "死亡不掉修为但掉灵石"（07 分册 §4）。
      */
+    /** 神识（EP1，ADR-036 ⑦）：独立附件——不动 StrifeData 2048B 预算。 */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ShenShiState>> SHENSHI =
+            ATTACHMENT_TYPES.register(
+                    "shenshi",
+                    () ->
+                            AttachmentType.builder(() -> ShenShiState.initial(10))
+                                    .serialize(ShenShiState.CODEC)
+                                    .copyOnDeath()
+                                    .build());
+
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<StrifeData>> PLAYER_DATA =
             ATTACHMENT_TYPES.register(
                     "player_data",

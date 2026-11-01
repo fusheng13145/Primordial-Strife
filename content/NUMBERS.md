@@ -336,3 +336,14 @@ mat_fengxue:     { name: 凤血,     element: huo,  rarity: epic,     source: se
 异火的 quality_shift 不是直接改概率——它是把产出概率从低品质段向高品质段<b>平移</b>：
 shift 0.05 = 每个低品段的 5% 概率转移到紧邻的高品段。如果丹方只有一个输出，shift 无效。
 这一设计使异火改变品质分布而不改变成败——成败由炉与材料稀有度控制。
+
+## 18. 神识（EP1，ADR-036 ⑦；值 2026-11-02 定值，随实机批校准）
+
+@@shenshi
+```yaml
+max_base: 10           # 凡人基础神识上限
+max_per_ordinal: 5     # 每境界 +5（练气=15, 筑基=20, 金丹=25 ...）
+regen_per_minute: 1    # 自然恢复：每现实分钟 +1
+sense_cost: 3          # /strife sense 消耗
+sense_radius: 24       # 探查半径（格）
+```

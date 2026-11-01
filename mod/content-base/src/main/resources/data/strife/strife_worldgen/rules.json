@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:b190c0d531c697bf710f96b664dc97fe725e4a3e4c856d85c6bee66a02f47b36",
+  "@generated": "from content/NUMBERS.md @ sha256:22f8403f620f7d8f0d24a638a68558e7d99e7cc3f059dc1ea394065e67f00b60",
   "id": "world_rules",
   "world": {
     "ambient_qi_min": 0.5,

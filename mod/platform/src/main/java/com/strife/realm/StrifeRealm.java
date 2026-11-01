@@ -45,6 +45,8 @@ public final class StrifeRealm {
         com.strife.core.StrifeCommands.MODULE_SUBTREES.add(SectStatus.subtree());
         // EP1（ADR-034；禁区披露批 #2）：闭关时间跳变——打坐结算的时间重放。
         com.strife.core.StrifeCommands.MODULE_SUBTREES.add(SeclusionCommand.subtree());
+        // EP1（ADR-036 ⑦；禁区披露批 #3）：神识探查——独立附件 + sense 命令。
+        com.strife.core.StrifeCommands.MODULE_SUBTREES.add(ShenShiCommand.subtree());
     }
 
     /**
