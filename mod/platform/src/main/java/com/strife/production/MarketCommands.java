@@ -1,0 +1,295 @@
+package com.strife.production;
+
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.strife.core.InventoryOps;
+import java.util.Map;
+import java.util.Optional;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+
+/**
+ * 坊市命令通道（EP1 v1，ADR-032）：一口价买卖 + 灵石三档兑换。D-P0-2 纪律——命令永久保留， 摊位 UI 后置时这套语义原样复用。
+ *
+ * <p><b>防复制</b>：价格只来自 {@link MarketPrices}（生成器门禁 sell&lt;buy）；买入/回收全部 服务端权威（{@link InventoryOps}
+ * 计数与扣除 → 原版背包入包），客户端上报的任何数量字段不参与结算； 未上架物品拒绝；灵石余量不足整单拒绝（不扣一半）。
+ */
+public final class MarketCommands {
+
+    private MarketCommands() {}
+
+    public static LiteralArgumentBuilder<CommandSourceStack> subtree() {
+        return Commands.literal("market")
+                .then(Commands.literal("list").executes(ctx -> list(ctx.getSource())))
+                .then(
+                        Commands.literal("buy")
+                                .then(
+                                        Commands.argument(
+                                                        "item_id",
+                                                        com.mojang.brigadier.arguments
+                                                                .StringArgumentType.string())
+                                                .executes(
+                                                        ctx ->
+                                                                buy(
+                                                                        ctx.getSource(),
+                                                                        com.mojang.brigadier
+                                                                                .arguments
+                                                                                .StringArgumentType
+                                                                                .getString(
+                                                                                        ctx,
+                                                                                        "item_id"),
+                                                                        1)))
+                                .then(
+                                        Commands.argument(
+                                                        "item_id",
+                                                        com.mojang.brigadier.arguments
+                                                                .StringArgumentType.string())
+                                                .then(
+                                                        Commands.argument(
+                                                                        "count",
+                                                                        com.mojang.brigadier
+                                                                                .arguments
+                                                                                .IntegerArgumentType
+                                                                                .integer(1))
+                                                                .executes(
+                                                                        ctx ->
+                                                                                buy(
+                                                                                        ctx
+                                                                                                .getSource(),
+                                                                                        com.mojang
+                                                                                                .brigadier
+                                                                                                .arguments
+                                                                                                .StringArgumentType
+                                                                                                .getString(
+                                                                                                        ctx,
+                                                                                                        "item_id"),
+                                                                                        com.mojang
+                                                                                                .brigadier
+                                                                                                .arguments
+                                                                                                .IntegerArgumentType
+                                                                                                .getInteger(
+                                                                                                        ctx,
+                                                                                                        "count"))))))
+                .then(
+                        Commands.literal("sell")
+                                .then(
+                                        Commands.argument(
+                                                        "item_id",
+                                                        com.mojang.brigadier.arguments
+                                                                .StringArgumentType.string())
+                                                .executes(
+                                                        ctx ->
+                                                                sell(
+                                                                        ctx.getSource(),
+                                                                        com.mojang.brigadier
+                                                                                .arguments
+                                                                                .StringArgumentType
+                                                                                .getString(
+                                                                                        ctx,
+                                                                                        "item_id"),
+                                                                        1)))
+                                .then(
+                                        Commands.argument(
+                                                        "item_id",
+                                                        com.mojang.brigadier.arguments
+                                                                .StringArgumentType.string())
+                                                .then(
+                                                        Commands.argument(
+                                                                        "count",
+                                                                        com.mojang.brigadier
+                                                                                .arguments
+                                                                                .IntegerArgumentType
+                                                                                .integer(1))
+                                                                .executes(
+                                                                        ctx ->
+                                                                                sell(
+                                                                                        ctx
+                                                                                                .getSource(),
+                                                                                        com.mojang
+                                                                                                .brigadier
+                                                                                                .arguments
+                                                                                                .StringArgumentType
+                                                                                                .getString(
+                                                                                                        ctx,
+                                                                                                        "item_id"),
+                                                                                        com.mojang
+                                                                                                .brigadier
+                                                                                                .arguments
+                                                                                                .IntegerArgumentType
+                                                                                                .getInteger(
+                                                                                                        ctx,
+                                                                                                        "count"))))))
+                .then(
+                        Commands.literal("exchange")
+                                .then(
+                                        Commands.literal("up")
+                                                .executes(ctx -> exchangeUp(ctx.getSource())))
+                                .then(
+                                        Commands.literal("down")
+                                                .executes(ctx -> exchangeDown(ctx.getSource()))));
+    }
+
+    private static int list(CommandSourceStack source) {
+        StringBuilder sb = new StringBuilder("坊市价目（下品灵石 买/卖）：");
+        for (Map.Entry<String, MarketPrices.Quote> e : MarketPrices.snapshot().entrySet()) {
+            sb.append('\n')
+                    .append(e.getKey())
+                    .append(' ')
+                    .append(e.getValue().buyLingshi())
+                    .append('/')
+                    .append(e.getValue().sellLingshi());
+        }
+        source.sendSuccess(() -> Component.literal(sb.toString()), false);
+        return 1;
+    }
+
+    private static int buy(CommandSourceStack source, String itemId, int count) {
+        ServerPlayer player;
+        try {
+            player = source.getPlayerOrException();
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+            source.sendFailure(Component.literal("market 需要玩家上下文（不能由控制台执行）"));
+            return 0;
+        }
+        Optional<MarketPrices.Quote> quote = MarketPrices.quote(itemId);
+        if (quote.isEmpty()) {
+            source.sendFailure(Component.literal("（坊市未上架：" + itemId + "）"));
+            return 0;
+        }
+        int cost = quote.get().buyLingshi() * count;
+        InventoryOps.PlayerContainers containers =
+                new InventoryOps.PlayerContainers(
+                        player.getInventory(), player.getEnderChestInventory());
+        if (InventoryOps.countOwned(containers, "item_lingshi") < cost) {
+            player.displayClientMessage(
+                    Component.literal(
+                            "（灵石不足：需 "
+                                    + cost
+                                    + "，现有 "
+                                    + InventoryOps.countOwned(containers, "item_lingshi")
+                                    + "）"),
+                    true);
+            return 0;
+        }
+        long removed = InventoryOps.remove(containers, "item_lingshi", cost);
+        if (removed < cost) {
+            player.displayClientMessage(
+                    Component.literal("（结算异常：实扣 " + removed + "/" + cost + "，已回滚数量校验）"), true);
+            return 0;
+        }
+        Item item = InventoryOps.resolve(itemId).orElse(null);
+        if (item == null) {
+            // 价格表有、注册表无：内容热更半途，按未上架处理（钱已扣则补偿——不吞玩家资产）。
+            player.getInventory().add(new ItemStack(StrifeItems.LINGSHI.get(), (int) removed));
+            player.displayClientMessage(Component.literal("（该物品暂未注册，已退回灵石）"), true);
+            return 0;
+        }
+        player.getInventory().add(new ItemStack(item, count));
+        player.displayClientMessage(
+                Component.literal("✦ 购入 " + itemId + " ×" + count + "（付灵石 " + cost + "）"), true);
+        return 1;
+    }
+
+    private static int sell(CommandSourceStack source, String itemId, int count) {
+        ServerPlayer player;
+        try {
+            player = source.getPlayerOrException();
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+            source.sendFailure(Component.literal("market 需要玩家上下文（不能由控制台执行）"));
+            return 0;
+        }
+        Optional<MarketPrices.Quote> quote = MarketPrices.quote(itemId);
+        if (quote.isEmpty()) {
+            source.sendFailure(Component.literal("（坊市未回收：" + itemId + "）"));
+            return 0;
+        }
+        InventoryOps.PlayerContainers containers =
+                new InventoryOps.PlayerContainers(
+                        player.getInventory(), player.getEnderChestInventory());
+        long owned = InventoryOps.countOwned(containers, itemId);
+        if (owned < count) {
+            player.displayClientMessage(
+                    Component.literal("（数量不足：现有 " + owned + "，需 " + count + "）"), true);
+            return 0;
+        }
+        long removed = InventoryOps.remove(containers, itemId, count);
+        int payout = quote.get().sellLingshi() * (int) removed;
+        player.getInventory().add(new ItemStack(StrifeItems.LINGSHI.get(), payout));
+        player.displayClientMessage(
+                Component.literal("✦ 回收 " + itemId + " ×" + removed + "（得灵石 " + payout + "）"),
+                true);
+        return 1;
+    }
+
+    /** 下品 → 高档：全量换算（余数留下品），不丢钱。 */
+    private static int exchangeUp(CommandSourceStack source) {
+        ServerPlayer player;
+        try {
+            player = source.getPlayerOrException();
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+            source.sendFailure(Component.literal("market 需要玩家上下文（不能由控制台执行）"));
+            return 0;
+        }
+        MarketPrices.Ratios ratios = MarketPrices.ratios();
+        InventoryOps.PlayerContainers containers =
+                new InventoryOps.PlayerContainers(
+                        player.getInventory(), player.getEnderChestInventory());
+        long owned = InventoryOps.countOwned(containers, "item_lingshi");
+        int[] want = MarketPrices.breakdown((int) Math.min(owned, Integer.MAX_VALUE), ratios);
+        if (want[0] == 0 && want[1] == 0) {
+            player.displayClientMessage(
+                    Component.literal(
+                            "（不足兑换：中品需 " + ratios.tierZhong() + "，上品需 " + ratios.tierShang() + "）"),
+                    true);
+            return 0;
+        }
+        int consumed = want[0] * ratios.tierShang() + want[1] * ratios.tierZhong();
+        long removed = InventoryOps.remove(containers, "item_lingshi", consumed);
+        if (removed < consumed) {
+            player.getInventory().add(new ItemStack(StrifeItems.LINGSHI.get(), (int) removed));
+            player.displayClientMessage(Component.literal("（结算异常已回滚）"), true);
+            return 0;
+        }
+        if (want[0] > 0) {
+            player.getInventory().add(new ItemStack(StrifeItems.LINGSHI_SHANG.get(), want[0]));
+        }
+        if (want[1] > 0) {
+            player.getInventory().add(new ItemStack(StrifeItems.LINGSHI_ZHONG.get(), want[1]));
+        }
+        player.displayClientMessage(
+                Component.literal(
+                        "✦ 兑换：上品 ×" + want[0] + "，中品 ×" + want[1] + "（余下品 " + want[2] + "）"),
+                true);
+        return 1;
+    }
+
+    /** 高档 → 下品（全部折回下品，回收随身高档）。 */
+    private static int exchangeDown(CommandSourceStack source) {
+        ServerPlayer player;
+        try {
+            player = source.getPlayerOrException();
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+            source.sendFailure(Component.literal("market 需要玩家上下文（不能由控制台执行）"));
+            return 0;
+        }
+        MarketPrices.Ratios ratios = MarketPrices.ratios();
+        InventoryOps.PlayerContainers containers =
+                new InventoryOps.PlayerContainers(
+                        player.getInventory(), player.getEnderChestInventory());
+        long zhong = InventoryOps.countOwned(containers, "item_lingshi_zhong");
+        long shang = InventoryOps.countOwned(containers, "item_lingshi_shang");
+        if (zhong == 0 && shang == 0) {
+            player.displayClientMessage(Component.literal("（没有可折算的中/上品灵石）"), true);
+            return 0;
+        }
+        InventoryOps.remove(containers, "item_lingshi_zhong", zhong);
+        InventoryOps.remove(containers, "item_lingshi_shang", shang);
+        int payout = (int) (zhong * ratios.tierZhong() + shang * ratios.tierShang());
+        player.getInventory().add(new ItemStack(StrifeItems.LINGSHI.get(), payout));
+        player.displayClientMessage(Component.literal("✦ 折算：得下品灵石 ×" + payout), true);
+        return 1;
+    }
+}

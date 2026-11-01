@@ -1,0 +1,9 @@
+id,item_id,buy_lingshi,sell_lingshi,_note
+price_ningxu,item_ningxu,2,1,凝须草（回收必折价）
+price_duanxu,item_duanxue,3,1,断血
+price_yaocai,item_yaocai,2,1,妖兽材料
+price_yuejian,item_yuejian,4,2,月见草
+price_xuanyu,item_xuanyu,10,5,玄玉佩（器胚）
+price_pill_juqi,pill_juqi,8,4,聚气丹
+price_pill_peiyuan,pill_peiyuan,15,7,培元丹
+price_pill_xuanyu,pill_xuanyu,20,10,玄玉丹

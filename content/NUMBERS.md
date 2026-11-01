@@ -185,7 +185,15 @@ breakthrough_per_min: 6  # 突破请求（防连点刷 fail_step）
 panel_per_sec: 4  # 面板视图拉取（03 §5 拉取式：C2S 请求 → S2C 视图包）
 ```
 
-## 11. 定稿记录
+## 11. 坊市（EP1，ADR-032；值 2026-11-01 定值，随实机批/Beta 周更校准）
+
+@@market
+```yaml
+tier_zhong: 10   # 中品灵石 = 下品 ×10（兑换命令用，服务端权威）
+tier_shang: 100  # 上品灵石 = 下品 ×100
+```
+
+## 12. 定稿记录
 
 - 2026-11-01 按 `deliverables/真相源定稿决策表-2026-11-01.md` 建议值批量定稿（ADR-031 ②授权）：N1–N11 采纳现值；保留项 = 大限键名与实现修正捆绑禁区批（Z2）、`@@artifact/@@pvp/@@companion` 值随实机批校准（ADR-031 ③）。
 - `@@limits` 的 S2C 预算 `[锚]` 与 03 §5/§6 一致；`@@downgrade` 段待建（ADR-026 ①），建段时同步本文件与 `DashengMath` 修正批。

@@ -64,6 +64,7 @@ public final class DataGenMain {
                 new DimensionGenerator(),
                 new PlaceGenerator(),
                 new NpcGenerator(),
+                new PriceGenerator(numbers),
                 new BiomeGenerator(),
                 new RealmDecorGenerator(),
                 new StructureGenerator(),

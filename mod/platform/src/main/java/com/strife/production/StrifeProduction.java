@@ -35,6 +35,8 @@ public final class StrifeProduction {
         ArtifactTables.register();
         NeoForge.EVENT_BUS.addListener(ArtifactForge::onTooltip);
         StrifeCommands.MODULE_SUBTREES.add(craftCommand());
+        // EP1 经济原语（ADR-032）：坊市一口价 + 灵石三档兑换。
+        StrifeCommands.MODULE_SUBTREES.add(MarketCommands.subtree());
         StrifeCommands.MODULE_SUBTREES.add(Alchemy.recipeCommand());
         LOGGER.info("strife production wired cultivation factor: pill=consumable buffs");
     }

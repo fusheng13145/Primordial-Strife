@@ -17,6 +17,11 @@ public final class StrifeItems {
             DeferredRegister.create(Registries.ITEM, StrifeMod.MOD_ID);
 
     public static final DeferredHolder<Item, Item> LINGSHI = register("item_lingshi");
+
+    /** 灵石三档（EP1，ADR-032）：中品 = 下品 ×10，上品 = 下品 ×100（NUMBERS @@market）。 */
+    public static final DeferredHolder<Item, Item> LINGSHI_ZHONG = register("item_lingshi_zhong");
+
+    public static final DeferredHolder<Item, Item> LINGSHI_SHANG = register("item_lingshi_shang");
     public static final DeferredHolder<Item, Item> NINGXU = register("item_ningxu");
     public static final DeferredHolder<Item, Item> YUEJIAN = register("item_yuejian");
     public static final DeferredHolder<Item, Item> DUANXUE = register("item_duanxue");

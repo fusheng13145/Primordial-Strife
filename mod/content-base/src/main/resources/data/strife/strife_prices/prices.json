@@ -1,0 +1,58 @@
+{
+  "@generated": "from tables/prices.csv @ sha256:71aefec05a00c82df0f40a9a1e1b0e7085b29c3a409c3b1c6e45bd0be5de9270",
+  "id": "prices",
+  "ratios": {
+    "tier_zhong": 10,
+    "tier_shang": 100
+  },
+  "entries": [
+    {
+    "id": "price_ningxu",
+    "item_id": "item_ningxu",
+    "buy_lingshi": 2,
+    "sell_lingshi": 1
+  },
+    {
+    "id": "price_duanxu",
+    "item_id": "item_duanxue",
+    "buy_lingshi": 3,
+    "sell_lingshi": 1
+  },
+    {
+    "id": "price_yaocai",
+    "item_id": "item_yaocai",
+    "buy_lingshi": 2,
+    "sell_lingshi": 1
+  },
+    {
+    "id": "price_yuejian",
+    "item_id": "item_yuejian",
+    "buy_lingshi": 4,
+    "sell_lingshi": 2
+  },
+    {
+    "id": "price_xuanyu",
+    "item_id": "item_xuanyu",
+    "buy_lingshi": 10,
+    "sell_lingshi": 5
+  },
+    {
+    "id": "price_pill_juqi",
+    "item_id": "pill_juqi",
+    "buy_lingshi": 8,
+    "sell_lingshi": 4
+  },
+    {
+    "id": "price_pill_peiyuan",
+    "item_id": "pill_peiyuan",
+    "buy_lingshi": 15,
+    "sell_lingshi": 7
+  },
+    {
+    "id": "price_pill_xuanyu",
+    "item_id": "pill_xuanyu",
+    "buy_lingshi": 20,
+    "sell_lingshi": 10
+  }
+  ]
+}
