@@ -1,0 +1,5 @@
+id,name,success_bonus,quality_cap,waste_recycle,double_output,_note
+furnace_shi,青石炉,0.00,di,0,0.00,基础炉：人人都有的起步设备
+furnace_tie,玄铁炉,0.05,tian,0,0.00,中阶炉：成功率+5% 品质解锁天品
+furnace_zijin,紫金鼎,0.10,tian,1,0.00,高阶鼎：成功率+10% 废丹回收1材料
+furnace_long,龙纹鼎,0.20,tian,2,0.10,传说鼎：成功率+20% 废丹回收2 +10%双产

@@ -1,0 +1,38 @@
+{
+  "@generated": "from tables/furnaces.csv @ sha256:d4521d8f525fca0e256a7adfa63903c694f5f19b3338feb229861914567d5292",
+  "id": "furnaces",
+  "entries": [
+    {
+    "id": "furnace_shi",
+    "name": "青石炉",
+    "success_bonus": "0.00",
+    "quality_cap": "di",
+    "waste_recycle": "0",
+    "double_output": "0.00"
+  },
+    {
+    "id": "furnace_tie",
+    "name": "玄铁炉",
+    "success_bonus": "0.05",
+    "quality_cap": "tian",
+    "waste_recycle": "0",
+    "double_output": "0.00"
+  },
+    {
+    "id": "furnace_zijin",
+    "name": "紫金鼎",
+    "success_bonus": "0.10",
+    "quality_cap": "tian",
+    "waste_recycle": "1",
+    "double_output": "0.00"
+  },
+    {
+    "id": "furnace_long",
+    "name": "龙纹鼎",
+    "success_bonus": "0.20",
+    "quality_cap": "tian",
+    "waste_recycle": "2",
+    "double_output": "0.10"
+  }
+  ]
+}

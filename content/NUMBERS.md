@@ -132,6 +132,17 @@ pill_juqi: { qi_rate_bonus: 0.25, duration_sec: 300,  repeat_step: 0.05, repeat_
 pill_peiyuan: { qi_rate_bonus: 0.60, duration_sec: 120, repeat_step: 0.10, repeat_floor: 0.20 }  # 培元丹（短效高倍）
 pill_yanshou: { lifespan_years_gain: 10, max_gain_per_realm: 30 }  # 延寿丹，续命路径，受单次境界封顶
 pill_xuanyu: { qi_rate_bonus: 0.50, duration_sec: 180, repeat_step: 0.08, repeat_floor: 0.15 }  # 玄玉丹（玄玉诀配套地阶丹，2026-11-01 定稿）
+pill_ningshen: { sense_regen_bonus: 2 }                                    # 凝神丹：神识恢复加速
+pill_huichun:  { heal_health: 10.0 }                                       # 回春丹：即时回血
+pill_liaoshang: { heal_health: 6.0, clear_debuff: true }                   # 疗伤丹：回血+清负面
+pill_baoxue:   { attack_flat: 4.0, defense_flat: -2.0, duration_sec: 120 }  # 暴血丹
+pill_jingang:  { defense_flat: 4.0, attack_flat: -1.0, duration_sec: 120 }  # 金刚丹
+pill_jifeng:   { speed_flat: 0.03, duration_sec: 90 }                       # 疾风丹
+pill_jiedu:    { clear_poison: true }                                      # 解毒丹
+pill_pojing:   { breakthrough_bonus: 0.10 }                                # 破境丹
+pill_wenyuan:  { fail_keep_ratio_bonus: 0.10 }                             # 稳元丹
+pill_wugou:    { clear_causality: 1 }                                      # 洗尘丹
+pill_xisui:    { spiritroot_upgrade: 1 }                                   # 洗髓丹
 # repeat_* 语义 ：同种丹药在冷却窗内重复服用，加成按 repeat_step 递减至 repeat_floor（防堆叠挂机化）
 ```
 
@@ -236,3 +247,92 @@ safety_radius: 8       # 入定安全半径：格内存在敌对生物即拒入
 ```yaml
 slot_shichen: 2   # 每件拍品的轮换时长（2 时辰 = 4 现实分钟等值；价格确定性推导自游戏时间）
 ```
+
+## 17. 丹药体系（EP1 百艺·专项设计，ADR-038；值 2026-11-02 定值，随实机批校准）
+
+### 17.1 设计原则
+
+丹药不是"吃蓝瓶"——每种丹有**主效**与**代价**（副作用/限制/依赖），让炼丹师在配方选择时
+做有意义的取舍，而不是无脑堆最强丹。三层结构：
+
+- **丹药**（效果）：作用于玩家属性/状态，有时长与衰减；
+- **丹方**（配方）：决定材料消耗与产出概率分布（含废丹）；
+- **器具与火**（ modifiers）：炉改变成功率与品质上限，火改变品质偏置与容差。
+
+### 17.2 丹药效果（按分类）
+
+@@alchemy_pills
+```yaml
+# 修炼辅助
+pill_juqi:     { qi_rate_bonus: 0.25, duration_sec: 300, repeat_step: 0.05, repeat_floor: 0.10 }
+pill_peiyuan:  { qi_rate_bonus: 0.60, duration_sec: 120, repeat_step: 0.10, repeat_floor: 0.20 }
+pill_xuanyu:   { qi_rate_bonus: 0.50, duration_sec: 180, repeat_step: 0.08, repeat_floor: 0.15 }
+pill_ningshen: { sense_regen_bonus: 2, duration_sec: 180 }            # 凝神丹：神识恢复加速
+pill_xisui:    { spiritroot_upgrade: 1 }                              # 洗髓丹：灵根品阶 +1（一次性，上限 tier1）
+# 疗伤
+pill_huichun:  { heal_health: 10.0 }                                 # 回春丹：即时回血
+pill_liaoshang: { heal_health: 6.0, clear_debuff: true }             # 疗伤丹：回血+清负面
+# 突破辅助
+pill_pojing:   { breakthrough_bonus: 0.10 }                          # 破境丹：下次突破成功率 +10%（一次性）
+pill_wenyuan:  { fail_keep_ratio_bonus: 0.10 }                       # 稳元丹：失败回退比率 +10%（一次性）
+# 战斗（有时长，互斥：同类同时只生效一个）
+pill_baoxue:   { attack_flat: 4.0, defense_flat: -2.0, duration_sec: 120 }  # 暴血丹：攻+4 防-2
+pill_jingang:  { defense_flat: 4.0, attack_flat: -1.0, duration_sec: 120 }  # 金刚丹：防+4 攻-1
+pill_jifeng:   { speed_flat: 0.03, duration_sec: 90 }                # 疾风丹：移速 +0.03
+# 毒/解
+pill_jiedu:    { clear_poison: true }                                # 解毒丹
+# 特殊
+pill_wugou:    { clear_causality: 1 }                                # 洗尘丹：清 1 笔因果标记
+```
+
+### 17.3 炼丹炉（furnace）
+
+@@alchemy_furnaces
+```yaml
+furnace_shi:    { name: 青石炉, success_bonus: 0.00, quality_cap: di,   waste_recycle: 0 }   # 基础
+furnace_tie:    { name: 玄铁炉, success_bonus: 0.05, quality_cap: tian, waste_recycle: 0 }   # 中阶
+furnace_zijin:  { name: 紫金鼎, success_bonus: 0.10, quality_cap: tian, waste_recycle: 1 }   # 高阶：废丹回收 1 材料
+furnace_long:   { name: 龙纹鼎, success_bonus: 0.20, quality_cap: tian, waste_recycle: 2, double_output: 0.10 }  # 传说：10% 双产
+```
+
+### 17.4 异火（fires）
+
+@@alchemy_fires
+```yaml
+fire_normal:    { name: 凡火,     tolerance: 0.00, quality_shift: 0.00, affinity: none }       # 默认
+fire_mu:        { name: 木灵火,   tolerance: 0.05, quality_shift: 0.00, affinity: mu }          # 木系亲和
+fire_dixin:     { name: 地心火,   tolerance: 0.00, quality_shift: 0.00, affinity: tu,  success_bonus: 0.03 }
+fire_xuanbing:  { name: 玄冰焰,   tolerance: 0.00, quality_shift: 0.00, affinity: shui, waste_reduce: 0.05 }
+fire_chiyian:   { name: 赤炎,     tolerance: 0.00, quality_shift: 0.05, affinity: huo }          # 品质+5%
+fire_jiuyou:    { name: 九幽冥火, tolerance: 0.03, quality_shift: 0.03, affinity: none, success_bonus: 0.08 }
+fire_taiyang:   { name: 太阳真火, tolerance: 0.05, quality_shift: 0.10, affinity: none }          # 传说：品质+10%
+```
+
+### 17.5 天材地宝（materials）
+
+@@alchemy_materials
+```yaml
+# 灵药（herb）：采集/种植获取，对应五行
+mat_ningxu:      { name: 凝须草,   element: mu,   rarity: common,   source: gather }
+mat_yuejian:     { name: 月见草,   element: huo,  rarity: common,   source: gather }
+mat_hanshi_cao:  { name: 寒石草,   element: shui, rarity: uncommon, source: gather }
+mat_zijin_hua:   { name: 紫金花,   element: huo,  rarity: uncommon, source: gather }
+mat_baiyu_guo:   { name: 白玉果,   element: tu,   rarity: uncommon, source: gather }
+mat_qingxin_lan: { name: 青心兰,   element: mu,   rarity: uncommon, source: farm }     # 灵田种植
+mat_xuelian:     { name: 天山雪莲, element: shui, rarity: rare,     source: secret_realm }
+# 矿石/兽核
+mat_yaodan:      { name: 妖丹,     element: none, rarity: uncommon, source: drop }     # 妖兽内丹
+mat_xuantie:     { name: 玄铁,     element: jin,  rarity: common,   source: mine }
+mat_wuse_shi:    { name: 五色石,   element: none, rarity: rare,     source: mine }     # 五行合一
+mat_duanxue:     { name: 断血,     element: none, rarity: common,   source: drop }
+# 天材地宝（treasure）
+mat_tianguo:     { name: 天元果,   element: none, rarity: epic,     source: secret_realm }  # 直接增修为
+mat_longxue:     { name: 龙血草,   element: huo,  rarity: epic,     source: secret_realm }
+mat_fengxue:     { name: 凤血,     element: huo,  rarity: epic,     source: secret_realm }
+```
+
+### 17.6 品质偏置机制
+
+异火的 quality_shift 不是直接改概率——它是把产出概率从低品质段向高品质段<b>平移</b>：
+shift 0.05 = 每个低品段的 5% 概率转移到紧邻的高品段。如果丹方只有一个输出，shift 无效。
+这一设计使异火改变品质分布而不改变成败——成败由炉与材料稀有度控制。

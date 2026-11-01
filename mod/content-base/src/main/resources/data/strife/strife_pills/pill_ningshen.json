@@ -1,0 +1,41 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:f382ee25193fdb44308c159aa4f7a5d72d88b0dc0ee9a65817773f087b6b3b11",
+  "id": "pill_ningshen",
+  "quality_tier": "di",
+  "pattern": "1x1=item_qingxin_lan;2x2=item_ningxu",
+  "core_slot": "item_qingxin_lan",
+  "materials": [
+    {
+    "item_id": "item_qingxin_lan",
+    "count": 2
+  },
+    {
+    "item_id": "item_ningxu",
+    "count": 1
+  }
+  ],
+  "heat_range": [
+    0.35,
+    0.65
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_ningshen",
+    "count": 1,
+    "prob": 0.85,
+    "quality": "di"
+  },
+    {
+    "item_id": "pill_juqi",
+    "count": 1,
+    "prob": 0.15,
+    "quality": "fan"
+  }
+  ],
+  "effect_key": "pill_ningshen",
+  "effect": {
+    "sense_regen_bonus": 2
+  },
+  "failure_output": null,
+  "price": null
+}

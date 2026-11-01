@@ -1,0 +1,8 @@
+id,name,tolerance,quality_shift,affinity,success_bonus,waste_reduce,_note
+fire_normal,凡火,0.00,0.00,none,0.00,0.00,默认火种：无加成无偏置
+fire_mu,木灵火,0.05,0.00,mu,0.00,0.00,木系亲和：火候容差+0.05
+fire_dixin,地心火,0.00,0.00,tu,0.03,0.00,土系亲和：成功率+3%
+fire_xuanbing,玄冰焰,0.00,0.00,shui,0.00,0.05,水系亲和：废丹率-5%
+fire_chiyan,赤炎,0.00,0.05,huo,0.00,0.00,火系亲和：品质偏置+5%（低品质→高品质平移）
+fire_jiuyou,九幽冥火,0.03,0.03,none,0.08,0.00,稀有：全系成功+8% 容差+3% 品质+3%
+fire_taiyang,太阳真火,0.05,0.10,none,0.00,0.00,传说：品质偏置+10% 容差+5%（品质锁定天品以上）

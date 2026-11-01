@@ -1,0 +1,16 @@
+id,name,element,rarity,source,item_id,_note
+mat_ningxu,凝须草,mu,common,gather,item_ningxu,已有（序章采集）
+mat_yuejian,月见草,huo,common,gather,item_yuejian,已有
+mat_duanxue,断血,none,common,drop,item_duanxue,已有（妖兽掉落）
+mat_lingshi,灵石,none,common,mine,item_lingshi,已有（货币兼材料）
+mat_xuanyu,玄玉,none,common,craft,item_xuanyu,已有（器胚）
+mat_hanshi_cao,寒石草,shui,uncommon,gather,item_hanshi_cao,新：水系灵药 寒地/阴湿生成
+mat_zijin_hua,紫金花,huo,uncommon,gather,item_zijin_hua,新：火系灵药 火山/熔岩带生成
+mat_baiyu_guo,白玉果,tu,uncommon,gather,item_baiyu_guo,新：土系灵果 洞府/山地生成
+mat_qingxin_lan,青心兰,mu,uncommon,farm,item_qingxin_lan,新：木系灵药 灵田种植（灵田联动）
+mat_xuelian,天山雪莲,shui,rare,secret_realm,item_xuelian,新：水系稀有 秘境产出
+mat_yaodan,妖丹,none,uncommon,drop,item_yaodan,新：妖兽内丹 击杀掉落（概率掉落替代部分 yaocai）
+mat_xuantie,玄铁,jin,common,mine,item_xuantie,新：金属矿石（炼器兼用）
+mat_wuse_shi,五色石,none,rare,mine,item_wuse_shi,新：五行合一稀有矿（炼丹+炼器通吃）
+mat_tianguo,天元果,none,epic,secret_realm,item_tianguo,新：天材地宝 直接增修为
+mat_longxue,龙血草,huo,epic,secret_realm,item_longxue,新：龙血浇灌 秘境产出

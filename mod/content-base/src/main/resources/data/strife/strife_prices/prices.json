@@ -3,7 +3,8 @@
   "id": "prices",
   "ratios": {
     "tier_zhong": 10,
-    "tier_shang": 100
+    "tier_shang": 100,
+    "appraise_cost": 5
   },
   "entries": [
     {

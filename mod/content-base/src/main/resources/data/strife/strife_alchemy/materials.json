@@ -1,0 +1,126 @@
+{
+  "@generated": "from tables/materials.csv @ sha256:2ce2d18e538e7ffa4c9659f31e61a7442dae8bf598a1cd049fabf94b26454a2b",
+  "id": "materials",
+  "entries": [
+    {
+    "id": "mat_ningxu",
+    "name": "凝须草",
+    "element": "mu",
+    "rarity": "common",
+    "source": "gather",
+    "item_id": "item_ningxu"
+  },
+    {
+    "id": "mat_yuejian",
+    "name": "月见草",
+    "element": "huo",
+    "rarity": "common",
+    "source": "gather",
+    "item_id": "item_yuejian"
+  },
+    {
+    "id": "mat_duanxue",
+    "name": "断血",
+    "element": "none",
+    "rarity": "common",
+    "source": "drop",
+    "item_id": "item_duanxue"
+  },
+    {
+    "id": "mat_lingshi",
+    "name": "灵石",
+    "element": "none",
+    "rarity": "common",
+    "source": "mine",
+    "item_id": "item_lingshi"
+  },
+    {
+    "id": "mat_xuanyu",
+    "name": "玄玉",
+    "element": "none",
+    "rarity": "common",
+    "source": "craft",
+    "item_id": "item_xuanyu"
+  },
+    {
+    "id": "mat_hanshi_cao",
+    "name": "寒石草",
+    "element": "shui",
+    "rarity": "uncommon",
+    "source": "gather",
+    "item_id": "item_hanshi_cao"
+  },
+    {
+    "id": "mat_zijin_hua",
+    "name": "紫金花",
+    "element": "huo",
+    "rarity": "uncommon",
+    "source": "gather",
+    "item_id": "item_zijin_hua"
+  },
+    {
+    "id": "mat_baiyu_guo",
+    "name": "白玉果",
+    "element": "tu",
+    "rarity": "uncommon",
+    "source": "gather",
+    "item_id": "item_baiyu_guo"
+  },
+    {
+    "id": "mat_qingxin_lan",
+    "name": "青心兰",
+    "element": "mu",
+    "rarity": "uncommon",
+    "source": "farm",
+    "item_id": "item_qingxin_lan"
+  },
+    {
+    "id": "mat_xuelian",
+    "name": "天山雪莲",
+    "element": "shui",
+    "rarity": "rare",
+    "source": "secret_realm",
+    "item_id": "item_xuelian"
+  },
+    {
+    "id": "mat_yaodan",
+    "name": "妖丹",
+    "element": "none",
+    "rarity": "uncommon",
+    "source": "drop",
+    "item_id": "item_yaodan"
+  },
+    {
+    "id": "mat_xuantie",
+    "name": "玄铁",
+    "element": "jin",
+    "rarity": "common",
+    "source": "mine",
+    "item_id": "item_xuantie"
+  },
+    {
+    "id": "mat_wuse_shi",
+    "name": "五色石",
+    "element": "none",
+    "rarity": "rare",
+    "source": "mine",
+    "item_id": "item_wuse_shi"
+  },
+    {
+    "id": "mat_tianguo",
+    "name": "天元果",
+    "element": "none",
+    "rarity": "epic",
+    "source": "secret_realm",
+    "item_id": "item_tianguo"
+  },
+    {
+    "id": "mat_longxue",
+    "name": "龙血草",
+    "element": "huo",
+    "rarity": "epic",
+    "source": "secret_realm",
+    "item_id": "item_longxue"
+  }
+  ]
+}

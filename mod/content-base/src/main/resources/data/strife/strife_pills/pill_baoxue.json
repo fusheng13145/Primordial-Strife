@@ -1,0 +1,43 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:f382ee25193fdb44308c159aa4f7a5d72d88b0dc0ee9a65817773f087b6b3b11",
+  "id": "pill_baoxue",
+  "quality_tier": "di",
+  "pattern": "1x1=item_duanxue;2x2=item_zijin_hua",
+  "core_slot": "item_zijin_hua",
+  "materials": [
+    {
+    "item_id": "item_duanxue",
+    "count": 3
+  },
+    {
+    "item_id": "item_zijin_hua",
+    "count": 1
+  }
+  ],
+  "heat_range": [
+    0.25,
+    0.75
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_baoxue",
+    "count": 1,
+    "prob": 0.85,
+    "quality": "di"
+  },
+    {
+    "item_id": "pill_juqi",
+    "count": 1,
+    "prob": 0.15,
+    "quality": "fan"
+  }
+  ],
+  "effect_key": "pill_baoxue",
+  "effect": {
+    "attack_flat": 4.0,
+    "defense_flat": -2.0,
+    "duration_sec": 120
+  },
+  "failure_output": null,
+  "price": null
+}

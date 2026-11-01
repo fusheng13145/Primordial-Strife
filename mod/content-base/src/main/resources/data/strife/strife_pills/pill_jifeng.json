@@ -1,0 +1,42 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:f382ee25193fdb44308c159aa4f7a5d72d88b0dc0ee9a65817773f087b6b3b11",
+  "id": "pill_jifeng",
+  "quality_tier": "fan",
+  "pattern": "1x1=item_qingxin_lan;2x2=item_yuejian",
+  "core_slot": "item_qingxin_lan",
+  "materials": [
+    {
+    "item_id": "item_qingxin_lan",
+    "count": 1
+  },
+    {
+    "item_id": "item_yuejian",
+    "count": 1
+  }
+  ],
+  "heat_range": [
+    0.25,
+    0.75
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_jifeng",
+    "count": 1,
+    "prob": 0.88,
+    "quality": "fan"
+  },
+    {
+    "item_id": "pill_juqi",
+    "count": 1,
+    "prob": 0.12,
+    "quality": "fan"
+  }
+  ],
+  "effect_key": "pill_jifeng",
+  "effect": {
+    "speed_flat": 0.03,
+    "duration_sec": 90
+  },
+  "failure_output": null,
+  "price": null
+}

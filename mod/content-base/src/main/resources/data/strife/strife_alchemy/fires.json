@@ -1,0 +1,69 @@
+{
+  "@generated": "from tables/fires.csv @ sha256:bb30d0edabe0e2cb25c214e4306e0b806a9bb531073540132f7849eb449e6f47",
+  "id": "fires",
+  "entries": [
+    {
+    "id": "fire_normal",
+    "name": "凡火",
+    "tolerance": "0.00",
+    "quality_shift": "0.00",
+    "affinity": "none",
+    "success_bonus": "0.00",
+    "waste_reduce": "0.00"
+  },
+    {
+    "id": "fire_mu",
+    "name": "木灵火",
+    "tolerance": "0.05",
+    "quality_shift": "0.00",
+    "affinity": "mu",
+    "success_bonus": "0.00",
+    "waste_reduce": "0.00"
+  },
+    {
+    "id": "fire_dixin",
+    "name": "地心火",
+    "tolerance": "0.00",
+    "quality_shift": "0.00",
+    "affinity": "tu",
+    "success_bonus": "0.03",
+    "waste_reduce": "0.00"
+  },
+    {
+    "id": "fire_xuanbing",
+    "name": "玄冰焰",
+    "tolerance": "0.00",
+    "quality_shift": "0.00",
+    "affinity": "shui",
+    "success_bonus": "0.00",
+    "waste_reduce": "0.05"
+  },
+    {
+    "id": "fire_chiyan",
+    "name": "赤炎",
+    "tolerance": "0.00",
+    "quality_shift": "0.05",
+    "affinity": "huo",
+    "success_bonus": "0.00",
+    "waste_reduce": "0.00"
+  },
+    {
+    "id": "fire_jiuyou",
+    "name": "九幽冥火",
+    "tolerance": "0.03",
+    "quality_shift": "0.03",
+    "affinity": "none",
+    "success_bonus": "0.08",
+    "waste_reduce": "0.00"
+  },
+    {
+    "id": "fire_taiyang",
+    "name": "太阳真火",
+    "tolerance": "0.05",
+    "quality_shift": "0.10",
+    "affinity": "none",
+    "success_bonus": "0.00",
+    "waste_reduce": "0.00"
+  }
+  ]
+}

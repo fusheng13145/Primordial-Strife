@@ -1,0 +1,41 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:f382ee25193fdb44308c159aa4f7a5d72d88b0dc0ee9a65817773f087b6b3b11",
+  "id": "pill_jiedu",
+  "quality_tier": "fan",
+  "pattern": "1x1=item_hanshi_cao;2x2=item_ningxu",
+  "core_slot": "item_hanshi_cao",
+  "materials": [
+    {
+    "item_id": "item_hanshi_cao",
+    "count": 1
+  },
+    {
+    "item_id": "item_ningxu",
+    "count": 1
+  }
+  ],
+  "heat_range": [
+    0.2,
+    0.8
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_jiedu",
+    "count": 1,
+    "prob": 0.92,
+    "quality": "fan"
+  },
+    {
+    "item_id": "pill_juqi",
+    "count": 1,
+    "prob": 0.08,
+    "quality": "fan"
+  }
+  ],
+  "effect_key": "pill_jiedu",
+  "effect": {
+    "clear_poison": "true"
+  },
+  "failure_output": null,
+  "price": null
+}

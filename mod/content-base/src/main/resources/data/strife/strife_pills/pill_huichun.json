@@ -1,0 +1,31 @@
+{
+  "@generated": "from tables/pills.csv @ sha256:f382ee25193fdb44308c159aa4f7a5d72d88b0dc0ee9a65817773f087b6b3b11",
+  "id": "pill_huichun",
+  "quality_tier": "fan",
+  "pattern": "1x1=item_yuejian",
+  "core_slot": "item_yuejian",
+  "materials": [
+    {
+    "item_id": "item_yuejian",
+    "count": 3
+  }
+  ],
+  "heat_range": [
+    0.25,
+    0.75
+  ],
+  "outputs": [
+    {
+    "item_id": "pill_huichun",
+    "count": 1,
+    "prob": 1.0,
+    "quality": "fan"
+  }
+  ],
+  "effect_key": "pill_huichun",
+  "effect": {
+    "heal_health": 10.0
+  },
+  "failure_output": null,
+  "price": null
+}

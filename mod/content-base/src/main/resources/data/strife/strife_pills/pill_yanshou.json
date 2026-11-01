@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/pills.csv @ sha256:1802d106d939f963ba18df08f66e3744d6c3ac046a685a40c8fe554969e329e5",
+  "@generated": "from tables/pills.csv @ sha256:f382ee25193fdb44308c159aa4f7a5d72d88b0dc0ee9a65817773f087b6b3b11",
   "id": "pill_yanshou",
   "quality_tier": "di",
   "pattern": "1x1=item_duanxue",
