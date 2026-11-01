@@ -65,6 +65,7 @@ public final class DataGenMain {
                 new PlaceGenerator(),
                 new NpcGenerator(),
                 new PriceGenerator(numbers),
+                new GuideGenerator(),
                 new BiomeGenerator(),
                 new RealmDecorGenerator(),
                 new StructureGenerator(),

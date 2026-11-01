@@ -26,7 +26,7 @@
 
 - 路径：`data/strife/<域目录>/<id>.json`；`域目录` 取 04 §2 枚举（`strife_realms` / `strife_techniques` / `strife_spells` / `strife_pills` / `strife_artifacts` / `strife_quests` / `dialog_trees` / `strife_factions` / `strife_wars` / `strife_periods` / `strife_places` / `strife_npcs` / `worldgen` / `loot_table` / `recipe` / `advancement`）。
 - **文件名 = 内容 ID**（不带命名空间前缀），运行时 ID 为 `strife:<id>`。
-- ID 格式（04 §4 `[锚]`）：`<域前缀>_<章>_<语义>`，全小写下划线。域前缀固定枚举：`tech_ / spell_ / pill_ / qi_ / quest_ / dlg_ / npc_ / block_ / item_ / ch<N>_`；另登记 `[拟]` 扩展前缀：`realm_`（境界内部 ID 例外，见 §4.1）、`art_`（器图）、`fac_`（势力）、`war_`（冲突）、`per_`（周期事件）、`price_`（坊市定价，EP1 ADR-032）、`flag_` 不用于内容 ID（flag 是运行时键，见 §5 H3）。
+- ID 格式（04 §4 `[锚]`）：`<域前缀>_<章>_<语义>`，全小写下划线。域前缀固定枚举：`tech_ / spell_ / pill_ / qi_ / quest_ / dlg_ / npc_ / block_ / item_ / ch<N>_`；另登记 `[拟]` 扩展前缀：`realm_`（境界内部 ID 例外，见 §4.1）、`art_`（器图）、`fac_`（势力）、`war_`（冲突）、`per_`（周期事件）、`price_`（坊市定价，EP1 ADR-032）、`guide_`（入门指引，P1-21 D12）、`flag_` 不用于内容 ID（flag 是运行时键，见 §5 H3）。
 - 一文件一对象；`strife_quests` 与 `dialog_trees` 为**一章一文件**（04 §2 `[锚]`），文件内 `id` 是该章入口节点 ID。
 - 每个产物文件头：
 
@@ -409,6 +409,12 @@ M4 宗门结构的字段契约。**本节已生效**：本人于 2026-10-02 按 
 | H5 全局时钟 | `strife_periods` 表（新增，字段见 §5.1） | SavedData in core | 灵脉潮汐试跑（M4） |
 | H6 福缘 | loot `luck_modifier_source`（恒 1.0）+ DSL `luck` 谓词（恒 0） | core 抽取层 | 入口在，无来源 |
 | H7 势力关系与战争 | `strife_factions` + `strife_wars`（字段见 §5.2/§5.3） | core + tables | 状态机原语与表结构，剧本不做 |
+
+### 4.19 入门指引（`tables/guide.csv`，P1-21 D12，2026-11-01）
+
+- 列：`id,section,title,text,_note`；产物单文件 `strife_guide/guide.json`（sections 五域数组）。
+- 门禁在生成器：`id` 限 `guide_` 前缀；`section` 限五域枚举（realm/cultivation/combat/production/quest）；正文 ≤40 汉字（LORE §3 语域）；五域各 ≥3 条。
+- 通道：命令 `/strife guide` 与未来客户端面板同读一份产物（D12 ④ 不分叉）；文本走产物通道不入 lang（对话文本同先例）。
 
 ### 5.5 `strife_prices` — 坊市定价（EP1，ADR-032，2026-11-01）
 

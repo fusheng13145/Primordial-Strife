@@ -19,6 +19,8 @@ public final class StrifeQuest {
     private static final Logger LOGGER = LoggerFactory.getLogger("strife/quest");
 
     public StrifeQuest(IEventBus modEventBus, ModContainer container) {
+        // P1-21（D12）：入门指引命令通道——与未来客户端面板同读 strife_guide 产物。
+        com.strife.core.StrifeCommands.MODULE_SUBTREES.add(GuideCommands.subtree());
         LOGGER.info(
                 "strife quest entry constructed (version {})", container.getModInfo().getVersion());
         QuestAdapter.register(modEventBus);
