@@ -1,2 +1,3 @@
 id,generator_type,noise_settings,biome,coordinate_scale,ambient_light,_note
 upper_realm,minecraft:noise,minecraft:floating_islands,strife:upper_realm_biome,1.0,0.5,M4 上界维度（ADR-021 已批准 2026-10-02）：浮岛地形借原版浮岛噪声；群系为自研 strife:upper_realm_biome（biomes.csv「灵霄青冥」配色，见 worldgen/biome 产物）；坐标 1:1、环境光 0.5（无昼夜恐惧刷怪）；灵气参数见 NUMBERS @@world upper_qi_min/max；2026-10-24 实机修正：原值 minecraft:end_islands 在 1.21.1 原版不存在（进世界注册表加载失败），且维度类型 height=256 与 minecraft:floating_islands 的 256 一致（end 为 128），改指 floating_islands
+miji_realm,minecraft:noise,minecraft:floating_islands,strife:miji_biome,1.0,0.3,EP2 秘境维度骨架（ADR-036 ⑨，数据先行）：定期开启/限境界进入的玩法随批（H4/H5 已备）；自研群系 strife:miji_biome（biomes.csv 需补行——骨架批先借 upper_realm_biome，见下注）；环境光 0.3（秘境幽暗）

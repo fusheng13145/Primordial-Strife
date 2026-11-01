@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/spells.csv @ sha256:c5b968f8d80aa2b1bd8b4c2b5c5afb57aae9ec274adc8f23c402088238c35446",
+  "@generated": "from tables/spells.csv @ sha256:cf384b320e128808c0765af0acb3e08afb3f1b77cc234b87bbc265ab6ea8d77f",
   "id": "spell_prologue_huodan",
   "element": "huo",
   "required_technique": "tech_duanhu_gong",

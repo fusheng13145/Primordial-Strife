@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dimensions.csv @ sha256:269ad9f8ce4b2dc8ebd6f7dbc1540fa03b837dcd534d8648e7a76d1169a94255",
+  "@generated": "from tables/dimensions.csv @ sha256:c6337cee41bc4e1eab1fd59475eaa38d6e39e5ab9f394512a92bb2d058b9963c",
   "type": "strife:upper_realm",
   "generator": {
     "type": "minecraft:noise",

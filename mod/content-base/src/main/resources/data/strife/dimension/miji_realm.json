@@ -1,0 +1,12 @@
+{
+  "@generated": "from tables/dimensions.csv @ sha256:c6337cee41bc4e1eab1fd59475eaa38d6e39e5ab9f394512a92bb2d058b9963c",
+  "type": "strife:miji_realm",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "minecraft:floating_islands",
+    "biome_source": {
+    "type": "minecraft:fixed",
+    "biome": "strife:miji_biome"
+  }
+  }
+}

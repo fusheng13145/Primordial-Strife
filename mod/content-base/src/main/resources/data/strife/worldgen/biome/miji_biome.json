@@ -1,0 +1,40 @@
+{
+  "@generated": "from tables/biomes.csv @ sha256:3042d748b8b6c5172b1ed579d0aae3a780ae6c4d6452662bbef18fc99ee16f0e",
+  "carvers": {},
+  "downfall": 0.6,
+  "effects": {
+    "fog_color": 920608,
+    "sky_color": 1709104,
+    "water_color": 2761792,
+    "water_fog_color": 1183786,
+    "grass_color": 2367036
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+    "strife:block_qi_crystal"
+  ],
+    [],
+    [],
+    [],
+    []
+  ],
+  "has_precipitation": false,
+  "spawn_costs": {},
+  "spawners": {
+    "monster": [],
+    "creature": [],
+    "ambient": [],
+    "axolotls": [],
+    "underground_water_creature": [],
+    "water_creature": [],
+    "water_ambient": [],
+    "misc": []
+  },
+  "temperature": 0.0
+}

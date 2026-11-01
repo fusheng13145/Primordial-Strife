@@ -1,0 +1,25 @@
+{
+  "@generated": "from tables/spells.csv @ sha256:cf384b320e128808c0765af0acb3e08afb3f1b77cc234b87bbc265ab6ea8d77f",
+  "id": "spell_ep1_feijian",
+  "element": "jin",
+  "required_technique": "tech_jinsha_jue",
+  "cost_key": "medium",
+  "cost_qi": 18,
+  "cooldown_key": "medium",
+  "cooldown_sec": 4.0,
+  "damage_formula_key": "formula_pierce",
+  "damage_formula": {
+    "base": 4,
+    "scale": "realm_coeff",
+    "pen": 0.5
+  },
+  "projectile": {
+    "speed": 1.4,
+    "gravity": 0.0,
+    "range": 30.0,
+    "pierce_count": 2
+  },
+  "aoe_radius_blocks": 0.0,
+  "effects": null,
+  "price": null
+}

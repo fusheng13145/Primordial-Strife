@@ -1,2 +1,3 @@
 id,sky_color,fog_color,water_color,water_fog_color,grass_color,temperature,downfall,features,_note
 upper_realm_biome,0x9BD7E8,0xEFDFB0,0x8FD8E0,0x186880,0xA8E0C0,0.8,0.0,ores=strife:block_qi_crystal;,上界「灵霄青冥」：天青天空+淡金雾+青玉草色（仙界观感 与借来的 the_end 暗紫彻底区分）；无降水 无 mood 声（灵界清净）；features.ores 列表落进原版 features[6]（underground_ores 步）；结晶见 realm_decor.csv 参数为材质属性非受管数值 调色直接改表（04 §7 占位资产管线）
+miji_biome,0x1A1430,0x0E0C20,0x2A2440,0x12102A,0x241E3C,0.0,0.6,ores=strife:block_qi_crystal;,EP2 秘境「幽冥暗域」：深紫夜空+暗雾+灰紫植被（环境光 0.3 配套）；无降水；结晶矿点同上界（秘境产出钩子，玩法随批）

@@ -1,0 +1,25 @@
+{
+  "@generated": "from tables/dimensions.csv @ sha256:c6337cee41bc4e1eab1fd59475eaa38d6e39e5ab9f394512a92bb2d058b9963c",
+  "ultrawarm": false,
+  "natural": false,
+  "piglin_safe": false,
+  "respawn_anchor_works": true,
+  "bed_works": false,
+  "has_raids": false,
+  "has_skylight": false,
+  "has_ceiling": false,
+  "coordinate_scale": 1.0,
+  "ambient_light": 0.3,
+  "fixed_time": 6000,
+  "monster_spawn_light_level": {
+    "type": "minecraft:uniform",
+    "min_inclusive": 0,
+    "max_inclusive": 7
+  },
+  "monster_spawn_block_light_limit": 0,
+  "min_y": 0,
+  "height": 256,
+  "logical_height": 256,
+  "infiniburn": "#minecraft:infiniburn_end",
+  "effects": "minecraft:the_end"
+}

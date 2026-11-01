@@ -35,7 +35,11 @@ class SpellClientTableTest {
     void parsesEveryShippedSpell() {
         List<SpellClientTable.Entry> entries = SpellClientTable.parse(ShippedProducts.allSpells());
 
-        assertEquals(4, entries.size(), "轮盘条目数必须等于 jar 内法术产物数");
+        // 条目数随产物走（EP1 飞剑术入表即 +1）——与 jar 内法术产物数对齐，不写死。
+        assertEquals(ShippedProducts.allSpells().size(), entries.size(), "轮盘条目数必须等于 jar 内法术产物数");
+        assertTrue(
+                entries.stream().anyMatch(e -> e.id().equals("spell_ep1_feijian")),
+                "EP1 飞剑术必须在轮盘里");
         Set<String> ids =
                 entries.stream().map(SpellClientTable.Entry::id).collect(Collectors.toSet());
         assertTrue(ids.contains("spell_xuanyu_ren"), "F1 新增的玄玉刃必须在轮盘里");

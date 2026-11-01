@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/biomes.csv @ sha256:110b5c9e86d2f3ee1b898ab02c1d784aa3f8a9409b9895b92d2c12e41f5861dc",
+  "@generated": "from tables/biomes.csv @ sha256:3042d748b8b6c5172b1ed579d0aae3a780ae6c4d6452662bbef18fc99ee16f0e",
   "carvers": {},
   "downfall": 0.0,
   "effects": {
