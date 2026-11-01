@@ -416,6 +416,12 @@ M4 宗门结构的字段契约。**本节已生效**：本人于 2026-10-02 按 
 - 门禁在生成器：`id` 限 `guide_` 前缀；`section` 限五域枚举（realm/cultivation/combat/production/quest）；正文 ≤40 汉字（LORE §3 语域）；五域各 ≥3 条。
 - 通道：命令 `/strife guide` 与未来客户端面板同读一份产物（D12 ④ 不分叉）；文本走产物通道不入 lang（对话文本同先例）。
 
+### 5.7 `strife_auction` — 拍卖行拍品（EP1，ADR-037 ①，2026-11-02）
+
+- 表：`tables/auction.csv`（列：`id,item_id,start_lingshi,min_lingshi,drop_lingshi,_note`）；产物 `strife_auction/auction.json`（lots + NUMBERS @@auction 的 slot_shichen）。
+- 门禁在生成器：`id` 限 `auction_` 前缀、min < start、drop ≥1、`item_id` 唯一且限 `item_|pill_`。
+- 语义：荷兰式降价拍——当前价 = max(min, start − 流逝时辰 × drop)，**由游戏时间确定性推导（零持久化）**；多买家各按当下价成交（急售语义）；有状态密封投标 = 第三批。
+
 ### 5.6 `strife_blackmarket` — 黑市价目（EP1，ADR-036 ②，2026-11-02）
 
 - 表：`tables/blackmarket.csv`（列：`id,item_id,price_lingshi,_note`）；产物单文件 `strife_blackmarket/market.json`。

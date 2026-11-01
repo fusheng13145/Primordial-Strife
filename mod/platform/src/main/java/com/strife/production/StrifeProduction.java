@@ -39,6 +39,8 @@ public final class StrifeProduction {
         StrifeCommands.MODULE_SUBTREES.add(MarketCommands.subtree());
         // EP1（ADR-036 ②）：黑市——赃货折扣第二价目段，代价是因果与声望。
         StrifeCommands.MODULE_SUBTREES.add(BlackMarketCommands.subtree());
+        // EP1（ADR-037 ①）：拍卖行——荷兰式降价拍，价格确定性推导零持久化。
+        StrifeCommands.MODULE_SUBTREES.add(AuctionCommands.subtree());
         StrifeCommands.MODULE_SUBTREES.add(Alchemy.recipeCommand());
         LOGGER.info("strife production wired cultivation factor: pill=consumable buffs");
     }

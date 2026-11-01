@@ -66,6 +66,7 @@ public final class DataGenMain {
                 new NpcGenerator(),
                 new PriceGenerator(numbers),
                 new BlackMarketGenerator(),
+                new AuctionGenerator(numbers),
                 new GuideGenerator(),
                 new BiomeGenerator(),
                 new RealmDecorGenerator(),

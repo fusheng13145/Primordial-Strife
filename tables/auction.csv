@@ -1,0 +1,4 @@
+id,item_id,start_lingshi,min_lingshi,drop_lingshi,_note
+auction_xuanyu,item_xuanyu,20,10,2,玄玉佩：流拍后每时辰降 2
+auction_pill_xuanyu,pill_xuanyu,30,16,3,玄玉丹急售
+auction_dunfu,item_dunfu,36,18,4,遁符（保命底牌，拍场常客）
