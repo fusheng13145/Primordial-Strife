@@ -43,6 +43,8 @@ public final class StrifeRealm {
         registerIntents();
         // EP1 E5（ADR-032；禁区披露批 ADR-031 ①）：宗门职级只读派生命令。
         com.strife.core.StrifeCommands.MODULE_SUBTREES.add(SectStatus.subtree());
+        // EP1（ADR-034；禁区披露批 #2）：闭关时间跳变——打坐结算的时间重放。
+        com.strife.core.StrifeCommands.MODULE_SUBTREES.add(SeclusionCommand.subtree());
     }
 
     /**

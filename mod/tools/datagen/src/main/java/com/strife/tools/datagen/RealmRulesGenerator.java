@@ -26,7 +26,8 @@ public final class RealmRulesGenerator implements NumbersGenerator {
                     "meditation",
                     "spiritroot",
                     "lifespan",
-                    "sect");
+                    "sect",
+                    "seclusion");
 
     @Override
     public List<Product> generate(NumbersSource numbers) {

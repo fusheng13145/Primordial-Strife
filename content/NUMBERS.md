@@ -214,3 +214,12 @@ substitute_health: 1.0   # 替身草人触发后保留的生命（半颗心）
 escape_cooldown_sec: 30  # 遁符使用冷却（秒）
 escape_place: qi_fangshi  # 遁符落点（地点内容 ID——"遁回坊市"；经 core 只读桥解析）
 ```
+
+## 15. 闭关时间跳变（EP1，ADR-034；值 2026-11-01 定值，随实机批校准）
+
+@@seclusion
+```yaml
+shichen_ticks: 12000   # 1 时辰 = 现实 10 分钟等值刻数（结算粒度）
+max_shichen: 12        # 单次闭关上限（12 时辰 = 6 修行年寿元代价）
+safety_radius: 8       # 入定安全半径：格内存在敌对生物即拒入
+```
