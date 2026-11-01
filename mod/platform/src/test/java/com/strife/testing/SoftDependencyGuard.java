@@ -13,6 +13,11 @@ public final class SoftDependencyGuard {
     static final List<String> FORBIDDEN = List.of("mezz.jei", "vazkii.patchouli");
 
     public static List<String> violations(String relativePath, String source) {
+        // ADR-028 ③：com/strife/clientfx/compat/** 是唯一的软依赖接入面（compileOnly 依赖，
+        // 运行期 optional+CLIENT）——白名单外任何 jei/patchouli 引用仍然必红。
+        if (relativePath.replace('\\', '/').contains("com/strife/clientfx/compat/")) {
+            return List.of();
+        }
         List<String> out = new ArrayList<>();
         for (String marker : FORBIDDEN) {
             int index = source.indexOf(marker);

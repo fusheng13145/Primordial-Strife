@@ -16,6 +16,18 @@ plugins {
 
 dependencyResolutionManagement {
     repositories {
+        // P1-11/12（ADR-028 ③）：JEI/Patchouli 走本地 vendor 仓（maven 布局）——2026-11-01 实证
+        // 本机代理截断 blamejared 二进制、maven.neoforged.net 拒连，故离线化：jar 就位即生效
+        // （解锁步骤见 platform/build.gradle dependencies 注释）。
+        exclusiveContent {
+            forRepository {
+                maven { url = file('vendor') }
+            }
+            filter {
+                includeGroup 'mezz.jei'
+                includeGroup 'vazkii.patchouli'
+            }
+        }
         mavenCentral()
     }
 }

@@ -56,6 +56,12 @@ neoForge {
 }
 
 dependencies {
+    // P1-11/12（ADR-028 ③）：依赖已接线但【阻塞于本机代理截断二进制下载】（2026-11-01 实证：
+    // blamejared 元数据可达、jar 拉取截断；maven.neoforged.net 拒连；本机无启动器缓存）。
+    // 解锁步骤：①按 maven 布局把两个 jar 放进 mod/vendor/（路径见 gradle.properties 版本号）
+    // ②解开下面两行 ③在 mod/ 下跑 gradle :platform:compileJava。
+    // compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${providers.gradleProperty('jei_version').get()}"
+    // compileOnly "vazkii.patchouli:Patchouli:${providers.gradleProperty('patchouli_version').get()}"
     testImplementation "org.junit.jupiter:junit-jupiter:${providers.gradleProperty('junit_version').get()}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

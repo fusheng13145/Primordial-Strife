@@ -3,6 +3,7 @@ package com.strife.testing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +37,20 @@ class SoftDependencyBoundaryTest {
     @DisplayName("主源码没有对 JEI/Patchouli 的硬引用")
     void mainSourcesNeverHardReferenceSoftDependencies() throws Exception {
         assertEquals(List.of(), SoftDependencyGuard.scan(PROJECT_DIR.resolve("src/main/java")));
+
+        // ADR-028 ③：compat 白名单正反样本——包内引库放行，包外依旧必红。
+        assertTrue(
+                SoftDependencyGuard.violations(
+                                "com/strife/clientfx/compat/jei/StrifeJeiPlugin.java",
+                                "package com.strife.clientfx.compat.jei;\n\nimport mezz.jei.api.JeiPlugin;\n")
+                        .isEmpty(),
+                "compat 包内允许引用 JEI（ADR-028 ③）");
+        assertFalse(
+                SoftDependencyGuard.violations(
+                                "com/strife/clientfx/StrifeClientFx.java",
+                                "package com.strife.clientfx;\n\nimport mezz.jei.api.JeiPlugin;\n")
+                        .isEmpty(),
+                "compat 包外引用 JEI 仍然必红");
     }
 
     @Test
