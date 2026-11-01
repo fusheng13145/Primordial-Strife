@@ -38,12 +38,12 @@
 | 领域 | 唯一真相源 | 状态 |
 |---|---|---|
 | 工程规范 / 架构 / 流程 | 本手册（docs/） | 生效 |
-| 全部游戏数值 | [`content/NUMBERS.md`](../content/NUMBERS.md) | **Agent 初稿待审**（G-5/P0）：九境骨架表字段齐，`[拟]` 值逐条待本人确认 |
-| 世界观与章节大纲 | [`content/STORY.md`](../content/STORY.md) | **Agent 初稿待审**：世界公理 + 序章十节点骨架 + 第一章骨架；序章冻结仍属 P0 |
-| 设定卡（Agent 文本强制上下文） | [`content/LORE.md`](../content/LORE.md) | **Agent 初稿待审**：术语表、区域/势力/NPC 卡、禁用词清单 |
-| 字段契约 | [`content/JSON_SCHEMA.md`](../content/JSON_SCHEMA.md) | **Agent 初稿待审**：§4 逐域字段表 + §7 校验规则 ID + §8.1 表侧对账 |
+| 全部游戏数值 | [`content/NUMBERS.md`](../content/NUMBERS.md) | **已定稿**（2026-11-01，ADR-031；`@@artifact/@@pvp/@@companion` 值随实机批校准） |
+| 世界观与章节大纲 | [`content/STORY.md`](../content/STORY.md) | **已定稿**（2026-11-01）：序章 + 第一章骨架冻结，第二章起登记 |
+| 设定卡（Agent 文本强制上下文） | [`content/LORE.md`](../content/LORE.md) | **已定稿**（2026-11-01）：区域/势力/NPC 名锁名 |
+| 字段契约 | [`content/JSON_SCHEMA.md`](../content/JSON_SCHEMA.md) | **已定稿**（2026-11-01；保留项：§4.14 配色美术裁决） |
 
-四份均已入库，但仍是 **Agent 起草、未经本人名义确认**：可读、可讨论，**不得当作既成事实引用**。`[拟]` / `[占位]` 的每一条都要本人拍板，定稿统一在 P0 的 G-5 批次执行。
+四份均已定稿（2026-11-01，ADR-031 全权委托批量拍板；本人对单项保留追认/推翻权）。`[占位]` 为 EP 后置内容的结构性占位；新受管数值仍只进真相源。
 
 **数值与剧情只写在真相源。** 代码、JSON、lang 中的相关值一律由 DataGen 从真相源生成，禁止手填；`@generated` 产物禁止手改。
 
