@@ -130,7 +130,8 @@ public final class Spells {
                 spec.projectileGravity(),
                 spec.projectileRange(),
                 spec.projectilePierceCount(),
-                (float) spec.aoeRadiusBlocks());
+                (float) spec.aoeRadiusBlocks(),
+                spec.element());
         level.addFreshEntity(projectile);
     }
 

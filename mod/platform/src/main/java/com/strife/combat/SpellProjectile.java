@@ -4,6 +4,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -44,6 +45,7 @@ public class SpellProjectile extends Projectile
     private double gravityPerTick;
     private Vec3 origin = Vec3.ZERO;
     private String spellId = "";
+    private String element = "";
 
     public SpellProjectile(EntityType<? extends SpellProjectile> type, Level level) {
         super(type, level);
@@ -59,8 +61,10 @@ public class SpellProjectile extends Projectile
             double gravity,
             double maxRange,
             int pierceCount,
-            float aoeRadius) {
+            float aoeRadius,
+            String element) {
         this.spellId = spellId;
+        this.element = element == null ? "" : element;
         this.setOwner(owner);
         this.damage = damage;
         this.maxRange = maxRange;
@@ -104,6 +108,7 @@ public class SpellProjectile extends Projectile
         Entity target = result.getEntity();
         DamageSource source = damageSource();
         target.hurt(source, (float) damage);
+        feedback(target.position(), 0.5f, 4);
         if (pierceLeft > 0) {
             pierceLeft--;
             return;
@@ -123,11 +128,39 @@ public class SpellProjectile extends Projectile
                 target.hurt(damageSource(), (float) (damage * 0.5));
             }
         }
-        if (this.level() instanceof ServerLevel server) {
-            server.sendParticles(
-                    ParticleTypes.CRIT, center.x, center.y, center.z, 6, 0.2, 0.2, 0.2, 0.05);
-        }
+        feedback(center, 1.0f, 8);
         this.discard();
+    }
+
+    /**
+     * P1-09 命中反馈：元素粒子 + 命中音效（vanilla 常量，缺库不崩——见 {@link SpellImpactFeedback}）。
+     * 直击音量低（0.5），消散音量足（1.0）；粒子数直击少、消散多。
+     */
+    private void feedback(Vec3 center, float volumeScale, int particleCount) {
+        if (this.level() instanceof ServerLevel server) {
+            SpellImpactFeedback.Impact impact = SpellImpactFeedback.forElement(element);
+            server.sendParticles(
+                    impact.particle(),
+                    center.x,
+                    center.y,
+                    center.z,
+                    particleCount,
+                    0.2,
+                    0.2,
+                    0.2,
+                    0.05);
+            server.sendParticles(
+                    ParticleTypes.CRIT, center.x, center.y, center.z, 4, 0.2, 0.2, 0.2, 0.05);
+            server.playSound(
+                    null,
+                    center.x,
+                    center.y,
+                    center.z,
+                    impact.sound(),
+                    SoundSource.NEUTRAL,
+                    impact.volume() * volumeScale,
+                    impact.pitch());
+        }
     }
 
     private DamageSource damageSource() {
