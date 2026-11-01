@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/prices.csv @ sha256:71aefec05a00c82df0f40a9a1e1b0e7085b29c3a409c3b1c6e45bd0be5de9270",
+  "@generated": "from tables/prices.csv @ sha256:7df23822c9d0bc986bd7b19223ccfa1b42b300124f163439858a0eab003619d8",
   "id": "prices",
   "ratios": {
     "tier_zhong": 10,
@@ -53,6 +53,18 @@
     "item_id": "pill_xuanyu",
     "buy_lingshi": 20,
     "sell_lingshi": 10
+  },
+    {
+    "id": "price_dunfu",
+    "item_id": "item_dunfu",
+    "buy_lingshi": 15,
+    "sell_lingshi": 7
+  },
+    {
+    "id": "price_tishen_caoren",
+    "item_id": "item_tishen_caoren",
+    "buy_lingshi": 25,
+    "sell_lingshi": 12
   }
   ]
 }

@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public final class CombatRulesGenerator implements NumbersGenerator {
 
-    private static final List<String> BLOCKS = List.of("combat");
+    private static final List<String> BLOCKS = List.of("combat", "talisman");
 
     @Override
     public List<Product> generate(NumbersSource numbers) {

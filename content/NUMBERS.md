@@ -205,3 +205,12 @@ tier_shang: 100  # 上品灵石 = 下品 ×100
 rank_neimen: 30   # 内门：对所属势力声望 ≥30
 rank_zhenchuan: 60  # 真传：对所属势力声望 ≥60（低于内门线为外门，无所属=散修）
 ```
+
+## 14. 符箓与保命道具（EP1，ADR-035；值 2026-11-01 定值，随实机批校准）
+
+@@talisman
+```yaml
+substitute_health: 1.0   # 替身草人触发后保留的生命（半颗心）
+escape_cooldown_sec: 30  # 遁符使用冷却（秒）
+escape_place: qi_fangshi  # 遁符落点（地点内容 ID——"遁回坊市"；经 core 只读桥解析）
+```

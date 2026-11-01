@@ -75,6 +75,42 @@ public final class CombatTables {
         }
     }
 
+    /**
+     * 符箓规则（P3 ADR-035，NUMBERS @@talisman → rules.json 的 talisman 块）。
+     *
+     * <p>fail-soft 口径与 BeastStats 不同：{@code absent()} 表示"符箓系统整体不可用"（遁符拒绝使用、
+     * 替身不触发）——保命道具缺数据时**宁可不生效也不猜默认值**（受管数值零字面量，猜错就是假死/秒回）。
+     */
+    public record TalismanRules(
+            double substituteHealth, int escapeCooldownSec, String escapePlace) {
+
+        public static TalismanRules absent() {
+            return new TalismanRules(-1.0, -1, "");
+        }
+
+        public boolean present() {
+            return substituteHealth >= 0;
+        }
+    }
+
+    /** 取符箓规则；产物缺失/解析失败回 {@link TalismanRules#absent} 并记日志。 */
+    public static TalismanRules talismanRules() {
+        try {
+            JsonObject talisman = loadProduct().getAsJsonObject("talisman");
+            if (talisman == null) {
+                throw new IllegalStateException(
+                        "strife_combat/rules.json 的 combat 块缺 talisman 子对象（NUMBERS @@talisman 改了键名？）");
+            }
+            return new TalismanRules(
+                    talisman.get("substitute_health").getAsDouble(),
+                    talisman.get("escape_cooldown_sec").getAsInt(),
+                    talisman.get("escape_place").getAsString());
+        } catch (RuntimeException e) {
+            LOGGER.error("talisman rules unavailable, talismans disabled: {}", e.getMessage());
+            return TalismanRules.absent();
+        }
+    }
+
     /** 取品阶加成；产物缺失/解析失败/未知品阶一律回零加成并记日志（属性栏不是崩点）。 */
     public static ArtifactBonus artifactBonus(String quality) {
         try {
@@ -112,6 +148,10 @@ public final class CombatTables {
     }
 
     private static JsonObject loadCombatBlock() {
+        return requireBlock(loadProduct(), "combat");
+    }
+
+    private static JsonObject loadProduct() {
         try (InputStream stream =
                 Objects.requireNonNull(
                         CombatTables.class.getResourceAsStream(
@@ -124,14 +164,19 @@ public final class CombatTables {
                 throw new IllegalStateException(
                         "strife_combat/rules.json missing @generated header");
             }
-            JsonObject combat = product.getAsJsonObject("combat");
-            if (combat == null) {
-                throw new IllegalStateException("strife_combat/rules.json missing 'combat' block");
-            }
-            return combat;
+            return product;
         } catch (Exception e) {
             throw new IllegalStateException("cannot read strife_combat/rules.json", e);
         }
+    }
+
+    private static JsonObject requireBlock(JsonObject product, String name) {
+        JsonObject value = product.getAsJsonObject(name);
+        if (value == null) {
+            throw new IllegalStateException(
+                    "strife_combat/rules.json missing '" + name + "' block");
+        }
+        return value;
     }
 
     private static com.google.gson.JsonElement require(JsonObject block, String key) {
