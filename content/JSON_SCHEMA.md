@@ -196,7 +196,7 @@ DataGen 只从 NUMBERS.md 读以下块，其余键视为未定义：
 | `timer` | `{sec, fail_goto}` \| null | 必（可 null） | 超时跳转节点 ID（04 §2 `timer`/`fail_goto`） |
 | `fail_goto` | quest id \| null | 必（可 null） | 与 timer 独立：任务可失败时的去向 |
 | `flags_set` | flag 键[] | 可 | **H3** 命名空间键，见 §5 |
-| `repeatable` | enum `no/per_day/per_period` | 必 | `per_period` 依赖 H5 周期 ID |
+| `repeatable` | 枚举 `no\|re-arm`（ADR-033：re-arm=完成后立即重新可接、进度清零、奖励重新可发；`yes/per_day/per_period` fail-fast——依赖 H5 周期未实现） |
 | `hidden` | bool | 必 | 是否在面板隐藏（剧情反转） |
 | `price_reward` | H1 | 必（可 null） | 灵石奖励统一走 H1 价格类型，避免第二货币字段 |
 

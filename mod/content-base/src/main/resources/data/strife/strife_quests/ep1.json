@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/quests_ep1.csv @ sha256:08a15f6cce482402dc3a237a45ac74eff2e43513706799b158adffbb136ca266",
+  "@generated": "from tables/quests_ep1.csv @ sha256:fbf0e78f16326f642ad95df81d82371556b2594f95df102f5440ee37468482cb",
   "id": "quest_ep1_market_intro_01",
   "chapter": "ep1",
   "quests": [
@@ -74,7 +74,7 @@
     "timer": null,
     "fail_goto": null,
     "flags_set": null,
-    "repeatable": "no",
+    "repeatable": "re-arm",
     "hidden": false,
     "price_reward": null
   },
@@ -107,7 +107,7 @@
     "timer": null,
     "fail_goto": null,
     "flags_set": null,
-    "repeatable": "no",
+    "repeatable": "re-arm",
     "hidden": false,
     "price_reward": null
   },
@@ -151,7 +151,7 @@
     "timer": null,
     "fail_goto": null,
     "flags_set": null,
-    "repeatable": "no",
+    "repeatable": "re-arm",
     "hidden": false,
     "price_reward": null
   },

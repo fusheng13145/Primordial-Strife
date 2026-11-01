@@ -86,7 +86,8 @@ public final class QuestBook {
             List<RewardSpec> rewards,
             List<ReputationDelta> reputationDeltas,
             List<String> flagsSet,
-            boolean hidden) {}
+            boolean hidden,
+            String repeatable) {}
 
     /** 一次完成所发放的奖励记录（装配层写审计日志用）。 */
     public record AppliedReward(
@@ -245,13 +246,15 @@ public final class QuestBook {
             flagsSet.add(string(element, "flag", true));
         }
         String repeatable = string(json, "repeatable", true);
-        if (!"no".equals(repeatable)) {
+        // ADR-033：合法值 no | re-arm（完成后立即重新可接、进度清零、奖励重新可发）。
+        // yes/per_day/per_period 仍 fail-fast——per_* 依赖日重置与 H5 周期，语义不冒领。
+        if (!"no".equals(repeatable) && !"re-arm".equals(repeatable)) {
             throw new IllegalStateException(
                     "quest '"
                             + id
                             + "' is repeatable="
                             + repeatable
-                            + " — per_day/per_period 依赖日重置与 H5 周期，本期未支持（JSON_SCHEMA §4.6）");
+                            + " — 合法值 no|re-arm（ADR-033）；per_day/per_period 依赖日重置与 H5 周期，本期未支持（JSON_SCHEMA §4.6）");
         }
         return new QuestSpec(
                 id,
@@ -262,7 +265,8 @@ public final class QuestBook {
                 rewards,
                 deltas,
                 flagsSet,
-                booleanValue(json, "hidden"));
+                booleanValue(json, "hidden"),
+                repeatable);
     }
 
     public String chapter() {
@@ -414,7 +418,12 @@ public final class QuestBook {
             // 重报事件必须能重试发放（缝幂等 + 完成态恰好落一次共同保证幂等）
             if (isComplete(quest, state)) {
                 applied.addAll(grant(quest, sink));
-                state.markCompleted(quest.id());
+                if ("re-arm".equals(quest.repeatable())) {
+                    // ADR-033：re-arm 悬赏——奖励入包后清进度不落完成态，立即重新可接。
+                    state.reArm(quest.id());
+                } else {
+                    state.markCompleted(quest.id());
+                }
             }
         }
         return applied;

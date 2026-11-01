@@ -36,6 +36,12 @@ public final class QuestState {
         completed.put(questId, true);
     }
 
+    /** ADR-033 re-arm：清除完成态与该任务全部进度——悬赏立即重新可接（奖励不回收）。 */
+    void reArm(String questId) {
+        completed.remove(questId);
+        objectiveProgress.remove(questId);
+    }
+
     /** start_quest 的落点（幂等：重复激活是 no-op）。公开给装配层（对话树 effects 的唯一开门入口）。 */
     public void activate(String questId) {
         activated.add(questId);
