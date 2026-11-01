@@ -41,6 +41,8 @@ public final class StrifeRealm {
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedOut);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         registerIntents();
+        // EP1 E5（ADR-032；禁区披露批 ADR-031 ①）：宗门职级只读派生命令。
+        com.strife.core.StrifeCommands.MODULE_SUBTREES.add(SectStatus.subtree());
     }
 
     /**

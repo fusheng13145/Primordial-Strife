@@ -20,7 +20,13 @@ import java.util.Map;
 public final class RealmRulesGenerator implements NumbersGenerator {
 
     private static final List<String> BLOCKS =
-            List.of("breakthrough", "breakthrough_cost", "meditation", "spiritroot", "lifespan");
+            List.of(
+                    "breakthrough",
+                    "breakthrough_cost",
+                    "meditation",
+                    "spiritroot",
+                    "lifespan",
+                    "sect");
 
     @Override
     public List<Product> generate(NumbersSource numbers) {
