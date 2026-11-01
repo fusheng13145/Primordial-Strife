@@ -95,6 +95,12 @@ public final class StrifeClientFx {
         modEventBus.addListener(this::onRegisterKeyMappings);
         modEventBus.addListener(this::onRegisterRenderers);
         NeoForge.EVENT_BUS.addListener(this::onClientTick);
+        // P1-21（D12）：指引面板桥——指引物品右键在客户端开启本侧 GuideScreen。
+        com.strife.core.GuideUiBridge.registerUiOpener(
+                stack -> {
+                    net.minecraft.client.Minecraft.getInstance().setScreen(new GuideScreen());
+                    return true;
+                });
     }
 
     private void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

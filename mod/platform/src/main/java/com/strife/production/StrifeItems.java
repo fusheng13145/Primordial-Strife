@@ -2,7 +2,11 @@ package com.strife.production;
 
 import com.strife.core.StrifeMod;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -35,12 +39,37 @@ public final class StrifeItems {
     public static final DeferredHolder<Item, Item> PILL_YANSHOU = registerPill("pill_yanshou");
     public static final DeferredHolder<Item, Item> PILL_XUANYU = registerPill("pill_xuanyu");
 
+    /** 《修真入门》（P1-21，D12）：右键开客户端面板（经 GuideUiBridge；无 clientfx 时静默，命令通道兜底）。 */
+    public static final DeferredHolder<Item, Item> GUIDE_INTRO =
+            ITEMS.register("item_guide_intro", GuideItem::new);
+
     private static DeferredHolder<Item, Item> register(String name) {
         return ITEMS.register(name, () -> new Item(new Item.Properties()));
     }
 
     private static DeferredHolder<Item, Item> registerPill(String pillId) {
         return ITEMS.register(pillId, () -> StrifePills.item(pillId));
+    }
+
+    /** 指引物品：use 全权委托 core 桥（面板在 clientfx；无桥=无操作，D-P0-2 命令兜底）。 */
+    public static final class GuideItem extends Item {
+        public GuideItem() {
+            super(new Item.Properties().stacksTo(1));
+        }
+
+        @Override
+        public InteractionResultHolder<ItemStack> use(
+                Level level,
+                net.minecraft.world.entity.player.Player player,
+                InteractionHand hand) {
+            ItemStack stack = player.getItemInHand(hand);
+            if (!level.isClientSide()) {
+                return InteractionResultHolder.success(stack);
+            }
+            return com.strife.core.GuideUiBridge.openClient(stack)
+                    ? InteractionResultHolder.consume(stack)
+                    : InteractionResultHolder.pass(stack);
+        }
     }
 
     private StrifeItems() {}
