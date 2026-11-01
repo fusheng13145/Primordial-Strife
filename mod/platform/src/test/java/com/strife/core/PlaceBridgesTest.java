@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -15,11 +16,21 @@ import org.junit.jupiter.api.Test;
  *
  * <p>关键口径与 {@link RewardBridgesTest} 同源：<b>没注册就是没有这条路</b>——调用返回 empty 且不提供任何"默认实现"，
  * 因为默认实现只能是"永远查不到"，而那正是"看起来接了其实没接"的来源。用例把这条钉住。
+ *
+ * <p><b>为什么 {@code @BeforeEach} 也要清场</b>：ModDevGradle {@code unitTest} 的 JUnit 环境会构造被测 mod 的 @Mod
+ * 入口——实测 StrifeWorld 构造器先于任何测试方法把地点桥注册掉（world 侧注册本是生产行为）。桥是 JVM 全局状态，
+ * 契约用例必须从已知零态出发，不能赌"引导期恰好没人注册"（StrifeCombat 不被构造只是 harness 的偶然，RewardBridgesTest
+ * 的"未接线"断言同样悬在这上面——见交付记录，不在本批扩大范围）。
  */
 class PlaceBridgesTest {
 
     private static final ResourceLocation OVERWORLD =
             ResourceLocation.fromNamespaceAndPath("minecraft", "overworld");
+
+    @BeforeEach
+    void clearGlobalStateBeforeTest() {
+        PlaceBridges.resetForTest();
+    }
 
     @AfterEach
     void tearDown() {
