@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
+import com.strife.core.PlaceBridges;
 import com.strife.testing.ShippedProducts;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
@@ -101,6 +103,27 @@ class PlacesTest {
             double scale = ShippedProducts.place(id).get("qi_scale").getAsDouble();
             assertTrue(scale > 0 && scale <= 10, id + " qi_scale 越界：" + scale);
         }
+    }
+
+    @Test
+    void lookupResolvesShippedPlaceThroughTheBridgeContract() {
+        // G-4 / ADR-023 world 侧实现：按 ID 查只读快照。真实产物当夹具（ADR-020），不依赖开服。
+        List<Places.Place> all =
+                List.of(
+                        Places.fromJson(ShippedProducts.place("qi_luoxia")),
+                        Places.fromJson(ShippedProducts.place("qi_wenjiang")));
+
+        Optional<PlaceBridges.PlaceCoords> hit = Places.lookupIn(all, "qi_wenjiang");
+        assertTrue(hit.isPresent(), "地点桥必须能按 ID 解析已登记地点");
+        assertEquals("文津渡", hit.orElseThrow().name(), "name 是玩家可见中文名（§4.17）");
+        assertEquals(
+                ResourceLocation.fromNamespaceAndPath("minecraft", "overworld"),
+                hit.orElseThrow().dimension());
+        assertEquals(-512, hit.orElseThrow().x());
+        assertEquals(-512, hit.orElseThrow().z());
+
+        assertTrue(Places.lookupIn(all, "qi_missing").isEmpty(), "未知地点返回 empty，调用方据此降级而不是画假方向");
+        assertTrue(Places.lookupIn(all, null).isEmpty(), "空 ID 返回 empty，不打崩调用方");
     }
 
     private static Places.Place luoxia() {

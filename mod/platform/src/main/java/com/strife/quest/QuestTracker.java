@@ -1,5 +1,6 @@
 package com.strife.quest;
 
+import com.strife.core.PlaceBridges;
 import com.strife.quest.engine.QuestAdapter;
 import com.strife.quest.engine.QuestBook;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.BossEvent.BossBarColor;
@@ -28,8 +30,9 @@ import org.slf4j.LoggerFactory;
  * <p>为什么是服务端 BossBar 而不是自绘 HUD：clientfx 只能依赖 core，quest 状态不在现有 S2C delta 里；把新载荷塞进 core 会动禁区
  * 契约。BossBar 是原版服务端原语（客户端零改动），且数据源仍是服务端权威任务状态——客户端不复制任务表，也不自行判断"当前任务"。
  *
- * <p>导航只覆盖 {@code npc_} 目标：坐标来自 quest 自己的 {@code strife_npcs} 产物；{@code reach} 的地点坐标属 world， 自动联动待
- * ADR-023 的 SPI 裁决。距离是水平距离，高度不参与（与 {@code /strife world place nav} 同口径）。
+ * <p>导航覆盖两类目标（G-4 / ADR-023 落地）：{@code npc_} 走 quest 自己的 {@code strife_npcs} 产物；{@code qi_}（reach
+ * 地点）经 core 的 {@link PlaceBridges} 只读桥查 world 的 {@code strife_places} 数据——quest 不 import
+ * world，桥未接线或查不到 就不画导航行（不编造方向）。距离是水平距离，高度不参与（与 {@code /strife world place nav} 同口径）。
  */
 public final class QuestTracker {
 
@@ -174,14 +177,15 @@ public final class QuestTracker {
         MutableComponent name =
                 Component.translatable("gui.strife.tracker.title").withStyle(ChatFormatting.AQUA);
         for (QuestBook.ObjectiveView objective : view.objectives()) {
-            name.append(" · ").append(objectiveLine(objective));
+            name.append(" · ").append(objectiveLine(objective, player));
         }
         navigationLine(view, player).ifPresent(line -> name.append(" · ").append(line));
         return name;
     }
 
-    private static Component objectiveLine(QuestBook.ObjectiveView objective) {
-        Component target = targetName(objective.target());
+    private static Component objectiveLine(QuestBook.ObjectiveView objective, ServerPlayer player) {
+        Component target =
+                targetName(objective.target(), PlaceBridges::findPlace, player.getServer());
         return switch (objective.type()) {
             case TALK ->
                     Component.translatable(
@@ -235,7 +239,12 @@ public final class QuestTracker {
         };
     }
 
-    private static Component targetName(String target) {
+    /**
+     * 目标显示名：{@code qi_} 地点目标优先用地点桥返回的中文表名（JSON_SCHEMA §4.17：地点 name <b>不入 lang</b>、直接写表， 再造 {@code
+     * region.strife.*} 词条就是第二真相源）；桥未接线或查不到时退回 {@code region.strife.*} 键（旧行为）。
+     */
+    static Component targetName(
+            String target, PlaceBridges.PlaceLookup placeLookup, MinecraftServer server) {
         if (target == null) {
             return Component.empty();
         }
@@ -249,19 +258,25 @@ public final class QuestTracker {
             return Component.translatable("block.strife." + target);
         }
         if (target.startsWith("qi_")) {
-            return Component.translatable("region.strife." + target);
+            return placeLookup == null
+                    ? Component.translatable("region.strife." + target)
+                    : placeLookup
+                            .find(server, target)
+                            .map(coords -> (Component) Component.literal(coords.name()))
+                            .orElseGet(() -> Component.translatable("region.strife." + target));
         }
         return Component.literal(target);
     }
 
     private static Optional<Component> navigationLine(
             QuestBook.QuestView view, ServerPlayer player) {
+        // NPC 摆放表不可用时置空而不是整体放弃：地点导航（qi_ 目标）不依赖它，两条数据源各管各的。
         List<NpcPlacements.Placement> placements;
         try {
             placements = NpcPlacements.getOrThrow(player.getServer());
         } catch (RuntimeException e) {
             logLoadFailure(e);
-            return Optional.empty();
+            placements = List.of();
         }
         ResourceLocation dimension = player.level().dimension().location();
         for (QuestBook.ObjectiveView objective : view.objectives()) {
@@ -271,7 +286,9 @@ public final class QuestTracker {
                             placements,
                             dimension,
                             player.getX(),
-                            player.getZ());
+                            player.getZ(),
+                            PlaceBridges::findPlace,
+                            player.getServer());
             if (nav.isPresent()) {
                 return Optional.of(navigationLine(nav.get()));
             }
@@ -294,33 +311,78 @@ public final class QuestTracker {
                 Component.translatable(nav.directionKey()));
     }
 
+    /** NPC 目标导航（原口径，测试入口）：不接地点桥。 */
     static Optional<Navigation> navigationFor(
             String target,
             List<NpcPlacements.Placement> placements,
             ResourceLocation playerDimension,
             double playerX,
             double playerZ) {
-        if (target == null || !target.startsWith("npc_")) {
+        return navigationFor(target, placements, playerDimension, playerX, playerZ, null, null);
+    }
+
+    /**
+     * 目标导航：{@code npc_} 走任务自己的 NPC 摆放表；{@code qi_}（reach 地点）走 core 桥的地点查询（G-4/ADR-023）；
+     * 其余目标没有坐标语义，返回 empty——不编造方向。桥未接线（{@code placeLookup == null}）时地点目标同样 empty。
+     */
+    static Optional<Navigation> navigationFor(
+            String target,
+            List<NpcPlacements.Placement> placements,
+            ResourceLocation playerDimension,
+            double playerX,
+            double playerZ,
+            PlaceBridges.PlaceLookup placeLookup,
+            MinecraftServer server) {
+        if (target == null) {
             return Optional.empty();
         }
-        for (NpcPlacements.Placement placement : placements) {
-            if (!placement.id().equals(target)) {
-                continue;
+        if (target.startsWith("npc_")) {
+            for (NpcPlacements.Placement placement : placements) {
+                if (!placement.id().equals(target)) {
+                    continue;
+                }
+                if (!placement.dimension().equals(playerDimension)) {
+                    return Optional.of(new Navigation(false, 0L, "", placement.dimension()));
+                }
+                double dx = placement.x() - playerX;
+                double dz = placement.z() - playerZ;
+                long distance = Math.round(Math.hypot(dx, dz));
+                return Optional.of(
+                        new Navigation(
+                                true,
+                                distance,
+                                distance == 0L
+                                        ? "gui.strife.tracker.dir.here"
+                                        : directionKey(dx, dz),
+                                placement.dimension()));
             }
-            if (!placement.dimension().equals(playerDimension)) {
-                return Optional.of(new Navigation(false, 0L, "", placement.dimension()));
-            }
-            double dx = placement.x() - playerX;
-            double dz = placement.z() - playerZ;
-            long distance = Math.round(Math.hypot(dx, dz));
-            return Optional.of(
-                    new Navigation(
-                            true,
-                            distance,
-                            distance == 0L ? "gui.strife.tracker.dir.here" : directionKey(dx, dz),
-                            placement.dimension()));
+            return Optional.empty();
+        }
+        if (target.startsWith("qi_") && placeLookup != null) {
+            return placeLookup
+                    .find(server, target)
+                    .map(coords -> navigation(coords, playerDimension, playerX, playerZ));
         }
         return Optional.empty();
+    }
+
+    /** 由地点坐标合成导航结果（与 NPC 同口径：水平距离 + 八向罗盘 + 跨维度提示）。 */
+    private static Navigation navigation(
+            PlaceBridges.PlaceCoords coords,
+            ResourceLocation playerDimension,
+            double playerX,
+            double playerZ) {
+        if (!coords.dimension().equals(playerDimension)) {
+            return new Navigation(false, 0L, "", coords.dimension());
+        }
+        double dx = coords.x() - playerX;
+        double dz = coords.z() - playerZ;
+        long distance = Math.round(Math.hypot(dx, dz));
+        return new Navigation(
+                true,
+                distance,
+                distance == 0L ? "gui.strife.tracker.dir.here" : directionKey(dx, dz),
+                coords.dimension());
     }
 
     /** 八向罗盘：0° 为北（-z），顺时针每 45° 一档。 */

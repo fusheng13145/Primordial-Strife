@@ -1,6 +1,7 @@
 package com.strife.world;
 
 import com.strife.core.CultivationFactors;
+import com.strife.core.PlaceBridges;
 import com.strife.core.StrifeCommands;
 import com.strife.core.StrifeMod;
 import java.util.Map;
@@ -77,10 +78,14 @@ public final class StrifeWorld {
         NeoForge.EVENT_BUS.addListener(HerbDrops::onBreakBlock);
         NeoForge.EVENT_BUS.addListener(AmbientQiWarmup::onChunkLoad);
         CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
+        // G-4 / ADR-023：把地点只读查询接进 core 桥，quest 的 reach 目标导航由此取坐标（quest 不 import world）。
+        PlaceBridges.registerPlaceLookup(Places::lookup);
         StrifeCommands.MODULE_SUBTREES.add(OreCommand.subtree());
         StrifeCommands.MODULE_SUBTREES.add(RealmCommand.subtree());
         StrifeCommands.MODULE_SUBTREES.add(PlaceCommand.subtree());
         LOGGER.info("strife world wired cultivation factor: environment=ambient qi field");
+        LOGGER.info(
+                "strife world wired place lookup (G-4): quest reach targets resolve via strife_places");
         LOGGER.info(
                 "strife world registered ore blocks: {}",
                 String.join(", ", StrifeOreBlocks.registeredIds()));

@@ -2,6 +2,7 @@ package com.strife.world;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.strife.core.PlaceBridges;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public final class Places {
             String chapter) {}
 
     private static volatile List<Place> places;
+    private static volatile boolean lookupFailureLogged;
 
     private Places() {}
 
@@ -119,6 +121,39 @@ public final class Places {
         return best;
     }
 
+    /**
+     * core {@link PlaceBridges} 的 world 侧实现（G-4 / ADR-023）：按内容 ID 查地点只读快照。
+     *
+     * <p>产物缺失（{@link #getOrThrow} 抛错）与未知 ID 都降级为 empty——导航是锦上添花，不能因为表缺失把调用方（任务 追踪条）打崩；故障信号由 ERROR
+     * 日志承载（只报一次，与 {@code WorldTables} 同口径）。
+     */
+    public static Optional<PlaceBridges.PlaceCoords> lookup(
+            MinecraftServer server, String placeId) {
+        try {
+            return lookupIn(getOrThrow(server), placeId);
+        } catch (RuntimeException e) {
+            if (!lookupFailureLogged) {
+                lookupFailureLogged = true;
+                LOGGER.error("place lookup unavailable: {}", e.getMessage());
+            }
+            return Optional.empty();
+        }
+    }
+
+    /** 按表查地点（包内可见，用例直接喂解析结果，不依赖开服）。 */
+    static Optional<PlaceBridges.PlaceCoords> lookupIn(List<Place> all, String placeId) {
+        if (placeId == null) {
+            return Optional.empty();
+        }
+        return all.stream()
+                .filter(p -> p.id().equals(placeId))
+                .findFirst()
+                .map(
+                        p ->
+                                new PlaceBridges.PlaceCoords(
+                                        p.dimension(), p.name(), p.x(), p.y(), p.z()));
+    }
+
     private static String string(JsonObject json, String key) {
         if (!json.has(key)) {
             throw new IllegalStateException("地点产物缺字段 '" + key + "'");
@@ -129,5 +164,6 @@ public final class Places {
     /** 仅供测试：清空缓存。 */
     static void clearForTest() {
         places = null;
+        lookupFailureLogged = false;
     }
 }

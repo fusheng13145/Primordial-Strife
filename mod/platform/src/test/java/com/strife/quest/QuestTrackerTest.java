@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.strife.core.PlaceBridges;
 import com.strife.quest.engine.QuestBook;
 import com.strife.quest.engine.QuestState;
 import com.strife.testing.ShippedProducts;
@@ -13,13 +14,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 /**
- * 任务追踪条的纯逻辑：当前任务选择、必做目标进度，以及 NPC 目标的地面导航。
+ * 任务追踪条的纯逻辑：当前任务选择、必做目标进度，以及 NPC / 地点（reach）目标的地面导航。
  *
- * <p>任务簿用 jar 内真实序章产物；导航断言用合成坐标（真实 NPC 坐标已由 {@code NpcPlacementsTest} 守住半径与维度）。
+ * <p>任务簿用 jar 内真实序章产物；导航断言用合成坐标（真实 NPC 坐标已由 {@code NpcPlacementsTest} 守住半径与维度， 地点桥的产物侧契约由 {@code
+ * PlacesTest} 守住）。
  */
 class QuestTrackerTest {
 
@@ -186,5 +190,77 @@ class QuestTrackerTest {
 
         assertEquals("gui.strife.tracker.dir.here", nav.orElseThrow().directionKey());
         assertEquals(0L, nav.orElseThrow().distanceBlocks());
+    }
+
+    @Test
+    void navigationResolvesReachTargetsThroughThePlaceBridge() {
+        // G-4 / ADR-023 三态之一：同维度——地点桥给出坐标，导航与 NPC 同口径（水平距离 + 八向罗盘）。
+        PlaceBridges.PlaceCoords wenjiang =
+                new PlaceBridges.PlaceCoords(OVERWORLD, "文津渡", -512, 64, -512);
+        PlaceBridges.PlaceLookup lookup =
+                (server, id) -> "qi_wenjiang".equals(id) ? Optional.of(wenjiang) : Optional.empty();
+
+        QuestTracker.Navigation nav =
+                QuestTracker.navigationFor(
+                                "qi_wenjiang", List.of(), OVERWORLD, -503, -503, lookup, null)
+                        .orElseThrow();
+        assertTrue(nav.sameDimension());
+        assertEquals(13L, nav.distanceBlocks(), "hypot(9,9)=12.7，四舍五入 13");
+        assertEquals("gui.strife.tracker.dir.nw", nav.directionKey());
+    }
+
+    @Test
+    void navigationReportsCrossDimensionForPlaceTargets() {
+        // 三态之二：跨维度——不画方位，只显示目标维度。
+        ResourceLocation upper = ResourceLocation.parse("strife:upper_realm");
+        PlaceBridges.PlaceLookup lookup =
+                (server, id) -> Optional.of(new PlaceBridges.PlaceCoords(upper, "上界某地", 0, 64, 0));
+
+        QuestTracker.Navigation nav =
+                QuestTracker.navigationFor("qi_x", List.of(), OVERWORLD, 0, 0, lookup, null)
+                        .orElseThrow();
+        assertFalse(nav.sameDimension());
+        assertEquals(upper, nav.dimension());
+        assertEquals("", nav.directionKey());
+    }
+
+    @Test
+    void navigationDegradesGracefullyForPlaceTargets() {
+        // 三态之三 + 未接线：未知地点、桥没注册、非地点目标，都不编造方向。
+        PlaceBridges.PlaceLookup lookup = (server, id) -> Optional.empty();
+
+        assertTrue(
+                QuestTracker.navigationFor("qi_unknown", List.of(), OVERWORLD, 0, 0, lookup, null)
+                        .isEmpty(),
+                "未知地点不应编造方向");
+        assertTrue(
+                QuestTracker.navigationFor("qi_wenjiang", List.of(), OVERWORLD, 0, 0, null, null)
+                        .isEmpty(),
+                "桥未接线时不得假装能导航——没注册就是没有这条路");
+        assertTrue(
+                QuestTracker.navigationFor("item_x", List.of(), OVERWORLD, 0, 0, lookup, null)
+                        .isEmpty(),
+                "物品目标没有坐标语义");
+    }
+
+    @Test
+    void reachTargetDisplayNameComesFromThePlaceTable() {
+        // JSON_SCHEMA §4.17：地点 name 不入 lang、直接写表——显示名必须来自桥，而不是再造 region.strife.* 词条。
+        Component resolved =
+                QuestTracker.targetName(
+                        "qi_wenjiang",
+                        (server, id) ->
+                                Optional.of(
+                                        new PlaceBridges.PlaceCoords(OVERWORLD, "文津渡", 0, 0, 0)),
+                        null);
+        assertEquals(Component.literal("文津渡"), resolved, "追踪条应显示地点表中文名，而不是 region.strife.* 原始键");
+
+        // 桥未接线（查不到）：退回 region 键（旧行为，键受 V-TEXT 覆盖）。
+        Component fallback =
+                QuestTracker.targetName("qi_wenjiang", (server, id) -> Optional.empty(), null);
+        assertTrue(
+                fallback.getContents() instanceof TranslatableContents translatable
+                        && "region.strife.qi_wenjiang".equals(translatable.getKey()),
+                "降级路径必须可预期，不能变成编造的名字");
     }
 }
