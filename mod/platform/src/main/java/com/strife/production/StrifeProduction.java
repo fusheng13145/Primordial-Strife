@@ -37,6 +37,8 @@ public final class StrifeProduction {
         StrifeCommands.MODULE_SUBTREES.add(craftCommand());
         // EP1 经济原语（ADR-032）：坊市一口价 + 灵石三档兑换。
         StrifeCommands.MODULE_SUBTREES.add(MarketCommands.subtree());
+        // EP1（ADR-036 ②）：黑市——赃货折扣第二价目段，代价是因果与声望。
+        StrifeCommands.MODULE_SUBTREES.add(BlackMarketCommands.subtree());
         StrifeCommands.MODULE_SUBTREES.add(Alchemy.recipeCommand());
         LOGGER.info("strife production wired cultivation factor: pill=consumable buffs");
     }

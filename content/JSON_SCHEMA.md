@@ -416,6 +416,11 @@ M4 宗门结构的字段契约。**本节已生效**：本人于 2026-10-02 按 
 - 门禁在生成器：`id` 限 `guide_` 前缀；`section` 限五域枚举（realm/cultivation/combat/production/quest）；正文 ≤40 汉字（LORE §3 语域）；五域各 ≥3 条。
 - 通道：命令 `/strife guide` 与未来客户端面板同读一份产物（D12 ④ 不分叉）；文本走产物通道不入 lang（对话文本同先例）。
 
+### 5.6 `strife_blackmarket` — 黑市价目（EP1，ADR-036 ②，2026-11-02）
+
+- 表：`tables/blackmarket.csv`（列：`id,item_id,price_lingshi,_note`）；产物单文件 `strife_blackmarket/market.json`。
+- 门禁在生成器：`id` 限 `bm_` 前缀、价 ≥1、`item_id` 唯一且限 `item_|pill_`。语义：只卖不收（销赃后置）、价格应为赃货折扣（跨表对账留 Validator 批）；每笔买入落 H3 因果标记 `causality:ep1:smuggler` + 青石观声望 −1（黑市的代价是因果不是差价）。
+
 ### 5.5 `strife_prices` — 坊市定价（EP1，ADR-032，2026-11-01）
 
 - 表：`tables/prices.csv`（列：`id,item_id,buy_lingshi,sell_lingshi,_note`）；产物单文件 `strife_prices/prices.json`（`entries` 数组 + `ratios`（NUMBERS @@market 三档兑换比））。

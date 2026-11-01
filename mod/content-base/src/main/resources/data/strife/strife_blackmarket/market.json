@@ -1,0 +1,21 @@
+{
+  "@generated": "from tables/blackmarket.csv @ sha256:f63bad2cf9ea89a073bd2e4c591813268f1a00de7e3320a349cb94f49e5c7b0a",
+  "id": "blackmarket",
+  "entries": [
+    {
+    "id": "bm_duanxue",
+    "item_id": "item_duanxue",
+    "price_lingshi": 2
+  },
+    {
+    "id": "bm_ningxu",
+    "item_id": "item_ningxu",
+    "price_lingshi": 1
+  },
+    {
+    "id": "bm_xuanyu",
+    "item_id": "item_xuanyu",
+    "price_lingshi": 7
+  }
+  ]
+}
