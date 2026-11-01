@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/artifacts.csv @ sha256:09e50d7c823261119ae4120f9dd235b64db9c6551a0971006e4fbe6e642c7dd2",
+  "@generated": "from tables/artifacts.csv @ sha256:865d3cfe617436620e1b7886afc5067ef8c9c341e4fae8213c5b9692b83240ca",
   "id": "art_xuanyu",
   "blank": "item_xuanyu",
   "restriction_count": 3,

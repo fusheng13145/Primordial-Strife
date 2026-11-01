@@ -1,0 +1,48 @@
+{
+  "@generated": "from tables/artifacts.csv @ sha256:865d3cfe617436620e1b7886afc5067ef8c9c341e4fae8213c5b9692b83240ca",
+  "id": "art_hanshijing",
+  "blank": "item_xuanyu",
+  "restriction_count": 3,
+  "core_slot": "item_lingshi",
+  "materials": [
+    {
+    "item_id": "item_xuanyu",
+    "count": 1
+  },
+    {
+    "item_id": "item_lingshi",
+    "count": 3
+  },
+    {
+    "item_id": "item_hanshi_cao",
+    "count": 2
+  }
+  ],
+  "quality_probs": [
+    {
+    "quality_tier": "di",
+    "prob": 0.5
+  },
+    {
+    "quality_tier": "fan",
+    "prob": 0.4
+  },
+    {
+    "quality_tier": "tian",
+    "prob": 0.1
+  }
+  ],
+  "slot_type": "treasure",
+  "required_realm": "qili",
+  "active_skill": {
+    "spell_id": "spell_prologue_tubi",
+    "cooldown_key": "medium",
+    "cooldown_sec": 20
+  },
+  "passives": null,
+  "durability_points": 80,
+  "price": {
+    "item_id": "item_lingshi",
+    "count": 100
+  }
+}

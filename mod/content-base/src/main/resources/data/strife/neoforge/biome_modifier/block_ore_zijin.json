@@ -1,0 +1,10 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:45a43ce8cde611c7890137b91790aea8bd869b87341652606f894ab67dcc2f5a",
+  "type": "neoforge:add_features",
+  "biomes": [
+    "minecraft:deep_dark",
+    "minecraft:dripstone_caves"
+  ],
+  "features": "strife:block_ore_zijin",
+  "step": "underground_ores"
+}

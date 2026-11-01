@@ -1,0 +1,20 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:45a43ce8cde611c7890137b91790aea8bd869b87341652606f894ab67dcc2f5a",
+  "id": "block_ore_xuantie",
+  "element": "jin",
+  "placement": {
+    "biomes": [
+    "minecraft:mountains",
+    "minecraft:windswept_hills",
+    "minecraft:windswept_forest",
+    "minecraft:stony_shore"
+  ],
+    "y_min": -64,
+    "y_max": 0,
+    "veins_per_chunk": 6,
+    "vein_size": 8
+  },
+  "density_ratio": 0.6,
+  "drop_table": "blocks/block_ore_xuantie",
+  "regen_period_key": null
+}

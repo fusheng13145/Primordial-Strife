@@ -31,7 +31,14 @@ class OreTablesTest {
 
     /** 三个已落地的矿石内容 ID（tables/ores.csv 当前行集）。 */
     private static final List<String> ORES =
-            List.of("block_ore_lingyu", "block_ore_chiyan", "block_ore_hanyu");
+            List.of(
+                    "block_ore_lingyu",
+                    "block_ore_chiyan",
+                    "block_ore_hanyu",
+                    "block_ore_xuantie",
+                    "block_ore_zijin",
+                    "block_ore_wuse",
+                    "block_ore_tianjing");
 
     @Test
     void everyShippedOreParsesIntoASpec() {
@@ -61,7 +68,7 @@ class OreTablesTest {
      */
     @Test
     void everyOreElementIsOneOfTheFiveContractValues() {
-        List<String> legal = List.of("jin", "mu", "shui", "huo", "tu");
+        List<String> legal = List.of("jin", "mu", "shui", "huo", "tu", "none");
         for (JsonObject product : ShippedProducts.allOres()) {
             String id = product.get("id").getAsString();
             String element = product.get("element").getAsString();

@@ -57,6 +57,18 @@ public final class StrifeOreBlocks {
             registerOre(
                     "block_ore_hanyu", MapColor.COLOR_LIGHT_BLUE, 5.0F, 6.0F, SoundType.AMETHYST);
 
+    public static final DeferredHolder<Block, Block> ORE_XUANTIE =
+            registerOre("block_ore_xuantie", MapColor.COLOR_GRAY, 4.0F, 4.0F, SoundType.STONE);
+
+    public static final DeferredHolder<Block, Block> ORE_ZIJIN =
+            registerOre("block_ore_zijin", MapColor.COLOR_PURPLE, 5.0F, 5.0F, SoundType.DEEPSLATE);
+
+    public static final DeferredHolder<Block, Block> ORE_WUSE =
+            registerOre("block_ore_wuse", MapColor.COLOR_MAGENTA, 6.0F, 6.0F, SoundType.AMETHYST);
+
+    public static final DeferredHolder<Block, Block> ORE_TIANJING =
+            registerOre("block_ore_tianjing", MapColor.COLOR_CYAN, 7.0F, 7.0F, SoundType.AMETHYST);
+
     private static DeferredHolder<Block, Block> registerOre(
             String id, MapColor color, float hardness, float resistance, SoundType sound) {
         DeferredHolder<Block, Block> block =

@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/ores.csv @ sha256:9d9d1ca58953c4e761d49570dede48d8a03c95430dcf60aa0f5e7ce7cc8f5907",
+  "@generated": "from tables/ores.csv @ sha256:45a43ce8cde611c7890137b91790aea8bd869b87341652606f894ab67dcc2f5a",
   "id": "block_ore_lingyu",
   "element": "jin",
   "placement": {

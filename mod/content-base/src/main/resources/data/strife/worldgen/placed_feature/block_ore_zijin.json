@@ -1,0 +1,28 @@
+{
+  "@generated": "from tables/ores.csv @ sha256:45a43ce8cde611c7890137b91790aea8bd869b87341652606f894ab67dcc2f5a",
+  "feature": "strife:block_ore_zijin",
+  "placement": [
+    {
+    "type": "minecraft:count",
+    "count": 1
+  },
+    {
+    "type": "minecraft:in_square"
+  },
+    {
+    "type": "minecraft:height_range",
+    "height": {
+    "type": "minecraft:trapezoid",
+    "max_inclusive": {
+    "absolute": -16
+  },
+    "min_inclusive": {
+    "absolute": -64
+  }
+  }
+  },
+    {
+    "type": "minecraft:biome"
+  }
+  ]
+}

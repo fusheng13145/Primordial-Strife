@@ -1,0 +1,56 @@
+{
+  "@generated": "from tables/artifacts.csv @ sha256:865d3cfe617436620e1b7886afc5067ef8c9c341e4fae8213c5b9692b83240ca",
+  "id": "art_longlinpei",
+  "blank": "item_xuanyu",
+  "restriction_count": 3,
+  "core_slot": "item_lingshi",
+  "materials": [
+    {
+    "item_id": "item_xuanyu",
+    "count": 1
+  },
+    {
+    "item_id": "item_lingshi",
+    "count": 12
+  },
+    {
+    "item_id": "item_longxue",
+    "count": 1
+  },
+    {
+    "item_id": "item_xuelian",
+    "count": 1
+  },
+    {
+    "item_id": "item_wuse_shi",
+    "count": 2
+  }
+  ],
+  "quality_probs": [
+    {
+    "quality_tier": "di",
+    "prob": 0.1
+  },
+    {
+    "quality_tier": "fan",
+    "prob": 0.2
+  },
+    {
+    "quality_tier": "tian",
+    "prob": 0.7
+  }
+  ],
+  "slot_type": "treasure",
+  "required_realm": "jindan",
+  "active_skill": {
+    "spell_id": "spell_ep1_feijian",
+    "cooldown_key": "heavy",
+    "cooldown_sec": 20
+  },
+  "passives": null,
+  "durability_points": 300,
+  "price": {
+    "item_id": "item_lingshi",
+    "count": 600
+  }
+}
