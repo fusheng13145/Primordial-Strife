@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_trees_ch1.csv @ sha256:db04603d22c7a3b40d8bf5b81714d4ca7eefedcb9a82155db91f249552619a06",
+  "@generated": "from tables/dialog_trees_ch1.csv @ sha256:50a104145c4c95f96a57beb42ab7aa4b54ecbb631956926a552ea4e11e998e03",
   "id": "nd_offer_welcome",
   "chapter": "ch1",
   "trees": [
@@ -15,6 +15,11 @@
     "conditions": null,
     "next": null,
     "options": [
+    {
+    "text_key": "dialog.strife.nd_offer_farewell_opt",
+    "conditions": "quest_done(quest_ch1_jindan_gate_01)",
+    "next": "nd_offer_farewell"
+  },
     {
     "text_key": "dialog.strife.nd_offer_welcome_opt1",
     "next": "nd_offer_lead"
@@ -58,6 +63,19 @@
     "conditions": null,
     "next": null,
     "options": null
+  },
+    {
+    "id": "nd_offer_farewell",
+    "speaker": "挑灯人",
+    "text_key": "dialog.strife.nd_offer_farewell",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_offer_farewell_opt1",
+    "next": "nd_offer_bye"
+  }
+  ]
   }
   ],
     "effects": null,

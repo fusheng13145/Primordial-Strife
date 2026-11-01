@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_ch1_text.csv @ sha256:70229a9062a096a842b7c364099cc19fe900e3343417e6d74bcc5fdf9b0e0ab5",
+  "@generated": "from tables/dialog_ch1_text.csv @ sha256:216160ed83d3d720d0691fd14934144429cffc7a83990300f4add5aef500179d",
   "id": "dialog_text_ch1",
   "chapter": "ch1",
   "texts": {
@@ -19,6 +19,9 @@
     "dialog.strife.nd_debt_tale_opt2": "此事容后再议",
     "dialog.strife.nd_debt_chat": "种药和修行一个理：火候不到，催出来的东西没灵性。你既来了，多看两眼我摘草的手艺。",
     "dialog.strife.nd_debt_chat_opt1": "回到正事",
-    "dialog.strife.nd_debt_bye": "园子你慢走，莫踩田垄。"
+    "dialog.strife.nd_debt_bye": "园子你慢走，莫踩田垄。",
+    "dialog.strife.nd_offer_farewell": "金丹了？好家伙，文津渡可有些年头没出过金丹。坊市的门路说到做到——你随时来，灯下有你的位置。",
+    "dialog.strife.nd_offer_farewell_opt": "坊市门路的事，该兑现了",
+    "dialog.strife.nd_offer_farewell_opt1": "记下了，后会有期"
   }
 }
