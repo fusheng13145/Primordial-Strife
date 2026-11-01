@@ -263,7 +263,7 @@ art_demo,<器胚ID 待本人定名>,3,<核心材料ID 待本人定名>,item_id=<
 
 ### 3.5 `quests_prologue.csv` / `quests_ch1.csv` —— 任务 DAG（各 16 列，**已接生成器**，一章一文件聚合产物）
 
-产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §4.6）。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名一致；空表合法。`objectives`/`rewards` 为对象数组（`|` 分隔），`reputation_delta` 用映射简写（生成器转对象数组）。序章表已有 STORY §4 十节点转译的初稿行，**奖励数值与物品命名待本人审定**（`item_lingshi/item_ningxu/item_yuejian/item_duanxue/item_yaocai` 五件已由 production 注册成真物品，lang 词条在库，定名改 lang 即可）。
+产物：`data/strife/strife_quests/<章>.json`，**一章一个文件**，文件内 `id` 是该章入口节点 ID（`docs/04` §2、契约 §4.6）。生成器硬校验：恰一个 `entry=true`、行 `chapter` 与文件名一致；空表合法。`objectives`/`rewards` 为对象数组（`|` 分隔），`reputation_delta` 用映射简写（生成器转对象数组）。序章与第一章表已随 G-5 定稿（2026-11-01，ADR-031）与 P1-03/04/05 落地（`item_lingshi/item_ningxu/item_yuejian/item_duanxue/item_yaocai` 五件已由 production 注册成真物品，lang 词条在库，定名改 lang 即可）。
 
 | 列 | 必/可 | 填什么 |
 |---|---|---|
