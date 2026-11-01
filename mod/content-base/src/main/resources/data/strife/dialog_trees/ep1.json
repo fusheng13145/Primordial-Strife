@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_trees_ep1.csv @ sha256:ede4ad33a7cd2f018caf59462fd2cc41457019e54732b45ee5dd316ac4c54796",
+  "@generated": "from tables/dialog_trees_ep1.csv @ sha256:f01db3dc72ccb0ad2718048e2232473bce4e97e627e403ec4d71d8e0c003226c",
   "id": "nd_mkt_welcome",
   "chapter": "ep1",
   "trees": [
@@ -15,6 +15,11 @@
     "conditions": null,
     "next": null,
     "options": [
+    {
+    "text_key": "dialog.strife.nd_mkt_deal_opt",
+    "conditions": "quest_done(quest_ep1_market_intro_01)",
+    "next": "nd_mkt_deal"
+  },
     {
     "text_key": "dialog.strife.nd_mkt_welcome_opt1",
     "next": "nd_mkt_prices"
@@ -34,6 +39,19 @@
     "options": [
     {
     "text_key": "dialog.strife.nd_mkt_prices_opt1",
+    "next": "nd_mkt_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_mkt_deal",
+    "speaker": "坊市牙人张",
+    "text_key": "dialog.strife.nd_mkt_deal",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_mkt_deal_opt1",
     "next": "nd_mkt_bye"
   }
   ]

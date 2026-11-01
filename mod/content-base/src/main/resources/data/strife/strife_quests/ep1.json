@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/quests_ep1.csv @ sha256:3a45b1c46ade7578e56e5d3dea79289605b98d0bc5d42973ce74f9d27f010c80",
+  "@generated": "from tables/quests_ep1.csv @ sha256:08a15f6cce482402dc3a237a45ac74eff2e43513706799b158adffbb136ca266",
   "id": "quest_ep1_market_intro_01",
   "chapter": "ep1",
   "quests": [
@@ -145,6 +145,94 @@
     {
     "faction_id": "fac_yuelai",
     "delta": 5
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep1_first_deal_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep1_market_intro_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "collect",
+    "target": "item_ningxu",
+    "count": 3,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 4,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep1:first_deal",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 3
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep1_rumor_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep1_first_deal_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_yuelai_deng",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 3,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep1:channel_open",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 3
   }
   ],
     "causality": null,

@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_ep1_text.csv @ sha256:b2f73b79dd55111a8df0020f848ba6a5f0745ca0ae9d7997bbcd39219afa9209",
+  "@generated": "from tables/dialog_ep1_text.csv @ sha256:5dda16357603078e71d1aee4d0e8fc2c0bcd6b243c2c0cfbb03719dbd4e89c35",
   "id": "dialog_text_ep1",
   "chapter": "ep1",
   "texts": {
@@ -8,6 +8,9 @@
     "dialog.strife.nd_mkt_welcome_opt2": "只是路过",
     "dialog.strife.nd_mkt_prices": "价目墙上贴着呢：材料回收一律折价，丹药按成色一口价。跟牙人买货卖货，用 /strife market 报我名字就行。",
     "dialog.strife.nd_mkt_prices_opt1": "记下了",
-    "dialog.strife.nd_mkt_bye": "慢走——灯一直亮着。"
+    "dialog.strife.nd_mkt_bye": "慢走——灯一直亮着。",
+    "dialog.strife.nd_mkt_deal_opt": "听说你在收凝须草？",
+    "dialog.strife.nd_mkt_deal": "巧了——药农们进山被妖兽搅了，坊市正缺凝须草。你凑三株来，账上给你记一笔。",
+    "dialog.strife.nd_mkt_deal_opt1": "这单我接了"
   }
 }
