@@ -136,6 +136,7 @@
   "gui.strife.artifact.no_active": "主动：无",
   "gui.strife.artifact.cast": "激发",
   "gui.strife.artifact.hint": "副手即法宝槽 · Esc 关闭",
+  "gui.strife.combat.beast_windup": "妖兽弓身蓄力——即将爆发范围攻击！",
   "gui.strife.tracker.title": "任务追踪",
   "gui.strife.tracker.talk": "对话 %s %s/%s",
   "gui.strife.tracker.deliver": "交付 %s %s/%s",

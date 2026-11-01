@@ -136,6 +136,7 @@
   "gui.strife.artifact.no_active": "Active: none",
   "gui.strife.artifact.cast": "Activate",
   "gui.strife.artifact.hint": "Offhand is the artifact slot · Esc to close",
+  "gui.strife.combat.beast_windup": "The beast coils to strike — a burst is coming!",
   "gui.strife.tracker.title": "Quest Tracker",
   "gui.strife.tracker.talk": "Talk to %s %s/%s",
   "gui.strife.tracker.deliver": "Deliver to %s %s/%s",
