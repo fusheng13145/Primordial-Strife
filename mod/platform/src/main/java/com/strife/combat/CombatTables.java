@@ -48,6 +48,44 @@ public final class CombatTables {
         }
     }
 
+    /**
+     * 法宝副手属性加成（P1-01，NUMBERS @@combat 的 {@code artifact_bonus_*} 三键）。
+     *
+     * <p>{@code attackPct} 作用于基础攻击（{@code ADD_MULTIPLIED_BASE}），{@code healthFlat} 为生命上限平加 （{@code
+     * ADD_VALUE}）。未知品阶回零加成（不崩、记一次日志）——品阶来自器胚 CustomData，坏数据不该打崩属性栏。
+     */
+    public record ArtifactBonus(double attackPct, double healthFlat) {
+
+        public static ArtifactBonus zero() {
+            return new ArtifactBonus(0.0, 0.0);
+        }
+
+        /** 按 quality（fan/di/tian）从 combat 块取加成；缺键报具体路径（02 §5 具名失败）。 */
+        public static ArtifactBonus fromCombatRules(JsonObject combat, String quality) {
+            String key = "artifact_bonus_" + quality;
+            if (!combat.has(key)) {
+                throw new IllegalStateException(
+                        "strife_combat/rules.json 的 combat 块缺键 '"
+                                + key
+                                + "'（NUMBERS @@combat 改了键名？）");
+            }
+            JsonObject bonus = combat.getAsJsonObject(key);
+            return new ArtifactBonus(
+                    bonus.get("attack_pct").getAsDouble(), bonus.get("health_flat").getAsDouble());
+        }
+    }
+
+    /** 取品阶加成；产物缺失/解析失败/未知品阶一律回零加成并记日志（属性栏不是崩点）。 */
+    public static ArtifactBonus artifactBonus(String quality) {
+        try {
+            return ArtifactBonus.fromCombatRules(loadCombatBlock(), quality);
+        } catch (RuntimeException e) {
+            LOGGER.error(
+                    "artifact bonus unavailable for '{}', using zero: {}", quality, e.getMessage());
+            return ArtifactBonus.zero();
+        }
+    }
+
     /** 取妖兽属性；产物缺失或解析失败回退到 {@link BeastStats#fallback()} 并记日志。 */
     public static BeastStats beastStats() {
         BeastStats cached = cachedBeast;

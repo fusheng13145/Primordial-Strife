@@ -152,6 +152,10 @@ beast_health: 20.0  # 妖兽基础生命（strife:monster），启动时按 comb
 beast_attack: 3.0  # 妖兽基础攻击伤害
 beast_speed: 0.30  # 妖兽移动速度
 beast_follow_range: 16.0  # 妖兽索敌/追击半径（格）
+# —— 法宝副手属性加成（P1-01；副手装备法宝时按品阶生效，卸下即撤——2026-11-01 定值，随实机批校准 ADR-031 ③）——
+artifact_bonus_fan:  { attack_pct: 0.05, health_flat: 0.0 }  # 凡品
+artifact_bonus_di:   { attack_pct: 0.10, health_flat: 1.0 }  # 地品
+artifact_bonus_tian: { attack_pct: 0.20, health_flat: 2.0 }  # 天品
 ```
 
 ## 9. 世界与掉落（M4 / 04 分册 §2）

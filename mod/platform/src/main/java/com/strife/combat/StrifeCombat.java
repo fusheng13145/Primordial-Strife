@@ -34,6 +34,8 @@ public final class StrifeCombat {
                 container.getModInfo().getVersion());
         Techniques.registerFactor();
         RewardBridges.registerTechniqueGranter(Techniques::learn);
+        // P1-01：法宝副手属性光环（品阶 → NUMBERS artifact_bonus_*，卸下即撤）。
+        ArtifactAura.register();
         StrifeCommands.MODULE_SUBTREES.add(Techniques.command());
         StrifeCommands.MODULE_SUBTREES.add(Spells.command());
         StrifeCommands.MODULE_SUBTREES.add(Artifacts.command());
