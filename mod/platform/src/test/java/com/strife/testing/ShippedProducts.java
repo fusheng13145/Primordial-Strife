@@ -108,6 +108,11 @@ public final class ShippedProducts {
         return json("/data/strife/strife_quests/prologue.json");
     }
 
+    /** 第一章任务产物（P1-03 全链路用例用）。 */
+    public static JsonObject ch1Quests() {
+        return json("/data/strife/strife_quests/ch1.json");
+    }
+
     /** 单个矿石的 strife 侧契约镜像，如 {@code block_ore_lingyu}。 */
     public static JsonObject ore(String oreId) {
         return json("/data/strife/strife_ores/" + oreId + ".json");

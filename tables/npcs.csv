@@ -2,3 +2,4 @@ id,dimension,place,x,z,_note
 npc_qingshi_zhizhi,minecraft:overworld,qi_luoxia,258,252,石执事：落霞山麓·青石观山门前（序章 #1 引导 / #6 旧事）
 npc_yaonong_su,minecraft:overworld,qi_luoxia,238,268,苏药农：山脚药棚（序章 #4 交付）
 npc_taishang_wu,minecraft:overworld,qi_luoxia,272,244,吴长老：青石观内（序章 #10 择宗）
+npc_yuelai_deng,minecraft:overworld,qi_wenjiang,-508,-516,挑灯人：文津渡渡口灯棚（ch1 主线 offer 对话 / 告别节点；STORY §5）

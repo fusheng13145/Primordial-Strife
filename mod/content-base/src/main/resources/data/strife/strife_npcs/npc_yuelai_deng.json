@@ -1,0 +1,8 @@
+{
+  "@generated": "from tables/npcs.csv @ sha256:7f72f1a71c155174a92cc0ad9d84f5692f4605b3ce194447a4bb5a346985de1d",
+  "id": "npc_yuelai_deng",
+  "dimension": "minecraft:overworld",
+  "place": "qi_wenjiang",
+  "x": -508,
+  "z": -516
+}

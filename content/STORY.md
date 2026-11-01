@@ -68,7 +68,7 @@
 
 - 场景：`qi_wenjiang` → `qi_shiguo`；NPC：`npc_yuelai_deng`（挑灯人）为主线，`npc_taishang_wu` 在观内继续施压。
 - 情感曲线三段（`[拟]`）：**借势**（散修身份可卖消息给两家）→ **担责**（改道后果落到药农聚落，苏药农线回收）→ **越界**（第一次介入他人因果，写 H3 债务/仇杀记录，为心魔与通缉留素材）。
-- 节点骨架（10 个左右，粒度与序章一致）：`ch1_pingcang_survey_01`（勘脉，`reach`+`collect`）→ `ch1_pingcang_offer_01`（对话树 `dlg_ch1_offer`，条件 DSL 含 `affinity(tu)` 与 `reputation(fac_qingshi>=-10)`）→ `ch1_pingcang_debt_01`（`causality` 写入债务）→ `ch1_pingcang_raid_01`（`kill` 妖兽群，掉落走 `loot_quest_ch1_*`）→ `ch1_pingcang_reckon_01`（`survive` 限时守台，第一次真用 `timer`/`fail_goto`）→ `ch1_jindan_gate_01`（筑基圆满条件 + 材料 → 金丹突破）。
+- 节点骨架（10 个左右，粒度与序章一致）：`ch1_pingcang_survey_01`（勘脉，`reach`+`collect`）→ `ch1_pingcang_offer_01`（对话树 `dlg_ch1_offer`，条件 DSL 含 `affinity(tu)` 与 `reputation(fac_qingshi>=-10)`）→ `ch1_pingcang_debt_01`（`causality` 写入债务）→ `ch1_pingcang_raid_01`（`kill` 妖兽群，掉落走 `loot_quest_ch1_*`）→ `ch1_pingcang_reckon_01`（`survive` 限时守台，第一次真用 `timer`/`fail_goto`）→ `ch1_jindan_gate_01`（筑基圆满条件 + 材料 → 金丹突破）→ `ch1_farewell_01`（告别：挑灯人兑现坊市门路承诺，章节收束 `[拟]` 随 G-5 校准，2026-11-01 P1-03 补记）。
 - 与主线钩子：第一章**不**展开战争，只在 `flag`（`fac_qingshi:ch1:war_rumor`）里为 ch3+ 的 H7 剧本埋引用。
 - 待审：第一章是否要求玩家必须与青石观保持正声望（若是，`affiliation` 散修路线的 ch1 文本量翻倍，需本人评估工期）。
 

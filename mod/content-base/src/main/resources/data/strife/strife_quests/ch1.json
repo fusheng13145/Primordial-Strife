@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/quests_ch1.csv @ sha256:9bd548a07357bba73690c04d918fc473ac72a39c9c187b5d872f72be4a6d5031",
+  "@generated": "from tables/quests_ch1.csv @ sha256:cfbd8e96ebca0604de0285a62231ffd9f6b706262fbeaa3944519bbad53b27da",
   "id": "quest_ch1_pingcang_survey_01",
   "chapter": "ch1",
   "quests": [
@@ -243,6 +243,50 @@
   }
   ],
     "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ch1_farewell_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ch1_jindan_gate_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_yuelai_deng",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 10,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ch1:favor_earned",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 5
+  }
+  ],
     "causality": null,
     "timer": null,
     "fail_goto": null,
