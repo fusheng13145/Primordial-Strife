@@ -153,9 +153,14 @@ beast_attack: 3.0  # 妖兽基础攻击伤害
 beast_speed: 0.30  # 妖兽移动速度
 beast_follow_range: 16.0  # 妖兽索敌/追击半径（格）
 # —— 法宝副手属性加成（P1-01；副手装备法宝时按品阶生效，卸下即撤——2026-11-01 定值，随实机批校准 ADR-031 ③）——
-artifact_bonus_fan:  { attack_pct: 0.05, health_flat: 0.0 }  # 凡品
-artifact_bonus_di:   { attack_pct: 0.10, health_flat: 1.0 }  # 地品
-artifact_bonus_tian: { attack_pct: 0.20, health_flat: 2.0 }  # 天品
+artifact_bonus_fan:  { attack_pct: 0.05, health_flat: 0.0 }  # 凡品（法器）
+artifact_bonus_di:   { attack_pct: 0.10, health_flat: 1.0 }  # 地品（法宝）
+artifact_bonus_tian: { attack_pct: 0.20, health_flat: 2.0 }  # 天品（灵宝）
+# —— 法器分级（EP1，ADR-036；品阶 → 四阶映射与阶位倍率，仙器 EP4 前不可达）——
+tier_of_fan: fa      # 凡品 → 法器
+tier_of_di: fa_bao   # 地品 → 法宝
+tier_of_tian: ling_bao  # 天品 → 灵宝
+tier_multiplier: { fa: 1.0, fa_bao: 1.5, ling_bao: 2.0, xian_qi: 3.0 }  # 阶位属性倍率（乘 artifact_bonus_*）
 ```
 
 ## 9. 世界与掉落（M4 / 04 分册 §2）

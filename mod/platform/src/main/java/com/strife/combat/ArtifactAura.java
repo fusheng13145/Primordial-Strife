@@ -74,7 +74,8 @@ public final class ArtifactAura {
         if (contract == null || contract.quality() == null || contract.quality().isBlank()) {
             return CombatTables.ArtifactBonus.zero();
         }
-        return CombatTables.artifactBonus(contract.quality());
+        // ADR-036 法器分级：生效加成 = 品阶加成 × 阶位倍率。
+        return CombatTables.effectiveBonus(contract.quality());
     }
 
     private static void refresh(ServerPlayer player) {

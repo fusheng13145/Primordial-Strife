@@ -122,6 +122,67 @@ public final class CombatTables {
         }
     }
 
+    /**
+     * 法器分级（EP1，ADR-036）：品阶 → 四阶（法器/法宝/灵宝/仙器——仙器 EP4 前不可达） 与阶位属性倍率。映射与倍率都来自
+     * NUMBERS @@combat（tier_of_* / tier_multiplier）， 未知品阶回 {@code absent}（同 ArtifactBonus
+     * fail-soft）。
+     */
+    public record ArtifactTier(String tier, String displayName, double multiplier) {
+
+        public static ArtifactTier absent() {
+            return new ArtifactTier("", "", 0.0);
+        }
+
+        public boolean present() {
+            return multiplier > 0;
+        }
+    }
+
+    /** 品阶 → 阶位；解析失败回 absent。 */
+    public static ArtifactTier artifactTier(String quality) {
+        try {
+            JsonObject combat = loadCombatBlock();
+            String tierKey = "tier_of_" + quality;
+            if (!combat.has(tierKey)) {
+                throw new IllegalStateException(
+                        "strife_combat/rules.json 缺 '" + tierKey + "'（NUMBERS @@combat 改了键名？）");
+            }
+            String tier = combat.get(tierKey).getAsString();
+            JsonObject multipliers = combat.getAsJsonObject("tier_multiplier");
+            if (multipliers == null || !multipliers.has(tier)) {
+                throw new IllegalStateException(
+                        "strife_combat/rules.json 缺 tier_multiplier."
+                                + tier
+                                + "（NUMBERS @@combat）");
+            }
+            String displayName =
+                    switch (tier) {
+                        case "fa" -> "法器";
+                        case "fa_bao" -> "法宝";
+                        case "ling_bao" -> "灵宝";
+                        case "xian_qi" -> "仙器";
+                        default ->
+                                throw new IllegalStateException(
+                                        "未知阶位 '" + tier + "'（tier_of_" + quality + "）");
+                    };
+            return new ArtifactTier(tier, displayName, multipliers.get(tier).getAsDouble());
+        } catch (RuntimeException e) {
+            LOGGER.error("artifact tier unavailable for '{}': {}", quality, e.getMessage());
+            return ArtifactTier.absent();
+        }
+    }
+
+    /** 生效加成 = 品阶加成 × 阶位倍率（ADR-036）。阶位/品阶任一不可用回零加成—— 光环宁可不生效也不猜数。 */
+    public static ArtifactBonus effectiveBonus(String quality) {
+        ArtifactBonus base = artifactBonus(quality);
+        ArtifactTier tier = artifactTier(quality);
+        if (base.equals(ArtifactBonus.zero()) || !tier.present()) {
+            return ArtifactBonus.zero();
+        }
+        return new ArtifactBonus(
+                base.attackPct() * tier.multiplier(), base.healthFlat() * tier.multiplier());
+    }
+
     /** 取妖兽属性；产物缺失或解析失败回退到 {@link BeastStats#fallback()} 并记日志。 */
     public static BeastStats beastStats() {
         BeastStats cached = cachedBeast;

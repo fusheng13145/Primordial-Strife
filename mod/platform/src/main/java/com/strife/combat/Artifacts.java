@@ -252,6 +252,13 @@ public final class Artifacts {
                         .append(Component.translatable("quality.strife." + contract.quality()))
                         .append("）"),
                 false);
+        CombatTables.ArtifactTier tier = CombatTables.artifactTier(contract.quality());
+        if (tier.present()) {
+            player.displayClientMessage(
+                    Component.literal(
+                            "  阶位：" + tier.displayName() + "（属性 ×" + tier.multiplier() + "）"),
+                    false);
+        }
         player.displayClientMessage(
                 Component.literal(
                         "  槽位：副手（"
