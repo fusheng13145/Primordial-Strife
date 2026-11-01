@@ -1,0 +1,12 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "minecraft:deep_dark",
+  "spawners": [
+    {
+      "type": "strife:shadow_leopard",
+      "weight": 5,
+      "minCount": 1,
+      "maxCount": 1
+    }
+  ]
+}

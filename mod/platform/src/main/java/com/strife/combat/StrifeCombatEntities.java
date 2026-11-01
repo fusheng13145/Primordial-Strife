@@ -38,5 +38,36 @@ public final class StrifeCombatEntities {
                                     .clientTrackingRange(10)
                                     .build("monster"));
 
+    // ── EP1 妖兽种类扩展（ADR-039）：共用 StrifeMonster 类，breed 由 EntityType ID 推导 ──
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StrifeMonster>> WOLF_BEAST =
+            registerBeast("wolf_beast", 0.7F, 1.5F);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StrifeMonster>> ROCK_BEAST =
+            registerBeast("rock_beast", 1.2F, 1.8F);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StrifeMonster>> FIRE_FOX =
+            registerBeast("fire_fox", 0.6F, 1.0F);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StrifeMonster>> ICE_SERPENT =
+            registerBeast("ice_serpent", 0.8F, 2.2F);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StrifeMonster>> SHADOW_LEOPARD =
+            registerBeast("shadow_leopard", 0.7F, 1.4F);
+
+    public static final DeferredHolder<EntityType<?>, EntityType<StrifeMonster>> TREANT =
+            registerBeast("treant", 1.4F, 3.0F);
+
+    private static DeferredHolder<EntityType<?>, EntityType<StrifeMonster>> registerBeast(
+            String id, float width, float height) {
+        return ENTITY_TYPES.register(
+                id,
+                () ->
+                        EntityType.Builder.<StrifeMonster>of(
+                                        StrifeMonster::new, MobCategory.MONSTER)
+                                .sized(width, height)
+                                .build(id));
+    }
+
     private StrifeCombatEntities() {}
 }

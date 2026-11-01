@@ -1,0 +1,7 @@
+id,name,entity_id,health,attack,speed,follow_range,xp,element,biomes,_note
+wolf,野狼,strife:wolf_beast,15.0,3.0,0.38,20.0,5,none,minecraft:forest|minecraft:taiga|minecraft:birch_forest,群体猎手（同群 2-3 只）速攻型
+rock,岩甲兽,strife:rock_beast,40.0,4.0,0.18,12.0,10,tu,minecraft:mountains|minecraft:windswept_hills|minecraft:stony_shore,高防坦克型：甲壳弹开 50% 远程伤害
+fire_fox,炎狐,strife:fire_fox,12.0,5.0,0.42,24.0,8,huo,minecraft:plains|minecraft:savanna|minecraft:desert,高攻速迅捷型：远距离喷吐火舌
+ice_serpent,寒蛟,strife:ice_serpent,25.0,4.0,0.22,16.0,10,shui,minecraft:ocean|minecraft:frozen_ocean|minecraft:river,水中霸主：高血量 近战
+shadow_leopard,暗影豹,strife:shadow_leopard,18.0,6.0,0.45,28.0,15,none,minecraft:deep_dark,稀有刺客：全维最高攻速 极稀稀有
+treant,古树妖,strife:treant,50.0,3.0,0.08,10.0,20,mu,minecraft:forest|minecraft:old_growth_birch_forest,Boss 级：极高血量 极慢 移动炮台

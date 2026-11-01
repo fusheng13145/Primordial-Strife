@@ -163,6 +163,53 @@ beast_health: 20.0  # 妖兽基础生命（strife:monster），启动时按 comb
 beast_attack: 3.0  # 妖兽基础攻击伤害
 beast_speed: 0.30  # 妖兽移动速度
 beast_follow_range: 16.0  # 妖兽索敌/追击半径（格）
+
+# —— 妖兽种类（EP1，ADR-039；值 2026-11-02 定值，随实机批校准）——
+@@beasts
+```yaml
+wolf:
+  name: 野狼
+  health: 15.0
+  attack: 3.0
+  speed: 0.38
+  follow_range: 20.0
+  xp: 5
+rock:
+  name: 岩甲兽
+  health: 40.0
+  attack: 4.0
+  speed: 0.18
+  follow_range: 12.0
+  xp: 10
+fire_fox:
+  name: 炎狐
+  health: 12.0
+  attack: 5.0
+  speed: 0.42
+  follow_range: 24.0
+  xp: 8
+ice_serpent:
+  name: 寒蛟
+  health: 25.0
+  attack: 4.0
+  speed: 0.22
+  follow_range: 16.0
+  xp: 10
+shadow_leopard:
+  name: 暗影豹
+  health: 18.0
+  attack: 6.0
+  speed: 0.45
+  follow_range: 28.0
+  xp: 15
+treant:
+  name: 古树妖
+  health: 50.0
+  attack: 3.0
+  speed: 0.08
+  follow_range: 10.0
+  xp: 20
+```
 # —— 法宝副手属性加成（P1-01；副手装备法宝时按品阶生效，卸下即撤——2026-11-01 定值，随实机批校准 ADR-031 ③）——
 artifact_bonus_fan:  { attack_pct: 0.05, health_flat: 0.0 }  # 凡品（法器）
 artifact_bonus_di:   { attack_pct: 0.10, health_flat: 1.0 }  # 地品（法宝）
