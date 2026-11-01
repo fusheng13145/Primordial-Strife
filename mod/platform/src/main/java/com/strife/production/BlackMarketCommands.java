@@ -123,7 +123,10 @@ public final class BlackMarketCommands {
             player.displayClientMessage(Component.literal("（该货暂未到岸，已退灵石）"), true);
             return 0;
         }
-        player.getInventory().add(new ItemStack(item, count));
+        ItemStack bought = new ItemStack(item, count);
+        // ADR-037 ③：黑市货未鉴定——鉴定阁去除标记前，品阶与加成对玩家隐藏。
+        com.strife.core.ArtifactTags.markUnidentified(bought);
+        player.getInventory().add(bought);
 
         // 代价：H3 因果标记（首次永久）+ 正道声望负增量（每笔）。
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);

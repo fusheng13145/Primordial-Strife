@@ -34,9 +34,14 @@ public final class MarketPrices {
 
     private static volatile Cache cache;
 
-    private record Cache(Map<String, Quote> entries, Ratios ratios) {}
+    private record Cache(Map<String, Quote> entries, Ratios ratios, int appraiseCost) {}
 
     private MarketPrices() {}
+
+    /** 鉴定阁每件手续费（NUMBERS @@market.appraise_cost）。 */
+    public static int appraiseCost() {
+        return load().appraiseCost();
+    }
 
     /** 全量价目快照（/strife market list 用；只读映射）。 */
     public static Map<String, Quote> snapshot() {
@@ -116,7 +121,9 @@ public final class MarketPrices {
                     entries.size(),
                     ratios.tierZhong(),
                     ratios.tierShang());
-            return new Cache(Map.copyOf(entries), ratios);
+            int appraiseCost =
+                    ratiosJson.has("appraise_cost") ? requireInt(ratiosJson, "appraise_cost") : 5;
+            return new Cache(Map.copyOf(entries), ratios, appraiseCost);
         } catch (Exception e) {
             throw new IllegalStateException("cannot read strife_prices/prices.json", e);
         }
@@ -141,6 +148,6 @@ public final class MarketPrices {
 
     /** 仅供测试：构造指定缓存（换算用例不依赖产物重生成）。 */
     static void setForTest(Map<String, Quote> entries, Ratios ratios) {
-        cache = new Cache(new HashMap<>(entries), ratios);
+        cache = new Cache(new HashMap<>(entries), ratios, 5);
     }
 }

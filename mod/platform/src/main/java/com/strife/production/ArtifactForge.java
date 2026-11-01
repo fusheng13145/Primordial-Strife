@@ -263,7 +263,13 @@ public final class ArtifactForge {
                                                         })));
     }
 
-    /** 器胚 tooltip：物品名下方补「法宝：<名>（<品阶>）」。 */
+    /** 器胚 tooltip：物品名下方补「法宝：<名>（<品阶>）」；未鉴定短路（只露名字与「未鉴定」）。 */
+    /** 是否器胚（CustomData 带 artifact_id）——测试与鉴定路径共用。 */
+    public static boolean hasArtifactTag(ItemStack stack) {
+        CustomData custom = stack.get(DataComponents.CUSTOM_DATA);
+        return custom != null && custom.copyTag().contains(ARTIFACT_ID_TAG);
+    }
+
     public static void onTooltip(ItemTooltipEvent event) {
         CustomData custom = event.getItemStack().get(DataComponents.CUSTOM_DATA);
         if (custom == null) {
@@ -275,6 +281,13 @@ public final class ArtifactForge {
         }
         Component artifact =
                 Component.translatable("artifact.strife." + tag.getString(ARTIFACT_ID_TAG));
+        if (com.strife.core.ArtifactTags.isUnidentified(event.getItemStack())) {
+            event.getToolTip()
+                    .add(
+                            Component.translatable(
+                                    "tooltip.strife.artifact", artifact, Component.literal("未鉴定")));
+            return;
+        }
         Component quality =
                 tag.contains(QUALITY_TAG)
                         ? qualityName(tag.getString(QUALITY_TAG))

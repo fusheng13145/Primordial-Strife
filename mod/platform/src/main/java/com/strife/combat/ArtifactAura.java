@@ -74,6 +74,10 @@ public final class ArtifactAura {
         if (contract == null || contract.quality() == null || contract.quality().isBlank()) {
             return CombatTables.ArtifactBonus.zero();
         }
+        // ADR-037 ③：黑市未鉴定货——加成不生效（鉴定阁去除标记后才亮）。
+        if (com.strife.core.ArtifactTags.isUnidentified(player.getOffhandItem())) {
+            return CombatTables.ArtifactBonus.zero();
+        }
         // ADR-036 法器分级：生效加成 = 品阶加成 × 阶位倍率。
         return CombatTables.effectiveBonus(contract.quality());
     }

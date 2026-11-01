@@ -1,6 +1,7 @@
 package com.strife.production;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.strife.core.InventoryOps;
 import java.util.Map;
 import java.util.Optional;
@@ -122,6 +123,7 @@ public final class MarketCommands {
                                                                                                 .getInteger(
                                                                                                         ctx,
                                                                                                         "count"))))))
+                .then(Commands.literal("appraise").executes(ctx -> appraise(ctx.getSource())))
                 .then(
                         Commands.literal("exchange")
                                 .then(
@@ -222,6 +224,48 @@ public final class MarketCommands {
                 Component.literal("✦ 回收 " + itemId + " ×" + removed + "（得灵石 " + payout + "）"),
                 true);
         return 1;
+    }
+
+    /** 鉴定阁（ADR-037 ③）：清点主背包+末影箱的未鉴定器胚，按件收费去除标记。 无未鉴定品=无事发生不扣费。 */
+    private static int appraise(CommandSourceStack source) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        int cost = MarketPrices.appraiseCost();
+        java.util.List<ItemStack> pending = new java.util.ArrayList<>();
+        collectUnidentified(player.getInventory(), pending);
+        collectUnidentified(player.getEnderChestInventory(), pending);
+        if (pending.isEmpty()) {
+            player.displayClientMessage(Component.literal("（没有需要鉴定的货）"), true);
+            return 0;
+        }
+        int total = cost * pending.size();
+        InventoryOps.PlayerContainers containers =
+                new InventoryOps.PlayerContainers(
+                        player.getInventory(), player.getEnderChestInventory());
+        if (InventoryOps.countOwned(containers, "item_lingshi") < total) {
+            player.displayClientMessage(
+                    Component.literal(
+                            "（鉴定费不足：需 " + total + "（" + pending.size() + " 件 × " + cost + "））"),
+                    true);
+            return 0;
+        }
+        InventoryOps.remove(containers, "item_lingshi", total);
+        for (ItemStack stack : pending) {
+            com.strife.core.ArtifactTags.markIdentified(stack);
+        }
+        player.displayClientMessage(
+                Component.literal("✦ 鉴定阁：" + pending.size() + " 件货过了眼（灵石 " + total + "）——是真金不怕火"),
+                true);
+        return 1;
+    }
+
+    private static void collectUnidentified(
+            net.minecraft.world.Container container, java.util.List<ItemStack> pending) {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack stack = container.getItem(i);
+            if (!stack.isEmpty() && com.strife.core.ArtifactTags.isUnidentified(stack)) {
+                pending.add(stack);
+            }
+        }
     }
 
     /** 下品 → 高档：全量换算（余数留下品），不丢钱。 */
