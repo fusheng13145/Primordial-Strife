@@ -73,6 +73,8 @@
     "data/strife/worldgen/placed_feature/block_ore_lingyu.json",
     "data/strife/worldgen/placed_feature/block_qi_crystal.json",
     "data/strife/worldgen/structure/sect_hall.json",
-    "data/strife/worldgen/structure_set/sect_hall.json"
+    "data/strife/worldgen/structure/wangxian_tai.json",
+    "data/strife/worldgen/structure_set/sect_hall.json",
+    "data/strife/worldgen/structure_set/wangxian_tai.json"
   ]
 }

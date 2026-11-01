@@ -1,0 +1,15 @@
+{
+  "@generated": "from tables/structures.csv @ sha256:fb62778af402087315435c708e5d63491b766081215464cfb57af559213eaa69",
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 1206,
+    "separation": 16,
+    "spacing": 64
+  },
+  "structures": [
+    {
+    "structure": "strife:wangxian_tai",
+    "weight": 1
+  }
+  ]
+}

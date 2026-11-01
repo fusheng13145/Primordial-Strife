@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/structures.csv @ sha256:982dd14892b8072abffe7ab4aad06e0ba6ace89195d5c9028d1c25cd1e85d067",
+  "@generated": "from tables/structures.csv @ sha256:fb62778af402087315435c708e5d63491b766081215464cfb57af559213eaa69",
   "placement": {
     "type": "minecraft:random_spread",
     "salt": 1205,

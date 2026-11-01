@@ -1,2 +1,3 @@
 id,kind,biomes,step,spacing,separation,salt,terrain_adaptation,_note
 sect_hall,code,minecraft:plains|minecraft:forest|minecraft:meadow|minecraft:savanna,surface_structures,48,12,1205,beard_thin,M4 宗门厅堂（ADR-022 code 路线）：主世界草原/森林/草甸/热带草原的地表宗门骨架（石基平台+四柱+屋顶+灵石灯+门匾位）；spacing 48 区块 separation 12 区块（spacing 必须 > separation 否则原版视作无效不生成）；形态属 LORE 真相源待本人补 本期只定机制
+wangxian_tai,code,minecraft:the_end,surface_structures,64,16,1206,beard_thin,P1-15 上界望仙台：上界（strife:upper_realm 用 the_end 群系，ADR-021）浮岛地表的开阔石台——端石砖台面+四柱+中央灵气结晶；spacing 64 / separation 16 / salt 1206（与 sect_hall 错开）；注：biome=the_end 使其同样可在原版末地生成，属借用原版群系的已知取舍（自研上界群系后收紧）

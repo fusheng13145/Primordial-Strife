@@ -1,0 +1,10 @@
+{
+  "@generated": "from tables/structures.csv @ sha256:fb62778af402087315435c708e5d63491b766081215464cfb57af559213eaa69",
+  "type": "strife:wangxian_tai",
+  "biomes": [
+    "minecraft:the_end"
+  ],
+  "spawn_overrides": {},
+  "step": "surface_structures",
+  "terrain_adaptation": "beard_thin"
+}

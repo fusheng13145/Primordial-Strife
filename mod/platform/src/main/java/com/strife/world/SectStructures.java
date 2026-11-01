@@ -22,6 +22,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * </ul>
  *
  * <p>三者缺一，游戏内表现都是"结构列表里有名字但永远找不到"——静默断链，与矿石/结晶同构。
+ *
+ * <p>本类是 world 侧结构注册的总装点（宗门 sect_hall + 上界望仙台 wangxian_tai）。
  */
 public final class SectStructures {
 
@@ -47,6 +49,22 @@ public final class SectStructures {
 
     public static final DeferredHolder<StructurePieceType, StructurePieceType> SECT_HALL_PIECE =
             PIECES.register(SECT_HALL_ID, () -> SectHallPiece::new);
+
+    /** 上界望仙台（P1-15）：内容 ID 与产物 {@code worldgen/structure/wangxian_tai.json} 同 ID。 */
+    public static final String WANGXIAN_TAI_ID = "wangxian_tai";
+
+    public static final DeferredHolder<Structure, WangxianTaiStructure> WANGXIAN_TAI =
+            STRUCTURES.register(
+                    WANGXIAN_TAI_ID,
+                    () -> new WangxianTaiStructure(WangxianTaiStructure.settings()));
+
+    public static final DeferredHolder<StructureType<?>, StructureType<WangxianTaiStructure>>
+            WANGXIAN_TAI_TYPE =
+                    STRUCTURE_TYPES.register(
+                            WANGXIAN_TAI_ID, () -> () -> WangxianTaiStructure.CODEC);
+
+    public static final DeferredHolder<StructurePieceType, StructurePieceType> WANGXIAN_TAI_PIECE =
+            PIECES.register(WANGXIAN_TAI_ID, () -> WangxianTaiPiece::new);
 
     private SectStructures() {}
 }
