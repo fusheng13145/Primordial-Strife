@@ -42,10 +42,47 @@ class Ch1PlaythroughTest {
             done.add(expected);
         }
 
-        // 全链走完：trackable 清空（章节收束，无下一个可接任务）。
+        // 全链走完：trackable 指向支线（可选内容仍开放——世界不为玩家而转，但为玩家留门），
+        // 支线也做完才真正清空。
+        QuestBook.QuestView afterMain =
+                ch1().trackable(QuestState.of(done, java.util.Map.of()), null).orElseThrow();
+        assertEquals("quest_ch1_garden_side_01", afterMain.id(), "主链收束后应轮到表尾支线（药圃的账）");
+
+        done.add("quest_ch1_garden_side_01");
+        QuestBook.QuestView ledger =
+                ch1().trackable(QuestState.of(done, java.util.Map.of()), null).orElseThrow();
+        assertEquals("quest_ch1_ledger_side_01", ledger.id(), "第二条支线（渡口的暗账）");
+
+        done.add("quest_ch1_ledger_side_01");
         assertTrue(
                 ch1().trackable(QuestState.of(done, java.util.Map.of()), null).isEmpty(),
-                "告别完成后第一章应无可接任务");
+                "主链 + 支线全部完成后第一章清空");
+    }
+
+    @Test
+    void skippingSideQuestsNeverBlocksTheMainChain() {
+        // P1-05 判据：跳过支线仍可通关——主链每一步 trackable 都指向主线任务（表序保证支线不插队）。
+        String[] mainChain = {
+            "quest_ch1_pingcang_survey_01",
+            "quest_ch1_pingcang_offer_01",
+            "quest_ch1_pingcang_debt_01",
+            "quest_ch1_pingcang_raid_01",
+            "quest_ch1_pingcang_reckon_01",
+            "quest_ch1_jindan_gate_01",
+            "quest_ch1_farewell_01",
+        };
+        java.util.HashSet<String> done = new java.util.HashSet<>();
+        for (String expected : mainChain) {
+            QuestBook.QuestView view =
+                    ch1().trackable(QuestState.of(done, java.util.Map.of()), null).orElseThrow();
+            assertEquals(expected, view.id(), "主链推进不得被支线抢占：" + expected);
+            done.add(expected);
+        }
+        // 主链收束后支线仍可回头补做（可错过 ≠ 永久关闭）。
+        assertEquals(
+                "quest_ch1_garden_side_01",
+                ch1().trackable(QuestState.of(done, java.util.Map.of()), null).orElseThrow().id(),
+                "支线在主链完成后仍开放");
     }
 
     @Test

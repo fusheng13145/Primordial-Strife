@@ -197,9 +197,10 @@ class Ch1RewardFlowTest {
     void chapterWalksThroughAndClosesOut() {
         Playthrough run = walkToTheEnd();
 
-        assertTrue(
-                run.book.trackable(QuestState.of(stateOf(run), Map.of()), null).isEmpty(),
-                "告别完成后第一章应无可接任务");
+        // 主链收束后轮到表尾支线（非必做、可错过——trackable 不清空，世界仍开放可选内容）。
+        QuestBook.QuestView afterMain =
+                run.book.trackable(QuestState.of(stateOf(run), Map.of()), null).orElseThrow();
+        assertEquals("quest_ch1_garden_side_01", afterMain.id(), "支线仍在，不阻塞也不消失");
     }
 
     @Test
