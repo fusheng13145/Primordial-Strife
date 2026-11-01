@@ -29,11 +29,21 @@ class WangxianTaiStructureTest {
         JsonObject structure = ShippedProducts.structure(ID);
         String biomes = structure.getAsJsonArray("biomes").toString();
 
-        // 上界维度借用 the_end 群系（ADR-021）——biome 过滤是结构归属维度的唯一手段，
-        // 群系写错（如主世界群系）= 上界永远找不到望仙台。
-        assertTrue(biomes.contains("minecraft:the_end"), biomes);
+        // 上界维度用自研群系 strife:upper_realm_biome（灵霄青冥，dimensions.csv 2026-10-24 实修口径）——
+        // biome 过滤是结构归属维度的唯一手段；RCON 实证：指 the_end 时 locate 在 upper_realm 找不到
+        // （维度群系不是 the_end），指对自研群系后才可定位。
+        assertTrue(biomes.contains("strife:upper_realm_biome"), biomes);
         assertTrue(!biomes.contains("minecraft:plains"), "不得落入主世界群系：" + biomes);
-        assertTrue(!biomes.contains("strife:"), "不自研群系阶段不得指向 strife: 群系：" + biomes);
+        assertTrue(!biomes.contains("minecraft:the_end"), "the_end 是原版末地群系，非本维度群系：" + biomes);
+    }
+
+    @Test
+    void referencedStrifeBiomeShipsAsARealProduct() {
+        // 结构引用的自研群系必须有产物（引用悬空 = 进世界加载红）——产物×产物对齐在这里被拦下。
+        JsonObject biome = ShippedProducts.biome("upper_realm_biome");
+        assertTrue(
+                biome.has("carvers") || biome.has("features") || biome.has("spawners"),
+                "群系产物必须可解析且为真实世界群系定义");
     }
 
     @Test

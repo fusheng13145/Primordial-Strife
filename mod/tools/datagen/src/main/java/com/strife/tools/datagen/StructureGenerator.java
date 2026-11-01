@@ -121,7 +121,14 @@ public final class StructureGenerator implements TableGenerator {
                 source.generatedHeader());
     }
 
-    /** {@code biomes} 列：{@code minecraft:x|minecraft:y} 多值，禁空项（与 ores.csv 同规则）。 */
+    /**
+     * {@code biomes} 列：{@code minecraft:x|strife:y} 多值，禁空项（与 ores.csv 同规则）。
+     *
+     * <p>{@code strife:} 自 P1-15 望仙台起允许（2026-11-01 RCON 实证驱动：上界维度群系为自研 {@code
+     * strife:upper_realm_biome}，结构挂 biome 过滤必须指向它才能在上界定位；维度契约 §4.13 的 {@code biome} 列早已允许 {@code
+     * minecraft:|strife:}，此处对齐）。防呆保持：命名空间 只许这两家；{@code strife:} 群系的存在性由 biomes.csv 产物管线与
+     * DimensionProductsTest 钉住 （引用悬空 = 进世界加载红，不会被静默吞掉）。
+     */
     private static List<String> biomes(
             TableSource source, TableSource.Record row, Map<String, String> values) {
         String raw = required(source, row, values, "biomes");
@@ -132,12 +139,14 @@ public final class StructureGenerator implements TableGenerator {
                 throw new IllegalStateException(
                         source.fileName() + ":" + row.line() + ": biomes 有空项：" + raw);
             }
-            if (!trimmed.startsWith("minecraft:")) {
+            boolean vanilla = trimmed.startsWith("minecraft:");
+            boolean strifeShipped = trimmed.startsWith("strife:") && trimmed.length() > 7;
+            if (!vanilla && !strifeShipped) {
                 throw new IllegalStateException(
                         source.fileName()
                                 + ":"
                                 + row.line()
-                                + ": biomes 只允许原版群系（结构挂主世界，借原版群系）："
+                                + ": biomes 只允许 minecraft:（原版群系）或 strife:（biomes.csv 自研群系）："
                                 + trimmed);
             }
             parsed.add(trimmed);

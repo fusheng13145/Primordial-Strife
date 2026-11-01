@@ -334,7 +334,7 @@ M4 宗门结构的字段契约。**本节已生效**：本人于 2026-10-02 按 
 |---|---|---|
 | `id` | 必 | `sect_<语义>`，小写下划线（V-NAME 守形状，见 docs/11 §2） |
 | `kind` | 必 | 实现路线：`code`（代码生成式，本期唯一可实现值）/ `jigsaw`（需 `.nbt`，本期留空不实现） |
-| `biomes` | 必 | 原版生物群系 ID，`\|` 分隔多值，**禁空项**（与 `ores.csv` 同规则） |
+| `biomes` | 必 | 生物群系 ID：`minecraft:`（原版）或 `strife:`（biomes.csv 自研群系；P1-15 望仙台起允许——2026-11-01 RCON 实证：上界维度群系为自研 `strife:upper_realm_biome`，结构必须指它才能在上界定位；维度契约 `biome` 列早有同款双命名空间先例），`\|` 分隔多值，**禁空项**（与 `ores.csv` 同规则） |
 | `step` | 必 | 原版生成阶段：`surface_structures` / `underground_structures` / `underground_decoration` |
 | `spacing` | 必 | `structure_set` 区域间距（区块）。**必须 > `separation`**，否则原版视作无效而不生成 |
 | `separation` | 必 | 区域内最小间距 |
