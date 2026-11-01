@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -13,6 +14,16 @@ import org.junit.jupiter.api.Test;
  * <p>关键口径：<b>没注册就是没有这条路</b>——调用返回 false 且不提供任何"默认实现"，因为默认实现只能是空操作， 而那正是"看起来发了其实没发"的来源。用例把这条钉住。
  */
 class RewardBridgesTest {
+
+    /**
+     * {@code @BeforeEach} 也要清场（2026-11-01 复核记录）：ModDevGradle {@code unitTest} 会构造被测 mod 的 @Mod 入口，
+     * StrifeCombat 构造器若被引导执行会先注册 granter——"未接线"断言不能悬在 harness 的偶然上。与 {@code PlaceBridgesTest}
+     * 同一修法（彼处已实测发生过）。
+     */
+    @BeforeEach
+    void clearGlobalStateBeforeTest() {
+        RewardBridges.resetForTest();
+    }
 
     @AfterEach
     void tearDown() {
