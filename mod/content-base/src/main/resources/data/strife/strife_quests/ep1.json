@@ -1,0 +1,159 @@
+{
+  "@generated": "from tables/quests_ep1.csv @ sha256:3a45b1c46ade7578e56e5d3dea79289605b98d0bc5d42973ce74f9d27f010c80",
+  "id": "quest_ep1_market_intro_01",
+  "chapter": "ep1",
+  "quests": [
+    {
+    "id": "quest_ep1_market_intro_01",
+    "entry": true,
+    "prerequisites": [],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_fangshi_zhang",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 5,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep1:market_known",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 2
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep1_bounty_tier1_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep1_market_intro_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "kill",
+    "target": "",
+    "count": 5,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 6,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep1_bounty_tier2_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep1_bounty_tier1_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "kill",
+    "target": "",
+    "count": 8,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 10,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": null,
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep1_bounty_tier3_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep1_bounty_tier2_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "kill",
+    "target": "",
+    "count": 12,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 25,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep1:famous",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 5
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "@generated": "from tables/places.csv @ sha256:45f920166f7ca55df3e2566f2ad175c1bff182ce309469fb9825b224bf6a1db7",
+  "id": "qi_fangshi",
+  "dimension": "minecraft:overworld",
+  "name": "文津坊市",
+  "x": -448,
+  "y": 64,
+  "z": -560,
+  "radius": 192,
+  "qi_scale": 1.0,
+  "chapter": "ep1"
+}

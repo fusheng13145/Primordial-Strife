@@ -1,0 +1,2 @@
+id,npc,root,nodes,effects,max_depth_levels,_note
+dlg_ep1_market,npc_fangshi_zhang,nd_mkt_welcome,id=nd_mkt_welcome;speaker=坊市牙人张;text_key=dialog.strife.nd_mkt_welcome;options=((text_key=dialog.strife.nd_mkt_welcome_opt1;next=nd_mkt_prices)|(text_key=dialog.strife.nd_mkt_welcome_opt2;next=nd_mkt_bye))|id=nd_mkt_prices;speaker=坊市牙人张;text_key=dialog.strife.nd_mkt_prices;options=((text_key=dialog.strife.nd_mkt_prices_opt1;next=nd_mkt_bye))|id=nd_mkt_bye;speaker=坊市牙人张;text_key=dialog.strife.nd_mkt_bye,,8,EP1 坊市牙人：价目引导（命令通道见 /strife market）

@@ -1,0 +1,7 @@
+id,text,variant_a,variant_b,_note
+nd_mkt_welcome,客官里边请——文津坊市，明码标价，童叟无欺。想看价目还是要办货？,灯下现银，当面点清。文津坊市只做一口价，客官要看价目还是直接办货？,南来北往的都在这本账上。客官，看价还是取货？,EP1 牙人张开门
+nd_mkt_welcome_opt1,看看今天的价目,,,选项
+nd_mkt_welcome_opt2,只是路过,,,选项
+nd_mkt_prices,价目墙上贴着呢：材料回收一律折价，丹药按成色一口价。跟牙人买货卖货，用 /strife market 报我名字就行。,本账明码：收货折价、出货实价——报 /strife market，账房随时结算。,价目不二价。买卖都走 /strife market，账房当场点清。,EP1 价目引导（命令提示）
+nd_mkt_prices_opt1,记下了,,,选项
+nd_mkt_bye,慢走——灯一直亮着。,货比三家，回头随意。,客官慢走。,EP1 收尾

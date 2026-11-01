@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/npcs.csv @ sha256:7f72f1a71c155174a92cc0ad9d84f5692f4605b3ce194447a4bb5a346985de1d",
+  "@generated": "from tables/npcs.csv @ sha256:65ed5ee4fef66550a7fb5ce0722485ae67b89aa0944888dd22cd3137600b69bd",
   "id": "npc_taishang_wu",
   "dimension": "minecraft:overworld",
   "place": "qi_luoxia",

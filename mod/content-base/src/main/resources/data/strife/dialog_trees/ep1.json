@@ -1,0 +1,54 @@
+{
+  "@generated": "from tables/dialog_trees_ep1.csv @ sha256:ede4ad33a7cd2f018caf59462fd2cc41457019e54732b45ee5dd316ac4c54796",
+  "id": "nd_mkt_welcome",
+  "chapter": "ep1",
+  "trees": [
+    {
+    "id": "dlg_ep1_market",
+    "npc": "npc_fangshi_zhang",
+    "root": "nd_mkt_welcome",
+    "nodes": [
+    {
+    "id": "nd_mkt_welcome",
+    "speaker": "坊市牙人张",
+    "text_key": "dialog.strife.nd_mkt_welcome",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_mkt_welcome_opt1",
+    "next": "nd_mkt_prices"
+  },
+    {
+    "text_key": "dialog.strife.nd_mkt_welcome_opt2",
+    "next": "nd_mkt_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_mkt_prices",
+    "speaker": "坊市牙人张",
+    "text_key": "dialog.strife.nd_mkt_prices",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_mkt_prices_opt1",
+    "next": "nd_mkt_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_mkt_bye",
+    "speaker": "坊市牙人张",
+    "text_key": "dialog.strife.nd_mkt_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 8
+  }
+  ]
+}

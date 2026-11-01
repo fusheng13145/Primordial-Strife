@@ -1,0 +1,8 @@
+{
+  "@generated": "from tables/npcs.csv @ sha256:65ed5ee4fef66550a7fb5ce0722485ae67b89aa0944888dd22cd3137600b69bd",
+  "id": "npc_fangshi_zhang",
+  "dimension": "minecraft:overworld",
+  "place": "qi_fangshi",
+  "x": -452,
+  "z": -556
+}

@@ -1,0 +1,5 @@
+id,chapter,entry,prerequisites,objectives,conditions,rewards,reputation_delta,causality,timer,fail_goto,flags_set,repeatable,hidden,price_reward,_note
+quest_ep1_market_intro_01,ep1,true,,id=1;type=talk;target=npc_fangshi_zhang;count=1;optional=false,,type=item;id=item_lingshi;count=5|type=flag;id=fac_yuelai:ep1:market_known,fac_yuelai=2,,,,,no,false,,坊市初识：牙人张引路（EP1 主线入口，E3/E7）
+quest_ep1_bounty_tier1_01,ep1,false,quest_ep1_market_intro_01,id=1;type=kill;target=;count=5;optional=false,,type=item;id=item_lingshi;count=6,,,,,,no,false,,悬赏·一档：妖兽 ×5（达标即赏——report 推进所有可用任务的引擎语义）
+quest_ep1_bounty_tier2_01,ep1,false,quest_ep1_bounty_tier1_01,id=1;type=kill;target=;count=8;optional=false,,type=item;id=item_lingshi;count=10,,,,,,no,false,,悬赏·二档：妖兽 ×8（一档完成解锁——委托递进，境界分层由难度涌现）
+quest_ep1_bounty_tier3_01,ep1,false,quest_ep1_bounty_tier2_01,id=1;type=kill;target=;count=12;optional=false,,type=item;id=item_lingshi;count=25|type=flag;id=fac_yuelai:ep1:famous,fac_yuelai=5,,,,,no,false,,悬赏·三档：妖兽 ×12（名望标记）

@@ -1,0 +1,13 @@
+{
+  "@generated": "from tables/dialog_ep1_text.csv @ sha256:b2f73b79dd55111a8df0020f848ba6a5f0745ca0ae9d7997bbcd39219afa9209",
+  "id": "dialog_text_ep1",
+  "chapter": "ep1",
+  "texts": {
+    "dialog.strife.nd_mkt_welcome": "客官里边请——文津坊市，明码标价，童叟无欺。想看价目还是要办货？",
+    "dialog.strife.nd_mkt_welcome_opt1": "看看今天的价目",
+    "dialog.strife.nd_mkt_welcome_opt2": "只是路过",
+    "dialog.strife.nd_mkt_prices": "价目墙上贴着呢：材料回收一律折价，丹药按成色一口价。跟牙人买货卖货，用 /strife market 报我名字就行。",
+    "dialog.strife.nd_mkt_prices_opt1": "记下了",
+    "dialog.strife.nd_mkt_bye": "慢走——灯一直亮着。"
+  }
+}
