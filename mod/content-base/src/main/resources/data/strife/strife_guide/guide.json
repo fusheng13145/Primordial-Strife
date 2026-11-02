@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/guide.csv @ sha256:ce423f2dd128f7cb02886d75c71bb210ac200488ab11482714a92c26dd13db18",
+  "@generated": "from tables/guide.csv @ sha256:21e61204641b10977aaddd923eb34f27e6cad506d1bb6c2351f3a6d8165e6d52",
   "id": "guide",
   "sections": {
     "realm": [
@@ -17,6 +17,21 @@
     "id": "guide_realm_life",
     "title": "寿元与大限",
     "text": "境界给寿元。大限不是删除：代价结算后还有残余寿元，续命丹是正路。"
+  },
+    {
+    "id": "guide_realm_shenshi",
+    "title": "神识",
+    "text": "/strife sense 消耗神识，透视周围生灵的类型与方位。凝神丹加速恢复。"
+  },
+    {
+    "id": "guide_realm_seclusion",
+    "title": "闭关",
+    "text": "/strife seclusion 闭关若干时辰，修为一次结清。须在安全之地。"
+  },
+    {
+    "id": "guide_realm_heartdemon",
+    "title": "心魔",
+    "text": "突破失败可能招心魔：修为变慢，紫雾缠身。洗尘丹立清，面板可见层数。"
   }
   ],
     "cultivation": [
@@ -68,6 +83,31 @@
     "id": "guide_production_market",
     "title": "坊市",
     "text": "/strife market 买卖与兑换灵石三档；回收一律折价，无倒卖套利。"
+  },
+    {
+    "id": "guide_production_furnace",
+    "title": "炼丹炉",
+    "text": "右键炼丹炉开炼丹界面，材料齐缺一目了然。炉越近加成越高，四阶炉各不同。"
+  },
+    {
+    "id": "guide_production_fire",
+    "title": "异火",
+    "text": "背包里的异火炼丹时自动燃起：成功率、品质、废丹回收各有所长，六火六色。"
+  },
+    {
+    "id": "guide_production_blackmarket",
+    "title": "黑市",
+    "text": "/strife blackmarket 赃货便宜，但落因果标记——洗尘丹能勾销。"
+  },
+    {
+    "id": "guide_production_auction",
+    "title": "拍卖行",
+    "text": "/strife auction：荷兰拍越等越便宜；bid 密封投标槽末开箱，价高者得。"
+  },
+    {
+    "id": "guide_production_hire",
+    "title": "供奉武士",
+    "text": "/strife hire 花灵石雇供奉武士随行护法，到期自去，同时只供一位。"
   }
   ],
     "quest": [
@@ -85,6 +125,16 @@
     "id": "guide_quest_bounty",
     "title": "悬赏委托",
     "text": "文津坊市的牙人张发布妖兽悬赏，做完一档解锁下一档，赏钱当场结。"
+  },
+    {
+    "id": "guide_quest_miji",
+    "title": "秘境",
+    "text": "秘境入口在文津渡西北。接过传承考验后，/strife world realm go miji 入内。"
+  },
+    {
+    "id": "guide_quest_trial",
+    "title": "三重试炼",
+    "text": "秘境三关：勇气在妖兽，智慧在天元果，心性在试炼台坚守。过关心魔劫随至。"
   }
   ]
   }
