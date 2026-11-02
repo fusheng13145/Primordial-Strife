@@ -101,6 +101,13 @@ public final class StrifeClientFx {
                     net.minecraft.client.Minecraft.getInstance().setScreen(new GuideScreen());
                     return true;
                 });
+        // EP1（ADR-038 交互层）：炉交互屏开启器——右键炼丹炉经 StrifeUiPayload 路由到本侧 AlchemyScreen。
+        com.strife.core.StrifeUiBridge.registerOpener(
+                com.strife.core.StrifeUiBridge.Keys.ALCHEMY_SCREEN,
+                data -> {
+                    net.minecraft.client.Minecraft.getInstance().setScreen(new AlchemyScreen(data));
+                    return true;
+                });
     }
 
     private void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

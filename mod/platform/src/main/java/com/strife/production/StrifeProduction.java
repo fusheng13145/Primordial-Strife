@@ -45,6 +45,18 @@ public final class StrifeProduction {
         // EP1（ADR-037 ①）：拍卖行——荷兰式降价拍，价格确定性推导零持久化。
         StrifeCommands.MODULE_SUBTREES.add(AuctionCommands.subtree());
         StrifeCommands.MODULE_SUBTREES.add(Alchemy.recipeCommand());
+        // EP1（ADR-038 交互层）：炉交互屏的炼制意图——与 /strife craft pill 同一业务口，同一份限速。
+        com.strife.core.net.StrifeIntents.register(
+                com.strife.core.net.IntentRateLimiter.CRAFT,
+                invocation ->
+                        Alchemy.craft(
+                                invocation.player(),
+                                invocation.args() == null
+                                        ? ""
+                                        : invocation
+                                                .args()
+                                                .getString(
+                                                        com.strife.core.StrifeUiBridge.Keys.PILL)));
         LOGGER.info("strife production wired cultivation factor: pill=consumable buffs");
     }
 

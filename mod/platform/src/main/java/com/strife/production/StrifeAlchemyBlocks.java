@@ -21,10 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 炼丹炉方块（EP1，ADR-038）：四阶炼丹炉——玩家站在炉附近使用炼丹命令时吃到加成。
+ * 炼丹炉方块（EP1，ADR-038）：四阶炼丹炉——右键打开炉交互屏（{@link AlchemyUi}）， 站在炉附近使用炼丹命令/屏内炼制时吃到加成。
  *
  * <p>变形测试（03 §2.1）：加新炉只需在本类加一个 register 常量 + furnaces.csv 加一行。 参数（success_bonus / quality_cap
- * 等）从产物读（{@link ProductionTables}），代码零受管字面量。
+ * 等）从产物读（furnaceStats 直读 furnaces.json），代码零受管字面量。
  *
  * <p>邻近判定：{@link #findNearby(Player)} 扫 3 格半径，返回最高阶的炉（多炉取最优）。
  */
@@ -55,7 +55,7 @@ public final class StrifeAlchemyBlocks {
                 BLOCKS.register(
                         id,
                         () ->
-                                new Block(
+                                new AlchemyFurnaceBlock(
                                         BlockBehaviour.Properties.of()
                                                 .mapColor(color)
                                                 .requiresCorrectToolForDrops()

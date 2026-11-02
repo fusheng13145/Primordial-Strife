@@ -25,6 +25,9 @@ public final class IntentRateLimiter {
     /** 面板视图拉取（03 §5"改拉取式：C2S 请求 → S2C 响应"）：读操作同样要有配额，否则它就是一个无限量的服务端计算入口。 */
     public static final String PANEL = "panel";
 
+    /** 炼丹（炉交互屏的炼制按钮，ADR-038 交互层）：与 /strife craft pill 同一业务口，同一份限速。 */
+    public static final String CRAFT = "craft_pill";
+
     private final Map<String, TokenBucket> buckets;
     private final Set<String> unknown = new LinkedHashSet<>();
 

@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:8c594e379632f5014e7f42d9a8f34b8b55cdf54826553eb73c41dd05fd743fe4",
+  "@generated": "from content/NUMBERS.md @ sha256:8d0f379750a4b68f316f5393dbb25e38e818b2dfb6a20f76f6655d6eb77cfac4",
   "id": "core_rules",
   "limits": {
     "growth_ratio_min": 1.8,
@@ -21,7 +21,8 @@
     "quest_per_sec": 2,
     "artifact_per_sec": 5,
     "breakthrough_per_min": 6,
-    "panel_per_sec": 4
+    "panel_per_sec": 4,
+    "craft_per_sec": 2
   },
   "derived": {
     "ticks_per_year": 24000

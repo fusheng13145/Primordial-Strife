@@ -18,8 +18,8 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  */
 public final class StrifeNetwork {
 
-    /** 载荷契约版本：新增包类型或改字段位序时 +1（{@link StrifeSyncField} 的注释里有同一条契约）。 */
-    public static final String PROTOCOL_VERSION = "1";
+    /** 载荷契约版本：新增包类型或改字段位序时 +1（{@link StrifeSyncField} 的注释里有同一条契约）。v2：+StrifeUiPayload（炉交互屏）。 */
+    public static final String PROTOCOL_VERSION = "2";
 
     private StrifeNetwork() {}
 
@@ -40,10 +40,18 @@ public final class StrifeNetwork {
                 StrifeRealmViewPayload.TYPE,
                 StrifeRealmViewPayload.STREAM_CODEC,
                 StrifeNetwork::onRealmView);
+        registrar.playToClient(
+                StrifeUiPayload.TYPE, StrifeUiPayload.STREAM_CODEC, StrifeNetwork::onUiData);
         registrar.playToServer(
                 StrifeIntentPayload.TYPE,
                 StrifeIntentPayload.STREAM_CODEC,
                 StrifeNetwork::onIntent);
+    }
+
+    /** 客户端收到数据屏（服务端驱动 UI）：按 screenId 路由到已注册的开启器；没有开启器 = 静默丢弃（命令通道兜底）。 */
+    private static void onUiData(StrifeUiPayload payload, IPayloadContext context) {
+        context.enqueueWork(
+                () -> com.strife.core.StrifeUiBridge.open(payload.screenId(), payload.data()));
     }
 
     /** 客户端收到面板视图（拉取式响应）：整体替换镜像里的视图。 */

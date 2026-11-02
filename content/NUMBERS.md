@@ -268,6 +268,7 @@ quest_per_sec: 2
 artifact_per_sec: 5
 breakthrough_per_min: 6
 panel_per_sec: 4
+craft_per_sec: 2    # 炼丹（炉交互屏炼制按钮与 /strife craft pill 同口，ADR-038 交互层）
 ```
 
 ## §25. 坊市
