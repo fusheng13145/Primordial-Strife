@@ -40,11 +40,13 @@ public final class StrifeCombat {
         StrifeTalismanItems.ITEMS.register(modEventBus);
         TalismanEffects.register();
         StrifeCommands.MODULE_SUBTREES.add(Techniques.command());
+        StrifeCommands.MODULE_SUBTREES.add(HireCommand.subtree());
         StrifeCommands.MODULE_SUBTREES.add(Spells.command());
         StrifeCommands.MODULE_SUBTREES.add(Artifacts.command());
         // M2：法术弹道系统（产物表 + cast 意图）与 combat 域实体（弹道/妖兽）。
         StrifeCombatEntities.ENTITY_TYPES.register(modEventBus);
         modEventBus.addListener(StrifeMonster::onAttributes);
+        modEventBus.addListener(this::onMercenaryAttributes);
         // 妖兽刷怪放置：主世界夜间（Monster 的光照/地面判定）+ 上界同款放置。
         modEventBus.addListener(RegisterSpawnPlacementsEvent.class, this::registerBeastSpawn);
         Spells.register();
@@ -59,6 +61,11 @@ public final class StrifeCombat {
      * 私有类型，故不复用）。具体"加进哪些群系"由 content-base 的 {@code neoforge:add_spawns} biome_modifier 决定，
      * 不在此硬编码群系列表（数据驱动，便于 C 调整密度/分布）。
      */
+    private void onMercenaryAttributes(
+            net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent event) {
+        event.put(StrifeCombatEntities.MERCENARY.get(), StrifeMercenary.createAttributes());
+    }
+
     private void registerBeastSpawn(RegisterSpawnPlacementsEvent event) {
         event.register(
                 StrifeCombatEntities.MONSTER.get(),

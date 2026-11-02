@@ -30,6 +30,9 @@ public final class StrifeProduction {
                 "strife production entry constructed (version {})",
                 container.getModInfo().getVersion());
         StrifeItems.ITEMS.register(modEventBus);
+        // EP1（ADR-038）：炼丹炉方块——站附近使用炼丹命令吃到阶位加成。
+        StrifeAlchemyBlocks.BLOCKS.register(modEventBus);
+        StrifeAlchemyBlocks.ITEMS.register(modEventBus);
         CultivationFactors.registerPill(StrifePills::coefficient);
         Alchemy.register();
         ArtifactTables.register();

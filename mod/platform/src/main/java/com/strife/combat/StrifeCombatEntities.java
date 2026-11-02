@@ -69,5 +69,15 @@ public final class StrifeCombatEntities {
                                 .build(id));
     }
 
+    /** 供奉武士（EP1，ADR-037 ②）：雇佣友方——跟随+攻击雇主目标。 */
+    public static final DeferredHolder<EntityType<?>, EntityType<StrifeMercenary>> MERCENARY =
+            ENTITY_TYPES.register(
+                    "mercenary",
+                    () ->
+                            EntityType.Builder.<StrifeMercenary>of(
+                                            StrifeMercenary::new, MobCategory.CREATURE)
+                                    .sized(0.6F, 1.8F)
+                                    .build("mercenary"));
+
     private StrifeCombatEntities() {}
 }
