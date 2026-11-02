@@ -27,6 +27,9 @@ test {
 def repoRoot = rootProject.projectDir.parentFile
 
 run {
+    // 修复：Gradle JavaExec 默认不追踪非 classpath 文件——NUMBERS.md 变了但任务 UP-TO-DATE 跳过，
+    // 导致产物指纹漂移（2026-11-02 实证）。追踪后 Gradle 在 NUMBERS.md 变更时强制重跑。
+    inputs.file("${repoRoot}/content/NUMBERS.md")
     workingDir = repoRoot
     args = [
             '--tables-root',
