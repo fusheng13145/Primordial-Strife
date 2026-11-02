@@ -236,8 +236,15 @@ public final class StrifeClientFx {
         if (player.tickCount % 8 != 0) return;
         String fireId = findFireItem(player);
         if (fireId == null) return;
+        // 火色染色（DustParticleOptions）：六火六色，颜色即辨识度——木灵翠绿/地心土橙/玄冰冰蓝/赤炎红橙/九幽暗紫/太阳金白
+        long color = FIRE_COLORS.getOrDefault(fireId, 0xFF8844L);
+        var tint =
+                new org.joml.Vector3f(
+                        ((color >> 16) & 0xFF) / 255f,
+                        ((color >> 8) & 0xFF) / 255f,
+                        (color & 0xFF) / 255f);
         mc.level.addParticle(
-                net.minecraft.core.particles.ParticleTypes.FLAME,
+                new net.minecraft.core.particles.DustParticleOptions(tint, 1.0f),
                 player.getX() + (mc.level.random.nextDouble() - 0.5) * 1.2,
                 player.getY() + mc.level.random.nextDouble() * 1.8,
                 player.getZ() + (mc.level.random.nextDouble() - 0.5) * 1.2,

@@ -3,6 +3,7 @@ package com.strife.production;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 炼丹配方的纯数据核与概率抽签（production 统一配方机的第一类，docs/03 §1"MVP 只交付炼丹与炼器"； 契约 = tables/pills.csv 的 DataGen 产物
@@ -48,9 +49,18 @@ public record AlchemyRecipe(
 
     /** 一次炼制抽签：累积区间命中输出；未命中（失败）返回 empty——材料已在调用方扣除，这里只管"出什么"。 */
     public java.util.Optional<Output> roll(IntRng rng) {
+        return rollList(outputs, rng);
+    }
+
+    /**
+     * 对任意输出分布抽签（品质偏置后的分布与原分布共用同一条累积区间路径）。
+     *
+     * <p>包内可见：真实炼制走 {@link #roll}，偏置分布走本方法——两条路径不允许出现两套抽签数学。
+     */
+    static java.util.Optional<Output> rollList(List<Output> pool, IntRng rng) {
         int roll = rng.nextInt(1000);
         long threshold = 0;
-        for (Output output : outputs) {
+        for (Output output : pool) {
             threshold += Math.round(output.prob() * 1000);
             if (roll < threshold) {
                 return java.util.Optional.of(output);
@@ -58,6 +68,64 @@ public record AlchemyRecipe(
         }
         return java.util.Optional.empty();
     }
+
+    /**
+     * 品质偏置（fires.csv {@code quality_shift}，ADR-038）：把概率质量从<b>最低品阶</b>产出平移到<b>最高品阶</b>产出——
+     * 只重排产出分布，成功/失败总质量（1−Σprob）不动，Σprob 构造性守恒。
+     *
+     * <p>规则：偏置量 = min(shift, 最低品阶概率合计)，在最低/最高品阶内部按原概率比例缩放（多产出同阶时不成偏袒）。 单一产 出、全同品阶、或任一产出品阶未知（null /
+     * 表外值）→ 原样返回（fail-soft：偏置宁可不生效，不改变分布形状）。
+     */
+    static List<Output> qualityShifted(List<Output> pool, double shift) {
+        if (shift <= 0 || pool.size() < 2) {
+            return pool;
+        }
+        int minRank = Integer.MAX_VALUE;
+        int maxRank = Integer.MIN_VALUE;
+        for (Output output : pool) {
+            Integer rank = output.quality() == null ? null : QUALITY_RANK.get(output.quality());
+            if (rank == null) {
+                return pool;
+            }
+            minRank = Math.min(minRank, rank);
+            maxRank = Math.max(maxRank, rank);
+        }
+        if (minRank == maxRank) {
+            return pool;
+        }
+        final int lowest = minRank;
+        final int highest = maxRank;
+        double lowSum =
+                pool.stream().filter(o -> rank(o) == lowest).mapToDouble(Output::prob).sum();
+        double highSum =
+                pool.stream().filter(o -> rank(o) == highest).mapToDouble(Output::prob).sum();
+        double moved = Math.min(shift, lowSum);
+        if (moved <= 0) {
+            return pool;
+        }
+        double lowFactor = (lowSum - moved) / lowSum;
+        double highFactor = (highSum + moved) / highSum;
+        List<Output> shifted = new java.util.ArrayList<>(pool.size());
+        for (Output output : pool) {
+            int r = rank(output);
+            double prob = output.prob();
+            if (r == lowest) {
+                prob *= lowFactor;
+            } else if (r == highest) {
+                prob *= highFactor;
+            }
+            shifted.add(new Output(output.itemId(), output.count(), prob, output.quality()));
+        }
+        return List.copyOf(shifted);
+    }
+
+    private static int rank(Output output) {
+        return QUALITY_RANK.get(output.quality());
+    }
+
+    /** 品阶全序（JSON_SCHEMA §2 品阶枚举）；表外品阶在 qualityShifted 里按 fail-soft 原样返回。 */
+    private static final Map<String, Integer> QUALITY_RANK =
+            Map.of("fan", 0, "di", 1, "tian", 2, "xian_qi", 3);
 
     /** 从产物 JSON 解析（严格未知字段，§1.2 规则 2）。 */
     public static AlchemyRecipe parse(JsonObject json) {

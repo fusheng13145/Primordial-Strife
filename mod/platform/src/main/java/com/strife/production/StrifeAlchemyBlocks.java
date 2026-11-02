@@ -1,5 +1,8 @@
 package com.strife.production;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.core.BlockPos;
@@ -14,6 +17,8 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 炼丹炉方块（EP1，ADR-038）：四阶炼丹炉——玩家站在炉附近使用炼丹命令时吃到加成。
@@ -24,6 +29,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * <p>邻近判定：{@link #findNearby(Player)} 扫 3 格半径，返回最高阶的炉（多炉取最优）。
  */
 public final class StrifeAlchemyBlocks {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("strife/production");
 
     public static final DeferredRegister<Block> BLOCKS =
             DeferredRegister.create(Registries.BLOCK, "strife");
@@ -91,30 +98,93 @@ public final class StrifeAlchemyBlocks {
     }
 
     /**
-     * 附近炉的铸造参数（从 furnaces.csv 产物解析）。返回 null = 没有炉。 v1 简化：参数硬编码自 NUMBERS 定稿值（ADR-038
-     * §17.3），方块实体化后从产物读。
+     * 附近炉的铸造参数（furnaces.csv DataGen 产物 {@code strife_alchemy/furnaces.json} 运行时直读， v1 硬编码 switch 已
+     * 除——受管数值零字面量）。返回 null = 没有炉或方块有而表缺（fail-soft：不加成不阻塞，一次性日志）。
      */
     public static AlchemyFurnace findNearbyStats(Player player) {
         String furnaceId = findNearby(player);
         if (furnaceId == null) {
             return null;
         }
-        return switch (furnaceId) {
-            case "furnace_shi" -> new AlchemyFurnace("青石炉", 0.00, "di", 0, 0.00);
-            case "furnace_tie" -> new AlchemyFurnace("玄铁炉", 0.05, "tian", 0, 0.00);
-            case "furnace_zijin" -> new AlchemyFurnace("紫金鼎", 0.10, "tian", 1, 0.00);
-            case "furnace_long" -> new AlchemyFurnace("龙纹鼎", 0.20, "tian", 2, 0.10);
-            default -> null;
-        };
+        AlchemyFurnace stats = furnaceStats().get(furnaceId);
+        if (stats == null) {
+            if (!loggedMissing) {
+                loggedMissing = true;
+                LOGGER.error("炼丹炉 {} 不在 furnaces.json——该炉不加成（方块与产物漂移）", furnaceId);
+            }
+            return null;
+        }
+        return stats;
     }
 
-    /** 炼丹炉铸造参数（NUMBERS §17.3 定稿值）。 */
+    private static volatile boolean loggedMissing;
+
+    /** 炼丹炉铸造参数（furnaces.csv 定稿值：name/success_bonus/quality_cap/waste_recycle/double_output）。 */
     public record AlchemyFurnace(
             String name,
             double successBonus,
             String qualityCap,
             int wasteRecycle,
             double doubleOutput) {}
+
+    private static final java.util.Set<String> FURNACE_FIELDS =
+            java.util.Set.of(
+                    "id", "name", "success_bonus", "quality_cap", "waste_recycle", "double_output");
+
+    private static final String FURNACE_PATH = "/data/strife/strife_alchemy/furnaces.json";
+
+    private static volatile Map<String, AlchemyFurnace> furnaceCache;
+
+    /** 包内可见供用例直测：装载失败回空表（findNearbyStats 走 fail-soft），不抛到炼制路径。 */
+    static Map<String, AlchemyFurnace> furnaceStats() {
+        Map<String, AlchemyFurnace> loaded = furnaceCache;
+        if (loaded != null) {
+            return loaded;
+        }
+        synchronized (StrifeAlchemyBlocks.class) {
+            if (furnaceCache != null) {
+                return furnaceCache;
+            }
+            furnaceCache = loaded = parseFurnaces();
+            return loaded;
+        }
+    }
+
+    private static Map<String, AlchemyFurnace> parseFurnaces() {
+        try (var stream = StrifeAlchemyBlocks.class.getResourceAsStream(FURNACE_PATH)) {
+            if (stream == null) {
+                throw new IllegalStateException(
+                        FURNACE_PATH + " not in jar（FurnaceGenerator 产物缺失）");
+            }
+            JsonObject json =
+                    JsonParser.parseReader(
+                                    new InputStreamReader(
+                                            stream, java.nio.charset.StandardCharsets.UTF_8))
+                            .getAsJsonObject();
+            Map<String, AlchemyFurnace> entries = new ConcurrentHashMap<>();
+            for (var element : json.getAsJsonArray("entries")) {
+                JsonObject e = element.getAsJsonObject();
+                for (String key : e.keySet()) {
+                    if (!FURNACE_FIELDS.contains(key)) {
+                        throw new IllegalStateException(
+                                "furnaces.json unknown field '" + key + "'（§1.2 规则 2 fail-fast）");
+                    }
+                }
+                AlchemyFurnace furnace =
+                        new AlchemyFurnace(
+                                e.get("name").getAsString(),
+                                e.get("success_bonus").getAsDouble(),
+                                e.get("quality_cap").getAsString(),
+                                e.get("waste_recycle").getAsInt(),
+                                e.get("double_output").getAsDouble());
+                entries.put(e.get("id").getAsString(), furnace);
+            }
+            return java.util.Collections.unmodifiableMap(entries);
+        } catch (Exception e) {
+            LOGGER.error("炼丹炉参数表加载失败（{}）——全部炉不加成", FURNACE_PATH, e);
+            return Map.of();
+        }
+    }
 
     private StrifeAlchemyBlocks() {}
 }

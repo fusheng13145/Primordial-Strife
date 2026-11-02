@@ -224,17 +224,17 @@ public final class Alchemy {
                                                         })));
     }
 
-    /** 一次炼制（服务端主线程；命令与未来炼制 UI 共用）。 */
-    /** 在背包中找火种物品；找到返回 ItemStack（可消耗），否则 null。 */
-    private static ItemStack findFireItem(
-            InventoryOps.PlayerContainers containers, String fireItemId) {
-        var item = InventoryOps.resolve(fireItemId).orElse(null);
-        if (item == null) return null;
-        if (InventoryOps.countOwned(containers, fireItemId) > 0) {
-            // 从主背包找
-            for (int i = 0; i < containers.main().getContainerSize(); i++) {
-                var stack = containers.main().getItem(i);
-                if (stack.getItem() == item && !stack.isEmpty()) return stack;
+    /** 在背包中扫火种物品（strife:item_fire_*）；找到返回该堆叠，否则 null。火种→表条目映射在 AlchemyFires。 */
+    private static ItemStack findFireStack(InventoryOps.PlayerContainers containers) {
+        for (int i = 0; i < containers.main().getContainerSize(); i++) {
+            var stack = containers.main().getItem(i);
+            if (stack.isEmpty()) continue;
+            var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+            if (key != null
+                    && "strife".equals(key.getNamespace())
+                    && key.getPath().startsWith("item_fire_")
+                    && AlchemyFires.byItemId(key.getPath()) != null) {
+                return stack;
             }
         }
         return null;
@@ -281,60 +281,59 @@ public final class Alchemy {
             }
         }
 
-        // ── ADR-038：炉加成 + 异火消耗（EP1 丹药体系集成）──
+        // ── ADR-038：炉加成（furnaces.json 产物）+ 异火四效（fires.json 产物，AlchemyFires 表驱动）──
         var furnace = StrifeAlchemyBlocks.findNearbyStats(player);
         double secondChance = furnace != null ? furnace.successBonus() : 0.0;
         String furnaceName = furnace != null ? furnace.name() : null;
 
-        // 异火：从背包找火种，找到则消耗并取加成
-        String fireName = null;
-        double fireBonus = 0.0;
-        record FireDef(String itemId, String name, double bonus) {}
-        var fireItems =
-                java.util.List.of(
-                        new FireDef("item_fire_mu", "木灵火", 0.0),
-                        new FireDef("item_fire_dixin", "地心火", 0.03),
-                        new FireDef("item_fire_xuanbing", "玄冰焰", 0.0),
-                        new FireDef("item_fire_chiyan", "赤炎", 0.0),
-                        new FireDef("item_fire_jiuyou", "九幽冥火", 0.08),
-                        new FireDef("item_fire_taiyang", "太阳真火", 0.0));
-        for (var fire : fireItems) {
-            var fireStack = findFireItem(containers, fire.itemId());
-            if (fireStack != null) {
-                fireName = fire.name();
-                fireBonus = fire.bonus();
+        // 异火：扫背包找 item_fire_* 火种，命中表条目则消耗一枚；无火种按凡火兜底
+        AlchemyFires.Fire fire = AlchemyFires.NORMAL;
+        ItemStack fireStack = findFireStack(containers);
+        if (fireStack != null) {
+            var key =
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(
+                            fireStack.getItem());
+            AlchemyFires.Fire found = key == null ? null : AlchemyFires.byItemId(key.getPath());
+            if (found != null) {
+                fire = found;
                 fireStack.shrink(1);
-                break;
             }
         }
-        double totalBonus = secondChance + fireBonus;
+        double totalBonus = secondChance + fire.successBonus();
+
+        // 品质偏置：异火 quality_shift 重排产出分布（成功/失败总质量不动），原分布与偏置分布共用一条抽签路径
+        var pool = AlchemyRecipe.qualityShifted(recipe.outputs(), fire.qualityShift());
 
         // 概率抽签 → 发放或失败（失败损失材料）
-        var output = recipe.roll(new Random()::nextInt);
+        var output = AlchemyRecipe.rollList(pool, new Random()::nextInt);
         if (output.isEmpty() && totalBonus > 0) {
             // 炉/异火二次判定：加成率作为"第二把火"的成功率
             var retry = new Random();
             if (retry.nextInt(1000) < (int) (totalBonus * 1000)) {
-                output = recipe.roll(retry::nextInt);
+                output = AlchemyRecipe.rollList(pool, retry::nextInt);
             }
         }
         if (output.isEmpty()) {
-            // 废丹回收（紫金鼎/龙纹鼎）
+            // 废丹回收（紫金鼎/龙纹鼎无条件回收；异火 waste_reduce 概率性追回 1 主材）
+            int recycled = 0;
+            var mat = recipe.materials().get(0);
             if (furnace != null && furnace.wasteRecycle() > 0) {
-                var mat = recipe.materials().get(0);
+                recycled += Math.min(furnace.wasteRecycle(), mat.count());
+            }
+            if (fire.wasteReduce() > 0
+                    && new Random().nextInt(1000) < (int) (fire.wasteReduce() * 1000)) {
+                recycled += 1;
+            }
+            int finalRecycled = Math.min(recycled, mat.count());
+            if (finalRecycled > 0) {
+                int count = finalRecycled;
                 InventoryOps.resolve(mat.itemId())
-                        .ifPresent(
-                                item ->
-                                        player.getInventory()
-                                                .add(
-                                                        new ItemStack(
-                                                                item,
-                                                                Math.min(
-                                                                        furnace.wasteRecycle(),
-                                                                        mat.count()))));
+                        .ifPresent(item -> player.getInventory().add(new ItemStack(item, count)));
             }
             String wasteMsg = "丹火失控——药材已毁，这一炉没有成丹。";
-            if (furnaceName != null) wasteMsg += "（" + furnaceName + "回收了部分材料）";
+            if (furnaceName != null && furnace.wasteRecycle() > 0) {
+                wasteMsg += "（" + furnaceName + "回收了部分材料）";
+            }
             player.displayClientMessage(
                     Component.literal(wasteMsg).withStyle(net.minecraft.ChatFormatting.DARK_RED),
                     false);
@@ -342,7 +341,7 @@ public final class Alchemy {
         }
         String bonusMsg = "";
         if (furnaceName != null) bonusMsg += " · " + furnaceName;
-        if (fireName != null) bonusMsg += " · " + fireName;
+        if (fire != AlchemyFires.NORMAL) bonusMsg += " · " + fire.name();
         AlchemyRecipe.Output out = output.get();
         InventoryOps.resolve(out.itemId())
                 .ifPresentOrElse(
