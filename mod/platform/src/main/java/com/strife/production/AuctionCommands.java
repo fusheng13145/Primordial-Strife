@@ -1,8 +1,10 @@
 package com.strife.production;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.strife.core.AuctionBids;
 import com.strife.core.InventoryOps;
 import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
@@ -16,8 +18,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 拍卖行命令（EP1，ADR-037 ①）：荷兰式降价拍——`/strife auction list|buy <拍品>`。 当前价由游戏时间确定性推导（{@link
- * AuctionHouse}），落槌即按当下价成交； 等得越久越便宜（触底即底价），多人同价各得各的（急售语义）。
+ * 拍卖行命令（EP1，ADR-037 ① + ADR-041 第三批）：荷兰拍 {@code list|buy}（急售当场成交）+ 密封投标 {@code
+ * bid|bids|claim}（槽末开箱，价高者得）。 任何 auction 交互先懒结算已过槽的出价（{@link AuctionBidding#settleAndPersist}）。
  */
 public final class AuctionCommands {
 
@@ -37,12 +39,40 @@ public final class AuctionCommands {
                                                                         StringArgumentType
                                                                                 .getString(
                                                                                         ctx,
-                                                                                        "拍品")))));
+                                                                                        "拍品")))))
+                .then(
+                        Commands.literal("bid")
+                                .then(
+                                        Commands.argument("拍品", StringArgumentType.string())
+                                                .then(
+                                                        Commands.argument(
+                                                                        "出价",
+                                                                        IntegerArgumentType.integer(
+                                                                                1))
+                                                                .executes(
+                                                                        ctx ->
+                                                                                bid(
+                                                                                        ctx
+                                                                                                .getSource(),
+                                                                                        StringArgumentType
+                                                                                                .getString(
+                                                                                                        ctx,
+                                                                                                        "拍品"),
+                                                                                        IntegerArgumentType
+                                                                                                .getInteger(
+                                                                                                        ctx,
+                                                                                                        "出价"))))))
+                .then(Commands.literal("bids").executes(ctx -> myBids(ctx.getSource())))
+                .then(Commands.literal("claim").executes(ctx -> claim(ctx.getSource())));
     }
 
     private static int list(CommandSourceStack source) {
+        if (source.getPlayer() != null) {
+            // 懒结算（ADR-041）：槽末的密封投标在任何交互时开箱
+            AuctionBidding.settleAndPersist(source.getServer());
+        }
         long gameTime = source.getLevel().getGameTime();
-        StringBuilder sb = new StringBuilder("拍场（荷兰拍，每槽 2 时辰轮换）：");
+        StringBuilder sb = new StringBuilder("拍场（荷兰拍急售 + 密封投标，每槽 2 时辰轮换）：");
         for (AuctionHouse.Lot lot : AuctionHouse.lots().values()) {
             boolean current = lot.equals(AuctionHouse.currentLot(gameTime));
             int price =
@@ -72,6 +102,7 @@ public final class AuctionCommands {
 
     private static int buy(CommandSourceStack source, String lotId) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
+        AuctionBidding.settleAndPersist(player.server);
         long gameTime = player.level().getGameTime();
         AuctionHouse.Lot lot = AuctionHouse.lots().get(lotId);
         if (lot == null) {
@@ -112,6 +143,68 @@ public final class AuctionCommands {
                 StrifeAttachmentTypes.PLAYER_DATA, data.withReputation(Map.copyOf(reputation)));
         player.displayClientMessage(
                 Component.literal("✦ 落槌！" + lot.itemId() + " 以 " + price + " 灵石归你"), true);
+        return 1;
+    }
+
+    // ═══ 密封投标（ADR-041 第三批）═══
+
+    private static int bid(CommandSourceStack source, String lotId, int amount)
+            throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        AuctionBidding.bid(player, lotId, amount);
+        return 1;
+    }
+
+    /** 我的出价 + 待领取池：懒结算后按个人视图展示。 */
+    private static int myBids(CommandSourceStack source) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        AuctionBidding.settleAndPersist(player.server);
+        AuctionBids state = AuctionBidding.state(player.server);
+        String self = player.getStringUUID();
+        StringBuilder sb = new StringBuilder("你的密封投标：");
+        boolean anyBid = false;
+        for (AuctionBids.BidEntry entry : state.bids()) {
+            if (!entry.bidderId().equals(self)) {
+                continue;
+            }
+            anyBid = true;
+            sb.append("\n· ")
+                    .append(entry.lotId())
+                    .append(' ')
+                    .append(entry.amount())
+                    .append(" 灵石");
+            if (AuctionBids.BidEntry.ACTIVE.equals(entry.status())) {
+                sb.append("（竞标中）");
+            } else if (AuctionBids.BidEntry.WON.equals(entry.status())) {
+                sb.append("（已中拍——/strife auction claim 领取）");
+            } else {
+                sb.append("（未中，退款入池）");
+            }
+        }
+        if (!anyBid) {
+            sb.append("还没有出过价（/strife auction bid <拍品> <价格>）");
+        }
+        int pending = 0;
+        for (AuctionBids.PayoutRow row : state.payouts()) {
+            if (row.playerId().equals(self)) {
+                pending++;
+            }
+        }
+        if (pending > 0) {
+            sb.append("\n待领取 ").append(pending).append(" 笔——/strife auction claim");
+        }
+        source.sendSuccess(() -> Component.literal(sb.toString()), false);
+        return 1;
+    }
+
+    private static int claim(CommandSourceStack source) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        String message = AuctionBidding.dispense(player);
+        if (message == null) {
+            player.displayClientMessage(Component.literal("（暗箱里没有你的东西）"), true);
+            return 0;
+        }
+        player.displayClientMessage(Component.literal(message), false);
         return 1;
     }
 }

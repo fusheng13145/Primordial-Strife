@@ -12,7 +12,8 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
  * attach 事件，注册表是唯一入口）。
  *
  * <p>玩家数据只此一个聚合附件 {@link #PLAYER_DATA}：所有子系统的玩家态都进 {@link StrifeData}，
- * 避免"同一玩家多个附件各自序列化"造成的档位不一致。世界级数据（灵气场缓存、宗门状态）走 {@code SavedData}，不在这里。
+ * 避免"同一玩家多个附件各自序列化"造成的档位不一致。世界级数据（灵气场缓存、宗门状态）走 {@code SavedData}； 例外见 {@link
+ * #AUCTION_BIDS}（全服小状态沿附件管线，ADR-041 §5）。
  */
 public final class StrifeAttachmentTypes {
 
@@ -44,6 +45,20 @@ public final class StrifeAttachmentTypes {
                                     AttachmentType.builder(() -> HeartDemonState.EMPTY)
                                             .serialize(HeartDemonState.CODEC)
                                             .copyOnDeath()
+                                            .build());
+
+    /**
+     * 拍卖密封投标（ADR-041 第三批）：全服态挂 overworld Level 附件（随 level.dat 持久化）。 上面 javadoc 说"世界级数据走
+     * SavedData"是一般规则；这里是例外——出价状态与玩家附件同构（小状态 + codec）， 沿用附件管线省一套 SavedData I/O 样板，取舍已在 ADR-041 §5
+     * 披露。
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<AuctionBids>>
+            AUCTION_BIDS =
+                    ATTACHMENT_TYPES.register(
+                            "auction_bids",
+                            () ->
+                                    AttachmentType.builder(() -> AuctionBids.EMPTY)
+                                            .serialize(AuctionBids.CODEC)
                                             .build());
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<StrifeData>> PLAYER_DATA =
