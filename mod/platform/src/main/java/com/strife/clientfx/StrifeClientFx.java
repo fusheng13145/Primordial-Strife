@@ -123,7 +123,17 @@ public final class StrifeClientFx {
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        for (String type : new String[] {"npc", "monster"}) {
+        for (String type :
+                new String[] {
+                    "npc",
+                    "monster",
+                    "wolf_beast",
+                    "rock_beast",
+                    "fire_fox",
+                    "ice_serpent",
+                    "shadow_leopard",
+                    "treant",
+                }) {
             EntityType<?> entityType =
                     BuiltInRegistries.ENTITY_TYPE.get(
                             ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, type));
