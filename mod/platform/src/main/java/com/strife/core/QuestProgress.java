@@ -104,6 +104,19 @@ public record QuestProgress(
         return new QuestProgress(completed, objectiveProgress, activated, updated);
     }
 
+    /**
+     * 移除一个 H3 标记（幂等；标记不存在或键非法时原样返回）。ADR-040 洗尘丹"清因果"的落地口—— 此前只有 withFlag，洗尘丹
+     * 对走私标记只能"算了不清"（StrifePills 里留有该处妥协注释）。
+     */
+    public QuestProgress withoutFlag(String flag) {
+        if (flag == null || !flags.contains(flag)) {
+            return this;
+        }
+        Set<String> updated = new java.util.HashSet<>(flags);
+        updated.remove(flag);
+        return new QuestProgress(completed, objectiveProgress, activated, updated);
+    }
+
     private static Map<String, Map<String, Long>> copyProgress(
             Map<String, Map<String, Long>> source) {
         Map<String, Map<String, Long>> copy = new HashMap<>();

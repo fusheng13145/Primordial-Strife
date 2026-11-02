@@ -213,7 +213,7 @@ public final class StrifePills {
         return true;
     }
 
-    /** 洗尘丹：清除心魔层数 + H3 因果标记（causality:ep1:smuggler）。 */
+    /** 洗尘丹：清除心魔层数 + H3 因果标记（causality:ep1:smuggler，标记常量与黑市同源）。 */
     private static boolean applyClearCausality(ServerPlayer player) {
         // 心魔清除
         var demon = player.getData(StrifeAttachmentTypes.HEART_DEMON);
@@ -222,17 +222,21 @@ public final class StrifePills {
             player.setData(
                     StrifeAttachmentTypes.HEART_DEMON, com.strife.core.HeartDemonState.EMPTY);
         }
-        // 因果标记清除（黑市走私标记）
+        // 因果标记清除（黑市走私标记）：QuestProgress.withoutFlag 落地（ADR-040）——
+        // 此前"QuestProgress 无 removeFlag，标记留给叙事"的妥协撤销，丹效与 pills.csv 口径一致。
         var data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
-        var quests = data.quests();
-        boolean hadSmuggler = quests.hasFlag("causality:ep1:smuggler");
+        boolean hadSmuggler = data.quests().hasFlag(BlackMarketCommands.SMUGGLER_FLAG);
         if (hadSmuggler) {
-            // QuestProgress 无 removeFlag——v1 简化：只清心魔，因果标记留给叙事
-            player.displayClientMessage(
-                    Component.literal("✦ 洗尘丹化开——心魔尽消（" + clearedStacks + " 层）"), true);
-        } else {
-            player.displayClientMessage(Component.literal("✦ 洗尘丹化开——心魔尽消"), true);
+            player.setData(
+                    StrifeAttachmentTypes.PLAYER_DATA,
+                    data.withQuests(data.quests().withoutFlag(BlackMarketCommands.SMUGGLER_FLAG)));
         }
+        String message =
+                clearedStacks > 0 ? "✦ 洗尘丹化开——心魔尽消（" + clearedStacks + " 层）" : "✦ 洗尘丹化开——心境澄明";
+        if (hadSmuggler) {
+            message += "，因果一笔勾销";
+        }
+        player.displayClientMessage(Component.literal(message), true);
         return clearedStacks > 0 || hadSmuggler;
     }
 

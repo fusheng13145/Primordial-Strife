@@ -97,4 +97,15 @@ class RealmTablesTest {
                     realmId + ".json 缺 tribulation 字段（RealmsGenerator 的推导项）");
         }
     }
+
+    /** ADR-040 心魔规则：类型化访问器 × 真实产物锚定（ CultivationHandler 不再裸读 rules.json 的回归锚）。 */
+    @Test
+    void readsHeartDemonRulesFromTheShippedProduct() {
+        RealmTables.Rules rules = RealmTables.parseRules(ShippedProducts.realmRules());
+
+        assertEquals(0.20, rules.heartDemonTriggerChance(), 1e-9, "@@heart_demon.trigger_chance");
+        assertEquals(0.15, rules.heartDemonQiRatePenalty(), 1e-9, "每层修为速率惩罚");
+        assertEquals(12000L, rules.heartDemonDurationTicks(), "600 秒 × 20 刻（换算集中在表）");
+        assertEquals(3, rules.heartDemonMaxStacks(), "叠层上限");
+    }
 }

@@ -29,7 +29,9 @@ import net.minecraft.world.item.ItemStack;
  */
 public final class BlackMarketCommands {
 
-    private static final String SMUGGLER_FLAG = "causality:ep1:smuggler";
+    /** H3 走私因果标记：黑市写入、洗尘丹清除（StrifePills）——同包共享，字符串只此一份。 */
+    static final String SMUGGLER_FLAG = "causality:ep1:smuggler";
+
     private static final int REPUTATION_COST_PER_BUY = -1;
 
     private BlackMarketCommands() {}

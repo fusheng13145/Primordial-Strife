@@ -99,6 +99,36 @@ class QuestProgressTest {
     }
 
     @Test
+    @DisplayName("withoutFlag 移除既有标记：只动 flags，进度与已完成保持不变")
+    void withoutFlagRemovesOnlyTheNamedFlag() {
+        QuestProgress base =
+                new QuestProgress(
+                        Set.of("quest_a"),
+                        Map.of("quest_a", Map.of("obj", 1L)),
+                        Set.of(),
+                        Set.of("h3_x", "h3_y"));
+
+        QuestProgress removed = base.withoutFlag("h3_x");
+
+        assertFalse(removed.hasFlag("h3_x"));
+        assertTrue(removed.hasFlag("h3_y"), "未点名的标记保持");
+        assertTrue(removed.isCompleted("quest_a"), "已完成集合不受影响");
+        assertEquals(1L, removed.progress("quest_a", "obj"), "目标进度不受影响");
+        assertTrue(base.hasFlag("h3_x"), "withoutFlag 不得改动原对象");
+    }
+
+    @Test
+    @DisplayName("withoutFlag 幂等与空操作：不存在的标记、null 都原样返回")
+    void withoutFlagIsIdempotentNoOp() {
+        QuestProgress base = new QuestProgress(Set.of(), Map.of(), Set.of(), Set.of("h3_x"));
+
+        assertEquals(base, base.withoutFlag("h3_absent"), "不存在的标记原样返回");
+        assertEquals(base, base.withoutFlag(null), "null 原样返回");
+        assertEquals(
+                base.withoutFlag("h3_x").withoutFlag("h3_x"), base.withoutFlag("h3_x"), "重复移除幂等");
+    }
+
+    @Test
     @DisplayName("构造器防御性拷贝：外部持有的可变集合后续改动不影响已构造状态")
     void constructorCopiesInputs() {
         Set<String> completed = new java.util.HashSet<>(Set.of("quest_a"));

@@ -63,7 +63,13 @@ public final class RealmTables {
             long debuffDurationTicks,
             double affinityMatched,
             double affinityNeutral,
-            double affinityConflict) {}
+            double affinityConflict,
+            // ADR-040 心魔（NUMBERS @@heart_demon）：修为速率惩罚、叠层上限与触发规则一并走类型化访问——
+            // 此前 CultivationHandler 每次触发都重开 rules.json 裸读，与表的解析路径平行是漂移温床。
+            double heartDemonTriggerChance,
+            double heartDemonQiRatePenalty,
+            long heartDemonDurationTicks,
+            int heartDemonMaxStacks) {}
 
     private static volatile RealmTables instance;
 
@@ -246,6 +252,8 @@ public final class RealmTables {
         JsonObject spiritroot = block(rules, "spiritroot");
         // 寿元与大限在 NUMBERS 的 @@lifespan 块里，与突破代价分属两块：混读就是上面说的那处缺陷。
         JsonObject lifespan = block(rules, "lifespan");
+        // ADR-040 心魔规则（@@heart_demon）：生成器整块拷入，解析路径与其余块同源。
+        JsonObject heartDemon = block(rules, "heart_demon");
         JsonObject weights = spiritroot.getAsJsonObject("roll_weights");
         return new Rules(
                 rates,
@@ -273,7 +281,12 @@ public final class RealmTables {
                 // 五行亲和三档（NUMBERS §6）：功法倍率的第二个因子，判定见 FiveElements。
                 number(spiritroot, "affinity_matched", "spiritroot"),
                 number(spiritroot, "affinity_neutral", "spiritroot"),
-                number(spiritroot, "affinity_conflict", "spiritroot"));
+                number(spiritroot, "affinity_conflict", "spiritroot"),
+                // ADR-040 心魔：duration 以秒存 NUMBERS，与打坐冷却同一换算纪律（换算集中在表）。
+                number(heartDemon, "trigger_chance", "heart_demon"),
+                number(heartDemon, "qi_rate_penalty", "heart_demon"),
+                StrifeTime.secondsToTicks(number(heartDemon, "duration_sec", "heart_demon")),
+                (int) number(heartDemon, "max_stacks", "heart_demon"));
     }
 
     /** 取字符串键（内容 ID 类，如 debuff 键名）；缺键时同样报出"块.键"。 */

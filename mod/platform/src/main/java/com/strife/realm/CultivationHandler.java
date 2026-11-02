@@ -12,12 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 
 /**
- * 修炼主链的服务端结算：寿元流动 → 打坐（时间片结算 + 打断惩罚 + 冷却）→ 大限结算；突破改为玩家主动押注（{@link #attemptBreakthrough}）。
+ * 修炼主链的服务端结算：寿元流动 → 心魔结算（ADR-040：到期清空 + 活跃反馈）→ 打坐（时间片结算 + 打断惩罚 + 冷却）→ 大限结算；突破改为玩家主动押注（{@link
+ * #attemptBreakthrough}）。
  *
  * <p>与旧版的三处实质差别（旧版自陈为"MVP 快速通道"）：
  *
@@ -73,7 +73,37 @@ public final class CultivationHandler {
             }
         }
 
-        // 2. 打坐：先判打断（每刻都要判），再按 tick_interval_ticks 降频结算（03 §6 单玩家附加逻辑预算）
+        // 2. 心魔（ADR-040）：到期清空 + 活跃期环境反馈。时间基用 level().getGameTime()——心魔附件持久化
+        //    expiryTick，服务器 tickCount 重启归零而 gameTime 连续，混用会让旧档的心魔在重启后"复活"。
+        long gameTime = player.level().getGameTime();
+        var demon = player.getData(StrifeAttachmentTypes.HEART_DEMON);
+        if (demon.active()) {
+            var settled = demon.expire(gameTime);
+            if (settled != demon) {
+                player.setData(StrifeAttachmentTypes.HEART_DEMON, settled);
+                if (!settled.active()) {
+                    tell(
+                            player,
+                            Component.literal("✦ 心魔随时间消散——道心恢复清明").withStyle(ChatFormatting.GREEN));
+                }
+            }
+            if (settled.active() && gameTime % StrifeTime.TICKS_PER_SECOND == 0L) {
+                // 活跃期视觉：每秒一撮紫色涡旋粒子（服务端 sendParticles，附近玩家同样可见——"心魔缠身"是外显的）
+                player.serverLevel()
+                        .sendParticles(
+                                net.minecraft.core.particles.ParticleTypes.PORTAL,
+                                player.getX(),
+                                player.getY() + 1.0,
+                                player.getZ(),
+                                10,
+                                0.4,
+                                0.6,
+                                0.4,
+                                0.5);
+            }
+        }
+
+        // 3. 打坐：先判打断（每刻都要判），再按 tick_interval_ticks 降频结算（03 §6 单玩家附加逻辑预算）
         boolean moved = movedBeyond(player, tables.rules().meditationInterruptMoveSqr());
         if (data.meditation().active()) {
             if (interrupted(player, moved)) {
@@ -224,20 +254,26 @@ public final class CultivationHandler {
             RealmEvents.postBreakthrough(
                     player, realm.breakthroughKey(), false, data.breakthroughAttempts() + 1);
             // ADR-040：心魔触发（突破失败 → 概率入体，叠层上限由 NUMBERS 控制）。
-            triggerHeartDemon(player, random);
+            triggerHeartDemon(player, tables, random);
         }
         RealmViewBuilder.pushTo(player);
     }
 
-    /** 每秒修为速率：05 §2 四因子公式（基础速率 × 灵根 × 环境 × 功法 × 丹药）。 */
+    /** 每秒修为速率：05 §2 四因子公式（基础速率 × 灵根 × 环境 × 功法 × 丹药），再乘 ADR-040 心魔惩罚。 */
     static double qiPerSecond(
             ServerPlayer player,
             RealmTables tables,
             RealmTables.RealmEntry realm,
             StrifeData data) {
+        // 心魔活跃时按层折减（@@heart_demon.qi_rate_penalty）；到期状态由 tick() 的心魔结算步先清，
+        // 这里只读不改——查询函数不携带写附件的副作用。
+        double demonMultiplier =
+                player.getData(StrifeAttachmentTypes.HEART_DEMON)
+                        .qiRateMultiplier(tables.rules().heartDemonQiRatePenalty());
         return realm.sitRate()
                 * tables.qualityCoefficient(data.spiritrootQuality())
-                * CultivationFactors.coefficients(player).product();
+                * CultivationFactors.coefficients(player).product()
+                * demonMultiplier;
     }
 
     /** 单刻速率（结算用；换算集中在 {@link StrifeTime}）。 */
@@ -402,39 +438,47 @@ public final class CultivationHandler {
     }
 
     /**
-     * ADR-040 心魔触发：突破失败后按概率入体。独立附件（StrifeAttachmentTypes.HEART_DEMON）， 规则从 rules.json @@heart_demon
-     * 块读取。触发后修为速率按层数递减，洗尘丹可清。
+     * ADR-040 心魔触发：突破失败后按概率入体。独立附件（StrifeAttachmentTypes.HEART_DEMON）， 规则走 {@link
+     * RealmTables.Rules} 类型化访问（与突破成功率同源同管——不再裸读 rules.json 制造第二条解析路径）。 触发后修为速率按层数递减（{@link
+     * #qiPerSecond}），洗尘丹可清。
      */
-    private static void triggerHeartDemon(ServerPlayer player, RandomSource random) {
-        try {
-            var res =
-                    player.getServer()
-                            .getResourceManager()
-                            .getResource(
-                                    ResourceLocation.fromNamespaceAndPath(
-                                            "strife", "strife_realms/rules.json"));
-            if (res.isEmpty()) return;
-            com.google.gson.JsonObject rules;
-            try (var reader =
-                    new java.io.InputStreamReader(
-                            res.get().open(), java.nio.charset.StandardCharsets.UTF_8)) {
-                rules = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
-            }
-            com.google.gson.JsonObject hd = rules.getAsJsonObject("heart_demon");
-            if (hd == null) return;
-            double chance = hd.get("trigger_chance").getAsDouble();
-            if (random.nextDouble() >= chance) return;
-            int maxStacks = hd.get("max_stacks").getAsInt();
-            long durationTicks =
-                    (long) (hd.get("duration_sec").getAsDouble() * StrifeTime.TICKS_PER_SECOND);
-            var demon = player.getData(StrifeAttachmentTypes.HEART_DEMON);
-            var updated = demon.trigger(player.level().getGameTime(), durationTicks, maxStacks);
-            player.setData(StrifeAttachmentTypes.HEART_DEMON, updated);
-            player.displayClientMessage(
-                    Component.literal("✦ 心魔入体——修为速率下降（" + updated.stacks() + " 层）"), true);
-        } catch (Exception ignored) {
-            // 心魔是锦上添花的 debuff，读取失败静默跳过
+    private static void triggerHeartDemon(
+            ServerPlayer player, RealmTables tables, RandomSource random) {
+        RealmTables.Rules rules = tables.rules();
+        if (random.nextDouble() >= rules.heartDemonTriggerChance()) {
+            return;
         }
+        var updated =
+                player.getData(StrifeAttachmentTypes.HEART_DEMON)
+                        .trigger(
+                                player.level().getGameTime(),
+                                rules.heartDemonDurationTicks(),
+                                rules.heartDemonMaxStacks());
+        player.setData(StrifeAttachmentTypes.HEART_DEMON, updated);
+        tell(
+                player,
+                Component.literal("✦ 心魔入体——修为速率下降（" + updated.stacks() + " 层）")
+                        .withStyle(ChatFormatting.DARK_PURPLE));
+        // 入体瞬间的强反馈：一簇涡旋 + 恶魂音效，让"这次失败不一样"可感知
+        player.serverLevel()
+                .sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.PORTAL,
+                        player.getX(),
+                        player.getY() + 1.0,
+                        player.getZ(),
+                        30,
+                        0.6,
+                        0.8,
+                        0.6,
+                        0.8);
+        player.serverLevel()
+                .playSound(
+                        null,
+                        player.blockPosition(),
+                        net.minecraft.sounds.SoundEvents.GHAST_AMBIENT,
+                        net.minecraft.sounds.SoundSource.PLAYERS,
+                        0.6f,
+                        0.5f);
     }
 
     /** 只改寿元（core 的 wither 替代手拼 13 个字段——漏一个字段是这类构造最常见的错法）。 */
