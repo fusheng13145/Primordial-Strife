@@ -38,6 +38,14 @@ public record ShenShiState(int value, long lastRegenTick) {
         return new ShenShiState(value - cost, lastRegenTick);
     }
 
+    /**
+     * 神识上限公式（唯一落点）：base + per_ordinal × 境界序数。ShenShiCommand.maxFor 与凝神丹（经 ShenShiBridge）
+     * 都走这里——公式只写一遍。
+     */
+    public static int maxFor(int realmOrdinal, int maxBase, int maxPerOrdinal) {
+        return maxBase + maxPerOrdinal * Math.max(0, realmOrdinal);
+    }
+
     /** 恢复后状态（自然回复，按分钟计，不超过上限）。 */
     public ShenShiState regen(long nowTick, int max, int perMinute) {
         long elapsed = nowTick - lastRegenTick;

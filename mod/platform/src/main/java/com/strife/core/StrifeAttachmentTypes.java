@@ -47,6 +47,17 @@ public final class StrifeAttachmentTypes {
                                             .copyOnDeath()
                                             .build());
 
+    /** 突破辅助丹力（丹药接线批）：破境丹/稳元丹服用后暂存，下次突破押注时消费（成败皆耗）。 独立附件——不动 StrifeData 2048B 预算与同步位序契约。 */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<BreakthroughAidState>>
+            BREAKTHROUGH_AID =
+                    ATTACHMENT_TYPES.register(
+                            "breakthrough_aid",
+                            () ->
+                                    AttachmentType.builder(() -> BreakthroughAidState.EMPTY)
+                                            .serialize(BreakthroughAidState.CODEC)
+                                            .copyOnDeath()
+                                            .build());
+
     /**
      * 拍卖密封投标（ADR-041 第三批）：全服态挂 overworld Level 附件（随 level.dat 持久化）。 上面 javadoc 说"世界级数据走
      * SavedData"是一般规则；这里是例外——出价状态与玩家附件同构（小状态 + codec）， 沿用附件管线省一套 SavedData I/O 样板，取舍已在 ADR-041 §5

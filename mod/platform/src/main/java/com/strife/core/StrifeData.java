@@ -204,6 +204,27 @@ public record StrifeData(
                 spells);
     }
 
+    /** 灵根品阶改写（洗髓丹：品阶序数向 tier1 方向移动，调用方负责钳位）。 */
+    public StrifeData withSpiritrootQuality(int updated) {
+        return new StrifeData(
+                dataVersion,
+                realmOrdinal,
+                stage,
+                qi,
+                lifespanTicks,
+                flags,
+                updated,
+                spiritrootElements,
+                breakthroughAttempts,
+                affiliation,
+                reputation,
+                meditation,
+                pills,
+                techniques,
+                quests,
+                spells);
+    }
+
     /** 整体替换打坐状态（时间片结算与打断的唯一入口，避免调用点各自拼字段）。 */
     public StrifeData withMeditation(MeditationState updated) {
         return new StrifeData(

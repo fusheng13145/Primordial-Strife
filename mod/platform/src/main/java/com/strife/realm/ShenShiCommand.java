@@ -47,7 +47,9 @@ public final class ShenShiCommand {
 
     /** 神识上限派生：base + ordinal × per_ordinal。纯函数。 */
     static int maxFor(int realmOrdinal, ShenShiRules rules) {
-        return rules.maxBase() + rules.maxPerOrdinal() * realmOrdinal;
+        // 公式唯一落点在 ShenShiState.maxFor（丹药接线批）——凝神丹经 ShenShiBridge 走同一条
+        return com.strife.core.ShenShiState.maxFor(
+                realmOrdinal, rules.maxBase(), rules.maxPerOrdinal());
     }
 
     public static LiteralArgumentBuilder<CommandSourceStack> subtree() {

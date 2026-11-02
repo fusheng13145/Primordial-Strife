@@ -210,6 +210,11 @@ public final class CultivationHandler {
         double probability =
                 BreakthroughMath.successProbability(
                         rate.base(), rate.failStep(), data.breakthroughAttempts(), rate.floor());
+        // 丹药接线批：破境丹力——押注即催动（成败皆耗），成功率加成封顶 1.0
+        var aid = player.getData(StrifeAttachmentTypes.BREAKTHROUGH_AID);
+        if (aid.successBonus() > 0) {
+            probability = Math.min(1.0, probability + aid.successBonus());
+        }
         RandomSource random = player.getRandom();
         boolean success = random.nextDouble() < probability;
 
@@ -234,6 +239,10 @@ public final class CultivationHandler {
                             + random.nextDouble()
                                     * (tables.rules().qiResetRatioMax()
                                             - tables.rules().qiResetRatioMin());
+            // 丹药接线批：稳元丹力——失败回退的保留比例上抬（封顶 1.0 = 修为不回退）
+            if (aid.failKeepBonus() > 0) {
+                ratio = Math.min(1.0, ratio + aid.failKeepBonus());
+            }
             int reset = BreakthroughMath.resetQi(realm.qiMax(), ratio);
             StrifeData failed =
                     withQiAndStage(data, reset, realm)
@@ -255,6 +264,13 @@ public final class CultivationHandler {
                     player, realm.breakthroughKey(), false, data.breakthroughAttempts() + 1);
             // ADR-040：心魔触发（突破失败 → 概率入体，叠层上限由 NUMBERS 控制）。
             triggerHeartDemon(player, tables, random);
+        }
+        // 丹药接线批：押注即催动——无论成败，本次丹力已用（附件清空）
+        if (aid.present()) {
+            player.setData(
+                    StrifeAttachmentTypes.BREAKTHROUGH_AID,
+                    com.strife.core.BreakthroughAidState.EMPTY);
+            tell(player, Component.literal("✦ 丹力催动已毕").withStyle(ChatFormatting.LIGHT_PURPLE));
         }
         RealmViewBuilder.pushTo(player);
     }

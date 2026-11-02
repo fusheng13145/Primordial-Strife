@@ -47,6 +47,20 @@ public final class StrifeRealm {
         com.strife.core.StrifeCommands.MODULE_SUBTREES.add(SeclusionCommand.subtree());
         // EP1（ADR-036 ⑦；禁区披露批 #3）：神识探查——独立附件 + sense 命令。
         com.strife.core.StrifeCommands.MODULE_SUBTREES.add(ShenShiCommand.subtree());
+        // 丹药接线批：神识上限桥——production 的凝神丹经此算"恢复到上限"（production 不 import realm）。
+        com.strife.core.ShenShiBridge.registerMaxProvider(
+                player -> {
+                    RealmTables tables = RealmTables.getOrNull(player.server);
+                    if (tables == null) {
+                        return -1;
+                    }
+                    var rules = tables.rules();
+                    return com.strife.core.ShenShiState.maxFor(
+                            player.getData(com.strife.core.StrifeAttachmentTypes.PLAYER_DATA)
+                                    .realmOrdinal(),
+                            rules.shenShiMaxBase(),
+                            rules.shenShiMaxPerOrdinal());
+                });
     }
 
     /**

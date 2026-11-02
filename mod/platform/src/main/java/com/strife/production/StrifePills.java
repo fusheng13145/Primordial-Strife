@@ -62,11 +62,10 @@ public final class StrifePills {
             case ProductionTables.Effect.ClearPoison ignored -> applyClearPoison(player);
             case ProductionTables.Effect.BreakthroughAid aid ->
                     applyBreakthroughAid(player, data, aid);
-            case ProductionTables.Effect.SenseRegen ignored ->
-                    applyDeferred(player, pillId, "神识系统");
+            case ProductionTables.Effect.SenseRegen regen -> applySenseRegen(player, regen);
             case ProductionTables.Effect.ClearCausality ignored -> applyClearCausality(player);
             case ProductionTables.Effect.SpiritRootUpgrade ignored ->
-                    applyDeferred(player, pillId, "灵根重算系统");
+                    applySpiritRootUpgrade(player, data);
         };
     }
 
@@ -209,10 +208,82 @@ public final class StrifePills {
         return true;
     }
 
+    /**
+     * 破境丹/稳元丹（丹药接线批）：丹力暂存独立附件（BREAKTHROUGH_AID），下次突破押注时催动（成败皆耗， realm 侧消费）。
+     * 不叠层：重复服用按最近一次覆盖——叠加会把押注变成攒弹药。
+     */
     private static boolean applyBreakthroughAid(
             ServerPlayer player, StrifeData data, ProductionTables.Effect.BreakthroughAid aid) {
-        // 突破辅助存入 flags（装配层在突破时读取）——v1 简化：只给反馈，数值在突破批接入。
-        player.displayClientMessage(Component.literal("✦ 丹力沉淀——下次突破时见效"), true);
+        player.setData(
+                StrifeAttachmentTypes.BREAKTHROUGH_AID,
+                new com.strife.core.BreakthroughAidState(aid.successBonus(), aid.failKeepBonus()));
+        StringBuilder text = new StringBuilder("✦ 丹力沉淀（下次突破：");
+        boolean first = true;
+        if (aid.successBonus() > 0) {
+            text.append("成功率 +").append(percent(aid.successBonus()));
+            first = false;
+        }
+        if (aid.failKeepBonus() > 0) {
+            if (!first) {
+                text.append('，');
+            }
+            text.append("失败保留 +").append(percent(aid.failKeepBonus()));
+        }
+        text.append("）——押注时催动，成败皆耗");
+        player.displayClientMessage(Component.literal(text.toString()), true);
+        return true;
+    }
+
+    /**
+     * 凝神丹（丹药接线批）：神识即时恢复 {@code sense_regen_bonus} 点，封顶当前上限—— 上限经 {@link
+     * com.strife.core.ShenShiBridge} 取（realm 注册），桥未接线或数据不可用时诚实拒绝（不猜默认上限、不浪费丹药）。
+     */
+    private static boolean applySenseRegen(
+            ServerPlayer player, ProductionTables.Effect.SenseRegen regen) {
+        int max = com.strife.core.ShenShiBridge.maxFor(player);
+        if (max < 0) {
+            player.displayClientMessage(Component.literal("（神识上限未知——丹力暂时封存，不会浪费）"), true);
+            return false;
+        }
+        var shenShi = player.getData(StrifeAttachmentTypes.SHENSHI);
+        int restored = Math.min(max, shenShi.value() + regen.bonus()) - shenShi.value();
+        if (restored <= 0) {
+            player.displayClientMessage(Component.literal("（神识已满——丹力暂时封存，不会浪费）"), true);
+            return false;
+        }
+        player.setData(
+                StrifeAttachmentTypes.SHENSHI,
+                new com.strife.core.ShenShiState(
+                        shenShi.value() + restored, shenShi.lastRegenTick()));
+        player.displayClientMessage(
+                Component.literal(
+                        "✦ 神识清明（+"
+                                + restored
+                                + "，现 "
+                                + (shenShi.value() + restored)
+                                + "/"
+                                + max
+                                + "）"),
+                true);
+        return true;
+    }
+
+    /**
+     * 洗髓丹（丹药接线批）：灵根品阶序数向 tier1 移动 {@code spiritroot_upgrade} 步，1 = 天品封顶——
+     * 已至天品则诚实拒绝（不浪费稀有材料）。品阶数值语义：序数越小越好（quality_tier_1 系数最高）。
+     */
+    private static boolean applySpiritRootUpgrade(ServerPlayer player, StrifeData data) {
+        int quality = data.spiritrootQuality();
+        if (quality <= 1) {
+            player.displayClientMessage(Component.literal("（灵根已至天品——洗髓无益，此丹暂不入腹）"), true);
+            return false;
+        }
+        int updated = Math.max(1, quality - 1);
+        player.setData(StrifeAttachmentTypes.PLAYER_DATA, data.withSpiritrootQuality(updated));
+        player.displayClientMessage(
+                Component.literal("✦ 洗髓伐毛——灵根品阶提升（现第 " + updated + " 阶）")
+                        .withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE),
+                false);
         return true;
     }
 
