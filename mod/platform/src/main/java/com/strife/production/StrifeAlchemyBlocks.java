@@ -30,6 +30,9 @@ public final class StrifeAlchemyBlocks {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(Registries.ITEM, "strife");
 
+    private static final Map<String, DeferredHolder<Block, Block>> BY_ID =
+            new ConcurrentHashMap<>();
+
     public static final DeferredHolder<Block, Block> FURNACE_SHI =
             register("furnace_shi", MapColor.COLOR_BROWN, 3.5F, 3.5F, SoundType.STONE);
     public static final DeferredHolder<Block, Block> FURNACE_TIE =
@@ -38,9 +41,6 @@ public final class StrifeAlchemyBlocks {
             register("furnace_zijin", MapColor.COLOR_PURPLE, 5.0F, 5.0F, SoundType.METAL);
     public static final DeferredHolder<Block, Block> FURNACE_LONG =
             register("furnace_long", MapColor.COLOR_ORANGE, 6.0F, 6.0F, SoundType.NETHERITE_BLOCK);
-
-    private static final Map<String, DeferredHolder<Block, Block>> BY_ID =
-            new ConcurrentHashMap<>();
 
     private static DeferredHolder<Block, Block> register(
             String id, MapColor color, float hardness, float resistance, SoundType sound) {
