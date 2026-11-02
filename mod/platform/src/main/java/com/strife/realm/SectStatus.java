@@ -28,34 +28,16 @@ public final class SectStatus {
     /** 职级阈值（NUMBERS @@sect → strife_realms/rules.json 的 sect 块）。 */
     record SectRanks(int neimen, int zhenchuan) {}
 
-    /** 从服务端 datapack 读阈值（与 {@code RealmTables} 同一资源、独立读取——不动 Rules record）； 缺块/缺键具名报错（02 §5）。 */
+    /**
+     * 从 RealmTables 类型化读阈值（披露批 #10 收口）——此前本类裸读 rules.json 手工解析，与表的解析路径平行。 表不可用回
+     * null（调用方给可读失败，不猜默认阈值）。
+     */
     static SectRanks sectRanks(net.minecraft.server.MinecraftServer server) {
-        try {
-            var resource =
-                    server.getResourceManager()
-                            .getResource(
-                                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
-                                            "strife", "strife_realms/rules.json"))
-                            .orElseThrow(
-                                    () ->
-                                            new IllegalStateException(
-                                                    "strife_realms/rules.json missing — RealmRulesGenerator 未跑？"));
-            com.google.gson.JsonObject rules;
-            try (var reader =
-                    new java.io.InputStreamReader(
-                            resource.open(), java.nio.charset.StandardCharsets.UTF_8)) {
-                rules = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
-            }
-            com.google.gson.JsonObject sect = rules.getAsJsonObject("sect");
-            if (sect == null) {
-                throw new IllegalStateException(
-                        "strife_realms/rules.json 缺 @@sect 块——NUMBERS 与 RealmRulesGenerator.BLOCKS 不一致");
-            }
-            return new SectRanks(
-                    sect.get("rank_neimen").getAsInt(), sect.get("rank_zhenchuan").getAsInt());
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("cannot read strife_realms/rules.json", e);
+        RealmTables tables = RealmTables.getOrNull(server);
+        if (tables == null) {
+            return null;
         }
+        return new SectRanks(tables.rules().sectNeimen(), tables.rules().sectZhenchuan());
     }
 
     /** 职级派生（纯函数，包内可见供用例）：外门 / 内门 / 真传。 */
@@ -127,11 +109,9 @@ public final class SectStatus {
                 faction = "fac_yuelai"; // 散修默认看月来渡（EP1/EP2 的坊市枢纽宗门）
             }
         }
-        SectRanks ranks;
-        try {
-            ranks = sectRanks(viewer.getServer());
-        } catch (RuntimeException e) {
-            context.getSource().sendFailure(Component.literal("（职级数据不可用：" + e.getMessage() + "）"));
+        SectRanks ranks = sectRanks(viewer.getServer());
+        if (ranks == null) {
+            context.getSource().sendFailure(Component.literal("（职级数据不可用——realm 表未加载）"));
             return 0;
         }
         Map<String, Integer> reputations = new java.util.LinkedHashMap<>();
@@ -179,7 +159,11 @@ public final class SectStatus {
         int own = rep.getOrDefault(affiliation, 0);
         String rank;
         try {
-            rank = rankOf(own, sectRanks(player.getServer()));
+            SectRanks ranksForStatus = sectRanks(player.getServer());
+            if (ranksForStatus == null) {
+                throw new IllegalStateException("realm 表未加载");
+            }
+            rank = rankOf(own, ranksForStatus);
         } catch (RuntimeException e) {
             context.getSource().sendFailure(Component.literal("（职级数据不可用：" + e.getMessage() + "）"));
             return 0;

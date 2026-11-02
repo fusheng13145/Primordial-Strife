@@ -108,4 +108,21 @@ class RealmTablesTest {
         assertEquals(12000L, rules.heartDemonDurationTicks(), "600 秒 × 20 刻（换算集中在表）");
         assertEquals(3, rules.heartDemonMaxStacks(), "叠层上限");
     }
+
+    /** 披露批 #10：sect/shenshi/seclusion 三块类型化收口的产物锚（三处命令的裸读已删，值锚在这里）。 */
+    @Test
+    void readsSectShenShiAndSeclusionBlocksFromTheShippedProduct() {
+        RealmTables.Rules rules = RealmTables.parseRules(ShippedProducts.realmRules());
+
+        assertEquals(30, rules.sectNeimen(), "@@sect.rank_neimen");
+        assertEquals(60, rules.sectZhenchuan(), "@@sect.rank_zhenchuan");
+        assertEquals(10, rules.shenShiMaxBase(), "@@shenshi.max_base");
+        assertEquals(5, rules.shenShiMaxPerOrdinal());
+        assertEquals(1, rules.shenShiRegenPerMinute());
+        assertEquals(3, rules.shenShiSenseCost());
+        assertEquals(24, rules.shenShiSenseRadius());
+        assertEquals(12000, rules.seclusionShichenTicks(), "1 时辰 = 12000 刻");
+        assertEquals(12, rules.seclusionMaxShichen());
+        assertEquals(8, rules.seclusionSafetyRadius());
+    }
 }

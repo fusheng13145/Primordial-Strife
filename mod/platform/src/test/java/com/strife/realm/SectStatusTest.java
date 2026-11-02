@@ -34,20 +34,12 @@ class SectStatusTest {
 
     @Test
     void missingSectBlockFailsWithNamedPath() {
-        // 02 §5：加载失败必须具名——缺 @@sect 块时报块名而不是裸 NPE。
-        var json =
-                com.google.gson.JsonParser.parseString("{\"id\":\"realm_rules\"}")
-                        .getAsJsonObject();
-        var e =
-                assertThrows(
-                        IllegalStateException.class,
-                        () -> {
-                            if (json.getAsJsonObject("sect") == null) {
-                                throw new IllegalStateException(
-                                        "strife_realms/rules.json 缺 @@sect 块——NUMBERS 与 RealmRulesGenerator.BLOCKS 不一致");
-                            }
-                        });
-        assertTrue(e.getMessage().contains("@@sect"));
+        // 02 §5：缺块在 parseRules 具名报错（披露批 #10 后阈值走类型化访问，裸读平行路径已删）。
+        // 直接从真实产物删掉 seclusion 块——比手造最小 JSON 更能防"前面的块顺序变了"的用例漂移。
+        var rules = com.strife.testing.ShippedProducts.realmRules();
+        rules.remove("seclusion");
+        var e = assertThrows(IllegalStateException.class, () -> RealmTables.parseRules(rules));
+        assertTrue(e.getMessage().contains("@@seclusion"));
     }
 
     /** 星评（439574e 提交说明复原，[拟]）：星数即职级档位，外门以下无星。 */

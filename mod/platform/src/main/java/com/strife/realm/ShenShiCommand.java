@@ -10,7 +10,6 @@ import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,36 +30,19 @@ public final class ShenShiCommand {
     record ShenShiRules(
             int maxBase, int maxPerOrdinal, int regenPerMinute, int senseCost, int senseRadius) {}
 
+    /** 从 RealmTables 类型化读规则（披露批 #10 收口）——此前裸读 rules.json 手工解析。 表不可用回 null（命令层给可读失败）。 */
     static ShenShiRules shenShiRules(MinecraftServer server) {
-        try {
-            var resource =
-                    server.getResourceManager()
-                            .getResource(
-                                    ResourceLocation.fromNamespaceAndPath(
-                                            "strife", "strife_realms/rules.json"))
-                            .orElseThrow(
-                                    () ->
-                                            new IllegalStateException(
-                                                    "strife_realms/rules.json missing"));
-            com.google.gson.JsonObject rules;
-            try (var reader =
-                    new java.io.InputStreamReader(
-                            resource.open(), java.nio.charset.StandardCharsets.UTF_8)) {
-                rules = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
-            }
-            com.google.gson.JsonObject block = rules.getAsJsonObject("shenshi");
-            if (block == null) {
-                throw new IllegalStateException("strife_realms/rules.json 缺 @@shenshi 块");
-            }
-            return new ShenShiRules(
-                    block.get("max_base").getAsInt(),
-                    block.get("max_per_ordinal").getAsInt(),
-                    block.get("regen_per_minute").getAsInt(),
-                    block.get("sense_cost").getAsInt(),
-                    block.get("sense_radius").getAsInt());
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("cannot read strife_realms/rules.json", e);
+        RealmTables tables = RealmTables.getOrNull(server);
+        if (tables == null) {
+            return null;
         }
+        var rules = tables.rules();
+        return new ShenShiRules(
+                rules.shenShiMaxBase(),
+                rules.shenShiMaxPerOrdinal(),
+                rules.shenShiRegenPerMinute(),
+                rules.shenShiSenseCost(),
+                rules.shenShiSenseRadius());
     }
 
     /** 神识上限派生：base + ordinal × per_ordinal。纯函数。 */
@@ -76,6 +58,10 @@ public final class ShenShiCommand {
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         ShenShiRules rules = shenShiRules(player.getServer());
+        if (rules == null) {
+            context.getSource().sendFailure(Component.literal("（神识规则不可用——realm 表未加载）"));
+            return 0;
+        }
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         ShenShiState shenShi =
                 player.getData(StrifeAttachmentTypes.SHENSHI)

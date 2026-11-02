@@ -69,7 +69,19 @@ public final class RealmTables {
             double heartDemonTriggerChance,
             double heartDemonQiRatePenalty,
             long heartDemonDurationTicks,
-            int heartDemonMaxStacks) {}
+            int heartDemonMaxStacks,
+            // 披露批 #10：sect/shenshi/seclusion 三块收进类型化访问——此前三处命令各自裸读
+            // rules.json 手工解析，与表的解析路径平行（漂移温床，与 ADR-040 批消灭的同款）。
+            int sectNeimen,
+            int sectZhenchuan,
+            int shenShiMaxBase,
+            int shenShiMaxPerOrdinal,
+            int shenShiRegenPerMinute,
+            int shenShiSenseCost,
+            int shenShiSenseRadius,
+            int seclusionShichenTicks,
+            int seclusionMaxShichen,
+            int seclusionSafetyRadius) {}
 
     private static volatile RealmTables instance;
 
@@ -286,7 +298,18 @@ public final class RealmTables {
                 number(heartDemon, "trigger_chance", "heart_demon"),
                 number(heartDemon, "qi_rate_penalty", "heart_demon"),
                 StrifeTime.secondsToTicks(number(heartDemon, "duration_sec", "heart_demon")),
-                (int) number(heartDemon, "max_stacks", "heart_demon"));
+                (int) number(heartDemon, "max_stacks", "heart_demon"),
+                // 披露批 #10：三块整段类型化（缺块由 block() 具名报错）
+                (int) number(block(rules, "sect"), "rank_neimen", "sect"),
+                (int) number(block(rules, "sect"), "rank_zhenchuan", "sect"),
+                (int) number(block(rules, "shenshi"), "max_base", "shenshi"),
+                (int) number(block(rules, "shenshi"), "max_per_ordinal", "shenshi"),
+                (int) number(block(rules, "shenshi"), "regen_per_minute", "shenshi"),
+                (int) number(block(rules, "shenshi"), "sense_cost", "shenshi"),
+                (int) number(block(rules, "shenshi"), "sense_radius", "shenshi"),
+                (int) number(block(rules, "seclusion"), "shichen_ticks", "seclusion"),
+                (int) number(block(rules, "seclusion"), "max_shichen", "seclusion"),
+                (int) number(block(rules, "seclusion"), "safety_radius", "seclusion"));
     }
 
     /** 取字符串键（内容 ID 类，如 debuff 键名）；缺键时同样报出"块.键"。 */

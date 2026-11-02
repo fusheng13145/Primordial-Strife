@@ -11,8 +11,6 @@ import com.strife.core.StrifeTime;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.monster.Monster;
 
@@ -42,35 +40,17 @@ public final class SeclusionCommand {
     /** 闭关规则（NUMBERS @@seclusion → rules.json 的 seclusion 块）。 */
     record SeclusionRules(int shichenTicks, int maxShichen, int safetyRadius) {}
 
-    static SeclusionRules seclusionRules(MinecraftServer server) {
-        try {
-            var resource =
-                    server.getResourceManager()
-                            .getResource(
-                                    ResourceLocation.fromNamespaceAndPath(
-                                            "strife", "strife_realms/rules.json"))
-                            .orElseThrow(
-                                    () ->
-                                            new IllegalStateException(
-                                                    "strife_realms/rules.json missing — RealmRulesGenerator 未跑？"));
-            com.google.gson.JsonObject rules;
-            try (var reader =
-                    new java.io.InputStreamReader(
-                            resource.open(), java.nio.charset.StandardCharsets.UTF_8)) {
-                rules = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
-            }
-            com.google.gson.JsonObject block = rules.getAsJsonObject("seclusion");
-            if (block == null) {
-                throw new IllegalStateException(
-                        "strife_realms/rules.json 缺 @@seclusion 块——NUMBERS 与 RealmRulesGenerator.BLOCKS 不一致");
-            }
-            return new SeclusionRules(
-                    block.get("shichen_ticks").getAsInt(),
-                    block.get("max_shichen").getAsInt(),
-                    block.get("safety_radius").getAsInt());
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("cannot read strife_realms/rules.json", e);
+    /** 从 RealmTables 类型化读规则（披露批 #10 收口）——此前裸读 rules.json 手工解析。 表不可用回 null（命令层给可读失败）。 */
+    static SeclusionRules seclusionRules(net.minecraft.server.MinecraftServer server) {
+        RealmTables tables = RealmTables.getOrNull(server);
+        if (tables == null) {
+            return null;
         }
+        var rules = tables.rules();
+        return new SeclusionRules(
+                rules.seclusionShichenTicks(),
+                rules.seclusionMaxShichen(),
+                rules.seclusionSafetyRadius());
     }
 
     private static int seclude(CommandContext<CommandSourceStack> context, int shichen)
@@ -78,6 +58,10 @@ public final class SeclusionCommand {
         ServerPlayer player = context.getSource().getPlayerOrException();
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         SeclusionRules rules = seclusionRules(player.getServer());
+        if (rules == null) {
+            context.getSource().sendFailure(Component.literal("（闭关规则不可用——realm 表未加载）"));
+            return 0;
+        }
 
         int hostile =
                 player.level()
