@@ -28,9 +28,39 @@ public final class HireCommand {
                                                                 ctx, "分钟"))));
     }
 
+    /** 坊市雇佣圈半径（[拟] ADR-036 ②"坊市按次雇佣"的门禁落地，随实机校准）。 */
+    static final int HIRE_PLACE_RADIUS = 48;
+
+    private static final String FANGSHI_PLACE = "qi_fangshi";
+
+    /** 坊市门禁（纯函数，包内可见供用例）：同维度 + 与坊市锚点水平距离在圈内。 ADR-036 ② 的"坊市按次雇佣"此前只有语义没有落点——雇供奉在哪都行，门禁是空的。 */
+    static boolean inHirePlace(
+            net.minecraft.resources.ResourceLocation playerDimension,
+            double playerX,
+            double playerZ,
+            com.strife.core.PlaceBridges.PlaceCoords place,
+            int radius) {
+        if (place == null || !place.dimension().equals(playerDimension)) {
+            return false;
+        }
+        double dx = playerX - (place.x() + 0.5);
+        double dz = playerZ - (place.z() + 0.5);
+        return dx * dx + dz * dz <= (double) radius * radius;
+    }
+
     private static int hire(CommandSourceStack source, int minutes)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
+        var place = com.strife.core.PlaceBridges.findPlace(player.server, FANGSHI_PLACE);
+        if (!inHirePlace(
+                player.level().dimension().location(),
+                player.getX(),
+                player.getZ(),
+                place.orElse(null),
+                HIRE_PLACE_RADIUS)) {
+            player.displayClientMessage(Component.literal("（雇供奉须在文津坊市——找牙人张作保才作数）"), true);
+            return 0;
+        }
         int cost = COST_PER_MINUTE * minutes;
         var containers =
                 new InventoryOps.PlayerContainers(

@@ -49,4 +49,29 @@ class SectStatusTest {
                         });
         assertTrue(e.getMessage().contains("@@sect"));
     }
+
+    /** 星评（439574e 提交说明复原，[拟]）：星数即职级档位，外门以下无星。 */
+    @Test
+    void starsFollowTheRankTiers() {
+        // 星评跟随 rankOf 口径（0 = 外门 = 一星）；榜单层另有"零声望不上榜"过滤，两者不冲突
+        assertEquals("★", SectStatus.starsOf(0, ranks));
+        assertEquals("★", SectStatus.starsOf(29, ranks));
+        assertEquals("★★", SectStatus.starsOf(59, ranks), "59 = 内门顶格");
+        assertEquals("★★★", SectStatus.starsOf(100, ranks));
+        assertEquals("★", SectStatus.starsOf(-1, ranks), "负声望仍按外门给一星");
+    }
+
+    @Test
+    void boardSortsByReputationDescThenNameAsc() {
+        var board =
+                SectStatus.boardOf(
+                        java.util.Map.of("乙", 30, "甲", 30, "丙", 60, "丁", 0, "戊", -5), ranks);
+        assertEquals(4, board.size(), "零声望不上榜（榜上有名须有声望）");
+        assertEquals("丙", board.get(0).name(), "最高声望居首");
+        assertEquals("★★★", board.get(0).stars());
+        assertEquals("乙", board.get(1).name(), "同声望按名字 Unicode 码点升序（乙 U+4E59 < 甲 U+7532，非拼音序）");
+        assertEquals("甲", board.get(2).name());
+        assertEquals("戊", board.get(3).name(), "负声望垫底但不消失");
+        assertEquals("外门", board.get(3).rank());
+    }
 }

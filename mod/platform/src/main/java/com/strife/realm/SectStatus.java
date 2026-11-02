@@ -1,9 +1,14 @@
 package com.strife.realm;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -66,7 +71,97 @@ public final class SectStatus {
 
     public static LiteralArgumentBuilder<CommandSourceStack> subtree() {
         return Commands.literal("sect")
-                .then(Commands.literal("status").executes(ctx -> status(ctx)));
+                .then(Commands.literal("status").executes(ctx -> status(ctx)))
+                .then(
+                        Commands.literal("ranking")
+                                .executes(ctx -> ranking(ctx, ""))
+                                .then(
+                                        Commands.argument("宗门", StringArgumentType.word())
+                                                .executes(
+                                                        ctx ->
+                                                                ranking(
+                                                                        ctx,
+                                                                        StringArgumentType
+                                                                                .getString(
+                                                                                        ctx,
+                                                                                        "宗门")))));
+    }
+
+    /** 天骄榜一行：名字 + 声望 + 职级 + 星评（星数即职级档位，纯派生零状态）。 */
+    record BoardRow(String name, int reputation, String rank, String stars) {}
+
+    /** 星评（纯函数，[拟] 语义复原自 439574e 提交说明）：真传★★★ / 内门★★ / 外门★ / 无职级无星。 */
+    static String starsOf(int reputation, SectRanks ranks) {
+        return switch (rankOf(reputation, ranks)) {
+            case "真传" -> "★★★";
+            case "内门" -> "★★";
+            case "外门" -> "★";
+            default -> "";
+        };
+    }
+
+    /** 天骄榜核（纯函数，包内可见供用例）：声望降序、同声望按名字升序；零声望不上榜（"榜上有名须有声望"）。 在线榜的诚实边界——离线玩家的附件不在此加载（那是全服扫描，另一档成本）。 */
+    static List<BoardRow> boardOf(Map<String, Integer> reputations, SectRanks ranks) {
+        List<BoardRow> rows = new ArrayList<>();
+        reputations.forEach(
+                (name, rep) -> {
+                    if (rep != 0) {
+                        rows.add(new BoardRow(name, rep, rankOf(rep, ranks), starsOf(rep, ranks)));
+                    }
+                });
+        rows.sort(
+                Comparator.comparingInt(BoardRow::reputation)
+                        .reversed()
+                        .thenComparing(BoardRow::name));
+        return List.copyOf(rows);
+    }
+
+    private static int ranking(CommandContext<CommandSourceStack> context, String factionArg)
+            throws CommandSyntaxException {
+        ServerPlayer viewer = context.getSource().getPlayerOrException();
+        StrifeData data = viewer.getData(StrifeAttachmentTypes.PLAYER_DATA);
+        String faction = factionArg;
+        if (faction == null || faction.isBlank()) {
+            faction = data.affiliation();
+            if (faction == null || faction.isBlank()) {
+                faction = "fac_yuelai"; // 散修默认看月来渡（EP1/EP2 的坊市枢纽宗门）
+            }
+        }
+        SectRanks ranks;
+        try {
+            ranks = sectRanks(viewer.getServer());
+        } catch (RuntimeException e) {
+            context.getSource().sendFailure(Component.literal("（职级数据不可用：" + e.getMessage() + "）"));
+            return 0;
+        }
+        Map<String, Integer> reputations = new java.util.LinkedHashMap<>();
+        for (ServerPlayer online : viewer.getServer().getPlayerList().getPlayers()) {
+            int rep =
+                    online.getData(StrifeAttachmentTypes.PLAYER_DATA)
+                            .reputation()
+                            .getOrDefault(faction, 0);
+            reputations.put(online.getName().getString(), rep);
+        }
+        List<BoardRow> board = boardOf(reputations, ranks);
+        StringBuilder sb =
+                new StringBuilder("【天骄榜 · " + faction + "】（在线修士，共 " + board.size() + " 人上榜）");
+        int place = 1;
+        for (BoardRow row : board) {
+            sb.append('\n')
+                    .append(place++)
+                    .append(". ")
+                    .append(row.name())
+                    .append(' ')
+                    .append(row.reputation())
+                    .append(' ')
+                    .append(row.rank())
+                    .append(row.stars());
+        }
+        if (board.isEmpty()) {
+            sb.append("\n尚无人上榜——声望从坊市与委托里来。");
+        }
+        context.getSource().sendSuccess(() -> Component.literal(sb.toString()), false);
+        return 1;
     }
 
     private static int status(CommandContext<CommandSourceStack> context)
