@@ -1,0 +1,78 @@
+{
+  "@generated": "from tables/beasts.csv @ sha256:601334ed1a16ca877edf76d3c50bda56c30b3ae8a7fc038d5126f82b33220f2d",
+  "id": "beasts",
+  "entries": [
+    {
+    "id": "wolf",
+    "name": "野狼",
+    "entity_id": "strife:wolf_beast",
+    "health": "15.0",
+    "attack": "3.0",
+    "speed": "0.38",
+    "follow_range": "20.0",
+    "xp": "5",
+    "element": "none",
+    "biomes": "minecraft:forest|minecraft:taiga|minecraft:birch_forest"
+  },
+    {
+    "id": "rock",
+    "name": "岩甲兽",
+    "entity_id": "strife:rock_beast",
+    "health": "40.0",
+    "attack": "4.0",
+    "speed": "0.18",
+    "follow_range": "12.0",
+    "xp": "10",
+    "element": "tu",
+    "biomes": "minecraft:mountains|minecraft:windswept_hills|minecraft:stony_shore"
+  },
+    {
+    "id": "fire_fox",
+    "name": "炎狐",
+    "entity_id": "strife:fire_fox",
+    "health": "12.0",
+    "attack": "5.0",
+    "speed": "0.42",
+    "follow_range": "24.0",
+    "xp": "8",
+    "element": "huo",
+    "biomes": "minecraft:plains|minecraft:savanna|minecraft:desert"
+  },
+    {
+    "id": "ice_serpent",
+    "name": "寒蛟",
+    "entity_id": "strife:ice_serpent",
+    "health": "25.0",
+    "attack": "4.0",
+    "speed": "0.22",
+    "follow_range": "16.0",
+    "xp": "10",
+    "element": "shui",
+    "biomes": "minecraft:ocean|minecraft:frozen_ocean|minecraft:river"
+  },
+    {
+    "id": "shadow_leopard",
+    "name": "暗影豹",
+    "entity_id": "strife:shadow_leopard",
+    "health": "18.0",
+    "attack": "6.0",
+    "speed": "0.45",
+    "follow_range": "28.0",
+    "xp": "15",
+    "element": "none",
+    "biomes": "minecraft:deep_dark"
+  },
+    {
+    "id": "treant",
+    "name": "古树妖",
+    "entity_id": "strife:treant",
+    "health": "50.0",
+    "attack": "3.0",
+    "speed": "0.08",
+    "follow_range": "10.0",
+    "xp": "20",
+    "element": "mu",
+    "biomes": "minecraft:forest|minecraft:old_growth_birch_forest"
+  }
+  ]
+}

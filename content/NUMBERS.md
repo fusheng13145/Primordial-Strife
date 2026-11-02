@@ -164,6 +164,14 @@ beast_attack: 3.0  # 妖兽基础攻击伤害
 beast_speed: 0.30  # 妖兽移动速度
 beast_follow_range: 16.0  # 妖兽索敌/追击半径（格）
 
+# —— 法宝副手属性加成（EP1，ADR-036；2026-11-02 定值，随实机批校准）——
+artifact_bonus_fan:  { attack_pct: 0.05, health_flat: 0.0 }
+artifact_bonus_di:   { attack_pct: 0.10, health_flat: 1.0 }
+artifact_bonus_tian: { attack_pct: 0.20, health_flat: 2.0 }
+tier_of_fan: fa
+tier_of_di: fa_bao
+tier_of_tian: ling_bao
+tier_multiplier: { fa: 1.0, fa_bao: 1.5, ling_bao: 2.0, xian_qi: 3.0 }
 ```
 # —— 妖兽种类（EP1，ADR-039；值 2026-11-02 定值，随实机批校准）——
 @@beasts

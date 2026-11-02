@@ -70,6 +70,7 @@ public final class DataGenMain {
                 new FurnaceGenerator(),
                 new FireGenerator(),
                 new MaterialGenerator(),
+                new BeastTableGenerator(),
                 new GuideGenerator(),
                 new BiomeGenerator(),
                 new RealmDecorGenerator(),

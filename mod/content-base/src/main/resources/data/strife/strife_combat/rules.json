@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:fbca81d78c7e69b013facb60a363eee16956a2c21b05801b9a9af7bfc28ac504",
+  "@generated": "from content/NUMBERS.md @ sha256:d5bd6c8fff6f722987c923c4a2199b3fb11a2caea0eee1915cbadab62c57412f",
   "id": "combat_rules",
   "combat": {
     "realm_coeff": {
@@ -41,7 +41,28 @@
     "beast_health": 20.0,
     "beast_attack": 3.0,
     "beast_speed": 0.3,
-    "beast_follow_range": 16.0
+    "beast_follow_range": 16.0,
+    "artifact_bonus_fan": {
+    "attack_pct": 0.05,
+    "health_flat": 0.0
+  },
+    "artifact_bonus_di": {
+    "attack_pct": 0.1,
+    "health_flat": 1.0
+  },
+    "artifact_bonus_tian": {
+    "attack_pct": 0.2,
+    "health_flat": 2.0
+  },
+    "tier_of_fan": "fa",
+    "tier_of_di": "fa_bao",
+    "tier_of_tian": "ling_bao",
+    "tier_multiplier": {
+    "fa": 1.0,
+    "fa_bao": 1.5,
+    "ling_bao": 2.0,
+    "xian_qi": 3.0
+  }
   },
   "talisman": {
     "substitute_health": 1.0,
