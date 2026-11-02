@@ -151,6 +151,10 @@ public final class StrifeClientFx {
 
     private void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        // EP1（ADR-038）：异火粒子——持有异火物品时每 8 刻生成火焰粒子。
+        if (minecraft.player != null && minecraft.screen == null) {
+            fireParticleTick(minecraft);
+        }
         // 对话推进（03 §4：UI 只显示服务端求值结果）：镜像有新节点且当前没有对话界面 → 开界面。
         // 已开着时由 DialogScreen.tick() 自己刷新，这里只负责"开"。
         long revision = DialogClientMirror.revision();
@@ -197,5 +201,67 @@ public final class StrifeClientFx {
         while (mapping.consumeClick()) {
             // 丢弃：界面打开期间不触发世界内动作
         }
+    }
+
+    // ═══ EP1 异火粒子（ADR-038）═══
+
+    private static final java.util.Map<String, Long> FIRE_COLORS =
+            java.util.Map.of(
+                    "item_fire_mu",
+                    0x44BB44L,
+                    "item_fire_dixin",
+                    0x886633L,
+                    "item_fire_xuanbing",
+                    0x66AAEEL,
+                    "item_fire_chiyan",
+                    0xCC4422L,
+                    "item_fire_jiuyou",
+                    0x442266L,
+                    "item_fire_taiyang",
+                    0xFFCC33L);
+
+    private void fireParticleTick(Minecraft mc) {
+        var player = mc.player;
+        if (player == null || mc.level == null || mc.isPaused()) return;
+        if (player.tickCount % 8 != 0) return;
+        String fireId = findFireItem(player);
+        if (fireId == null) return;
+        mc.level.addParticle(
+                net.minecraft.core.particles.ParticleTypes.FLAME,
+                player.getX() + (mc.level.random.nextDouble() - 0.5) * 1.2,
+                player.getY() + mc.level.random.nextDouble() * 1.8,
+                player.getZ() + (mc.level.random.nextDouble() - 0.5) * 1.2,
+                0,
+                0.02,
+                0);
+        mc.level.addParticle(
+                net.minecraft.core.particles.ParticleTypes.SMOKE,
+                player.getX(),
+                player.getY() + 1.5,
+                player.getZ(),
+                0,
+                0.01,
+                0);
+    }
+
+    private String findFireItem(net.minecraft.world.entity.player.Player player) {
+        var off = checkFireStack(player.getOffhandItem());
+        if (off != null) return off;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            var r = checkFireStack(player.getInventory().getItem(i));
+            if (r != null) return r;
+        }
+        return null;
+    }
+
+    private String checkFireStack(net.minecraft.world.item.ItemStack stack) {
+        if (stack.isEmpty()) return null;
+        var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (key != null
+                && key.getNamespace().equals("strife")
+                && FIRE_COLORS.containsKey(key.getPath())) {
+            return key.getPath();
+        }
+        return null;
     }
 }
