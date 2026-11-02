@@ -29,6 +29,9 @@ import net.minecraft.world.level.Level;
  */
 public final class StrifePills {
 
+    /** EP2 心魔劫：真清了心魔落此标记（对话条件分支与 quests 奖励共用同一字符串，测试钉两侧一致）。 */
+    public static final String HEART_CLEANSED_FLAG = "fac_yuelai:ep2:heartdemon_cleansed";
+
     private StrifePills() {}
 
     /** 丹药物品：右键服用。 */
@@ -213,7 +216,12 @@ public final class StrifePills {
         return true;
     }
 
-    /** 洗尘丹：清除心魔层数 + H3 因果标记（causality:ep1:smuggler，标记常量与黑市同源）。 */
+    /**
+     * 洗尘丹：清除心魔层数 + H3 因果标记（causality:ep1:smuggler，标记常量与黑市同源）。
+     *
+     * <p>真清了心魔还会落 {@link #HEART_CLEANSED_FLAG}——EP2 心魔劫对话链（dlg_ep2_trial.nd_hm_pill 的条件分支）
+     * 据此给出"阴影散了"的反馈；flag 字符串与对话表 conditions= 两侧同值，{@code Ep2HeartDemonContentTest} 钉住一致性。
+     */
     private static boolean applyClearCausality(ServerPlayer player) {
         // 心魔清除
         var demon = player.getData(StrifeAttachmentTypes.HEART_DEMON);
@@ -226,10 +234,12 @@ public final class StrifePills {
         // 此前"QuestProgress 无 removeFlag，标记留给叙事"的妥协撤销，丹效与 pills.csv 口径一致。
         var data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
         boolean hadSmuggler = data.quests().hasFlag(BlackMarketCommands.SMUGGLER_FLAG);
-        if (hadSmuggler) {
-            player.setData(
-                    StrifeAttachmentTypes.PLAYER_DATA,
-                    data.withQuests(data.quests().withoutFlag(BlackMarketCommands.SMUGGLER_FLAG)));
+        var quests = data.quests().withoutFlag(BlackMarketCommands.SMUGGLER_FLAG);
+        if (clearedStacks > 0) {
+            quests = quests.withFlag(HEART_CLEANSED_FLAG);
+        }
+        if (hadSmuggler || clearedStacks > 0) {
+            player.setData(StrifeAttachmentTypes.PLAYER_DATA, data.withQuests(quests));
         }
         String message =
                 clearedStacks > 0 ? "✦ 洗尘丹化开——心魔尽消（" + clearedStacks + " 层）" : "✦ 洗尘丹化开——心境澄明";

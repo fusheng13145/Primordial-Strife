@@ -1420,7 +1420,12 @@ public final class ValidatorMain {
                                 continue;
                             }
                             String key = stringOrNull(target.get("target"));
-                            if (key != null && !breakthroughKeys.contains(key)) {
+                            // 空白目标 = 任意突破：运行时 QuestBook.string 把空白归一为 null（kill_any 同一口径），
+                            // 校验器必须与运行时同归一，否则"任意突破"会被误报成引用漂移。
+                            if (key == null || key.isBlank()) {
+                                continue;
+                            }
+                            if (!breakthroughKeys.contains(key)) {
                                 problems.add(
                                         file
                                                 + ": quest '"

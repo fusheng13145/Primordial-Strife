@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_ep2_text.csv @ sha256:5de25791c9cc93dafa18da4c6f8845cd053406223c482259424409997f78cdb9",
+  "@generated": "from tables/dialog_ep2_text.csv @ sha256:166d163f442e69c0db37a59f5b28c3fa38317dad18cb06f6f503c171459e5e03",
   "id": "dialog_text_ep2",
   "chapter": "ep2",
   "texts": {
@@ -8,6 +8,15 @@
     "dialog.strife.nd_miji_welcome_opt2": "容我先看看周围",
     "dialog.strife.nd_miji_trial": "第一重：勇气——秘境深处有妖兽盘踞，去证明你的胆识。第二重：智慧——天元果隐于秘境深处，寻它便是考验。第三重：心性——在试炼台上坚守两分钟，不动如山。",
     "dialog.strife.nd_miji_trial_opt1": "我明白了",
-    "dialog.strife.nd_miki_bye": "去吧。秘境之门为你而开。"
+    "dialog.strife.nd_miki_bye": "去吧。秘境之门为你而开。",
+    "dialog.strife.nd_miji_welcome_opt3": "心魔是什么？听说突破失败的修士都被它缠过",
+    "dialog.strife.nd_hm_intro": "突破一途，十有九败——败者的不甘积在心底，便成了心魔。它不噬肉身，只折你的修行：一层心魔，修为慢上三分。",
+    "dialog.strife.nd_hm_intro_opt1": "如何化解？",
+    "dialog.strife.nd_hm_intro_opt2": "记下了",
+    "dialog.strife.nd_hm_pill": "洗尘丹可涤心魔——天山雪莲合五色石炼制，秘境深处偶有出产，坊市暗柜也收。此丹还能勾销一笔因果。",
+    "dialog.strife.nd_hm_pill_opt1": "我已经服过洗尘丹了",
+    "dialog.strife.nd_hm_pill_opt2": "告辞",
+    "dialog.strife.nd_hm_cleansed": "（玄凝视你良久）……你身上的阴影散了。道心澄明，好。往后突破，纵是再败，也别让它再缠上你。",
+    "dialog.strife.nd_hm_cleansed_opt1": "多谢指点"
   }
 }

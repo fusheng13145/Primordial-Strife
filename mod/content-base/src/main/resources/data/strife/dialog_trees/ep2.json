@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/dialog_trees_ep2.csv @ sha256:088b95aed4fa576aef7012d6b2536761846602959af451aa930a311161794d07",
+  "@generated": "from tables/dialog_trees_ep2.csv @ sha256:4e99ebc9e3ae910dbb3c51b73fb5c9d20abfe98b0b28d0fce1191700a06591af",
   "id": "nd_miji_welcome",
   "chapter": "ep2",
   "trees": [
@@ -22,6 +22,10 @@
     {
     "text_key": "dialog.strife.nd_miji_welcome_opt2",
     "next": "nd_miki_bye"
+  },
+    {
+    "text_key": "dialog.strife.nd_miji_welcome_opt3",
+    "next": "nd_hm_intro"
   }
   ]
   },
@@ -45,6 +49,54 @@
     "conditions": null,
     "next": null,
     "options": null
+  },
+    {
+    "id": "nd_hm_intro",
+    "speaker": "秘境守护者·玄",
+    "text_key": "dialog.strife.nd_hm_intro",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_hm_intro_opt1",
+    "next": "nd_hm_pill"
+  },
+    {
+    "text_key": "dialog.strife.nd_hm_intro_opt2",
+    "next": "nd_miki_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_hm_pill",
+    "speaker": "秘境守护者·玄",
+    "text_key": "dialog.strife.nd_hm_pill",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_hm_pill_opt1",
+    "conditions": "flag(fac_yuelai:ep2:heartdemon_cleansed)",
+    "next": "nd_hm_cleansed"
+  },
+    {
+    "text_key": "dialog.strife.nd_hm_pill_opt2",
+    "next": "nd_miki_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_hm_cleansed",
+    "speaker": "秘境守护者·玄",
+    "text_key": "dialog.strife.nd_hm_cleansed",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_hm_cleansed_opt1",
+    "next": "nd_miki_bye"
+  }
+  ]
   }
   ],
     "effects": null,

@@ -64,6 +64,16 @@ public final class ShippedProducts {
         return json("/data/strife/strife_pills/" + pillId + ".json");
     }
 
+    /** EP2 任务链产物（{@code data/strife/strife_quests/ep2.json}）。 */
+    public static JsonObject ep2Quests() {
+        return json("/data/strife/strife_quests/ep2.json");
+    }
+
+    /** EP2 对话树产物（{@code data/strife/dialog_trees/ep2.json}）。 */
+    public static JsonObject ep2Dialog() {
+        return json("/data/strife/dialog_trees/ep2.json");
+    }
+
     /** 全部法术产物（枚举目录；新增产物未被运行时加载时用例变红）。 */
     public static List<JsonObject> allSpells() {
         return allIn("/data/strife/strife_spells/");

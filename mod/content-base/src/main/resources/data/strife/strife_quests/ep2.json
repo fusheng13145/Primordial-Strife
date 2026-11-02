@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/quests_ep2.csv @ sha256:355a4f619510406a558bac792bf32740df5505017d45525f46f93b53e40e1350",
+  "@generated": "from tables/quests_ep2.csv @ sha256:cd55f5d2efcfbc53970f0a6ed6f92e7531c57f65144a2a8d55610fd35c17cb8c",
   "id": "quest_ep2_trial_entry_01",
   "chapter": "ep2",
   "quests": [
@@ -226,6 +226,145 @@
     {
     "faction_id": "fac_yuelai",
     "delta": 8
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep2_heartdemon_intro_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep2_trial_complete_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_miji_guardian",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:heartdemon_intro",
+    "count": null,
+    "unlock_key": null
+  },
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 10,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 2
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep2_heartdemon_pill_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep2_heartdemon_intro_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "collect",
+    "target": "item_xuelian",
+    "count": 1,
+    "optional": false
+  },
+    {
+    "id": "2",
+    "type": "collect",
+    "target": "item_wuse_shi",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:heartdemon_pill_ready",
+    "count": null,
+    "unlock_key": null
+  },
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 15,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 2
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep2_heartdemon_breakthrough_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep2_heartdemon_pill_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "breakthrough",
+    "target": "",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:heartdemon_path_complete",
+    "count": null,
+    "unlock_key": null
+  },
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 25,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 3
   }
   ],
     "causality": null,
