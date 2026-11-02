@@ -35,6 +35,17 @@ public final class StrifeAttachmentTypes {
                                     .copyOnDeath()
                                     .build());
 
+    /** 心魔（EP2，ADR-040）：独立附件——突破失败触发，洗尘丹清除。 */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<HeartDemonState>>
+            HEART_DEMON =
+                    ATTACHMENT_TYPES.register(
+                            "heart_demon",
+                            () ->
+                                    AttachmentType.builder(() -> HeartDemonState.EMPTY)
+                                            .serialize(HeartDemonState.CODEC)
+                                            .copyOnDeath()
+                                            .build());
+
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<StrifeData>> PLAYER_DATA =
             ATTACHMENT_TYPES.register(
                     "player_data",

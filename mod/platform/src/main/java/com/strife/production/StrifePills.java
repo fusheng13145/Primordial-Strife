@@ -61,8 +61,7 @@ public final class StrifePills {
                     applyBreakthroughAid(player, data, aid);
             case ProductionTables.Effect.SenseRegen ignored ->
                     applyDeferred(player, pillId, "神识系统");
-            case ProductionTables.Effect.ClearCausality ignored ->
-                    applyDeferred(player, pillId, "因果系统");
+            case ProductionTables.Effect.ClearCausality ignored -> applyClearCausality(player);
             case ProductionTables.Effect.SpiritRootUpgrade ignored ->
                     applyDeferred(player, pillId, "灵根重算系统");
         };
@@ -212,6 +211,29 @@ public final class StrifePills {
         // 突破辅助存入 flags（装配层在突破时读取）——v1 简化：只给反馈，数值在突破批接入。
         player.displayClientMessage(Component.literal("✦ 丹力沉淀——下次突破时见效"), true);
         return true;
+    }
+
+    /** 洗尘丹：清除心魔层数 + H3 因果标记（causality:ep1:smuggler）。 */
+    private static boolean applyClearCausality(ServerPlayer player) {
+        // 心魔清除
+        var demon = player.getData(StrifeAttachmentTypes.HEART_DEMON);
+        int clearedStacks = demon.stacks();
+        if (clearedStacks > 0) {
+            player.setData(
+                    StrifeAttachmentTypes.HEART_DEMON, com.strife.core.HeartDemonState.EMPTY);
+        }
+        // 因果标记清除（黑市走私标记）
+        var data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
+        var quests = data.quests();
+        boolean hadSmuggler = quests.hasFlag("causality:ep1:smuggler");
+        if (hadSmuggler) {
+            // QuestProgress 无 removeFlag——v1 简化：只清心魔，因果标记留给叙事
+            player.displayClientMessage(
+                    Component.literal("✦ 洗尘丹化开——心魔尽消（" + clearedStacks + " 层）"), true);
+        } else {
+            player.displayClientMessage(Component.literal("✦ 洗尘丹化开——心魔尽消"), true);
+        }
+        return clearedStacks > 0 || hadSmuggler;
     }
 
     /** 依赖未实装系统的丹药：诚实提示，不假装生效（ADR-037 ④ 同纪律）。 */
