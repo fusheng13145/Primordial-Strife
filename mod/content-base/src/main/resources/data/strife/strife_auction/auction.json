@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/auction.csv @ sha256:48705f1cbeae7830e8d0981a2b1e63b28e1fd6f97e5abe58d4b7706738956b0e",
+  "@generated": "from tables/auction.csv @ sha256:2002a0364e441eacf1bcafc79d5ae31bfe8efcfca658a9e9543fdae5bd9c3e61",
   "id": "auction",
   "slot_shichen": 2,
   "lots": [
@@ -22,6 +22,34 @@
     "item_id": "item_dunfu",
     "start_lingshi": 36,
     "min_lingshi": 18,
+    "drop_lingshi": 4
+  },
+    {
+    "id": "auction_ningshen",
+    "item_id": "pill_ningshen",
+    "start_lingshi": 25,
+    "min_lingshi": 12,
+    "drop_lingshi": 3
+  },
+    {
+    "id": "auction_jingang",
+    "item_id": "pill_jingang",
+    "start_lingshi": 22,
+    "min_lingshi": 10,
+    "drop_lingshi": 3
+  },
+    {
+    "id": "auction_fire_jiuyou",
+    "item_id": "item_fire_jiuyou",
+    "start_lingshi": 80,
+    "min_lingshi": 40,
+    "drop_lingshi": 8
+  },
+    {
+    "id": "auction_xuelian",
+    "item_id": "item_xuelian",
+    "start_lingshi": 35,
+    "min_lingshi": 15,
     "drop_lingshi": 4
   }
   ]

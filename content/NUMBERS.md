@@ -348,3 +348,14 @@ mat_fengxue: { element: huo, rarity: epic, source: secret_realm }
 rank_neimen: 30
 rank_zhenchuan: 60
 ```
+
+## §31. 心魔（EP2，ADR-040；值 2026-11-03 定值，随实机批校准）
+
+@@heart_demon
+```yaml
+trigger_chance: 0.20       # 突破失败时触发心魔的概率
+qi_rate_penalty: 0.15      # 心魔活跃期间修为速率 -15%
+duration_sec: 600          # 心魔持续 10 分钟（可提前化解）
+cleanse_pill_key: pill_wugou  # 洗尘丹可提前清除心魔
+max_stacks: 3              # 最多叠加 3 层心魔（连续失败累积）
+```

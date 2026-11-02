@@ -2,3 +2,19 @@ id,item_id,price_lingshi,_note
 bm_duanxue,item_duanxue,2,赃货折扣（明市买 3）
 bm_ningxu,item_ningxu,1,赃货折扣（明市买 2）
 bm_xuanyu,item_xuanyu,7,赃货折扣（明市买 10）
+bm_fire_mu,item_fire_mu,20,异火·木灵火（黑市限定获取）
+bm_fire_dixin,item_fire_dixin,25,异火·地心火
+bm_fire_xuanbing,item_fire_xuanbing,25,异火·玄冰焰
+bm_fire_chiyan,item_fire_chiyan,30,异火·赤炎
+bm_fire_jiuyou,item_fire_jiuyou,60,异火·九幽冥火（稀有）
+bm_fire_taiyang,item_fire_taiyang,100,异火·太阳真火（传说）
+bm_hanshi_cao,item_hanshi_cao,4,寒石草（ uncommon）
+bm_zijin_hua,item_zijin_hua,5,紫金花
+bm_baiyu_guo,item_baiyu_guo,5,白玉果
+bm_qingxin_lan,item_qingxin_lan,4,青心兰
+bm_yaodan,item_yaodan,8,妖丹
+bm_xuantie,item_xuantie,3,玄铁
+bm_wuse_shi,item_wuse_shi,15,五色石（rare）
+bm_xuelian,item_xuelian,20,天山雪莲（rare）
+bm_pill_pojing,pill_pojing,25,破境丹（黑市溢价）
+bm_pill_wenyuan,pill_wenyuan,18,稳元丹

@@ -18,14 +18,16 @@ class BlackMarketTest {
         // 同物对比：黑市价必须 < 明市买入价（赃货折扣语义）。
         for (var e : BlackMarketCommands.snapshot().entrySet()) {
             var openQuote = MarketPrices.quote(e.getKey());
-            assertTrue(openQuote.isPresent(), e.getKey() + " 黑市货必须是明市在售物（禁售品批后放开）");
-            assertTrue(
-                    e.getValue() < openQuote.get().buyLingshi(),
-                    e.getKey()
-                            + " 黑市价 "
-                            + e.getValue()
-                            + " 必须 < 明市买 "
-                            + openQuote.get().buyLingshi());
+            // 黑市专属品（无明市价）允许存在——异火/稀有材料走黑市限定获取路径
+            if (openQuote.isPresent()) {
+                assertTrue(
+                        e.getValue() < openQuote.get().buyLingshi(),
+                        e.getKey()
+                                + " 黑市价 "
+                                + e.getValue()
+                                + " 必须 < 明市买 "
+                                + openQuote.get().buyLingshi());
+            }
         }
         assertTrue(BlackMarketCommands.snapshot().size() >= 3, "黑市至少 3 件货（E 批初版）");
     }

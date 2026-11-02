@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/blackmarket.csv @ sha256:f63bad2cf9ea89a073bd2e4c591813268f1a00de7e3320a349cb94f49e5c7b0a",
+  "@generated": "from tables/blackmarket.csv @ sha256:05d2d75e220d2df0924306e1b5de208ac37d4f3adb6dc7de3865facda6f2e1f3",
   "id": "blackmarket",
   "entries": [
     {
@@ -16,6 +16,86 @@
     "id": "bm_xuanyu",
     "item_id": "item_xuanyu",
     "price_lingshi": 7
+  },
+    {
+    "id": "bm_fire_mu",
+    "item_id": "item_fire_mu",
+    "price_lingshi": 20
+  },
+    {
+    "id": "bm_fire_dixin",
+    "item_id": "item_fire_dixin",
+    "price_lingshi": 25
+  },
+    {
+    "id": "bm_fire_xuanbing",
+    "item_id": "item_fire_xuanbing",
+    "price_lingshi": 25
+  },
+    {
+    "id": "bm_fire_chiyan",
+    "item_id": "item_fire_chiyan",
+    "price_lingshi": 30
+  },
+    {
+    "id": "bm_fire_jiuyou",
+    "item_id": "item_fire_jiuyou",
+    "price_lingshi": 60
+  },
+    {
+    "id": "bm_fire_taiyang",
+    "item_id": "item_fire_taiyang",
+    "price_lingshi": 100
+  },
+    {
+    "id": "bm_hanshi_cao",
+    "item_id": "item_hanshi_cao",
+    "price_lingshi": 4
+  },
+    {
+    "id": "bm_zijin_hua",
+    "item_id": "item_zijin_hua",
+    "price_lingshi": 5
+  },
+    {
+    "id": "bm_baiyu_guo",
+    "item_id": "item_baiyu_guo",
+    "price_lingshi": 5
+  },
+    {
+    "id": "bm_qingxin_lan",
+    "item_id": "item_qingxin_lan",
+    "price_lingshi": 4
+  },
+    {
+    "id": "bm_yaodan",
+    "item_id": "item_yaodan",
+    "price_lingshi": 8
+  },
+    {
+    "id": "bm_xuantie",
+    "item_id": "item_xuantie",
+    "price_lingshi": 3
+  },
+    {
+    "id": "bm_wuse_shi",
+    "item_id": "item_wuse_shi",
+    "price_lingshi": 15
+  },
+    {
+    "id": "bm_xuelian",
+    "item_id": "item_xuelian",
+    "price_lingshi": 20
+  },
+    {
+    "id": "bm_pill_pojing",
+    "item_id": "pill_pojing",
+    "price_lingshi": 25
+  },
+    {
+    "id": "bm_pill_wenyuan",
+    "item_id": "pill_wenyuan",
+    "price_lingshi": 18
   }
   ]
 }

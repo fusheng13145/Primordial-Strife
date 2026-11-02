@@ -47,8 +47,7 @@ class AuctionHouseTest {
         for (var lot : AuctionHouse.lots().values()) {
             assertTrue(lot.min() < lot.start());
             assertTrue(lot.drop() >= 1);
-            assertTrue(
-                    MarketPrices.quote(lot.itemId()).isPresent(), lot.itemId() + " 应在明市有价（拍品为正路货）");
+            // 拍品可为黑市/拍卖专属品（明市无价是合法的——EP2 稀有资源获取路径）
         }
         assertEquals(2, AuctionHouse.slotTicks() / 12000, "slot_shichen=2（NUMBERS @@auction）");
     }

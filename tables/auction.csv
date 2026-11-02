@@ -2,3 +2,7 @@ id,item_id,start_lingshi,min_lingshi,drop_lingshi,_note
 auction_xuanyu,item_xuanyu,20,10,2,玄玉佩：流拍后每时辰降 2
 auction_pill_xuanyu,pill_xuanyu,30,16,3,玄玉丹急售
 auction_dunfu,item_dunfu,36,18,4,遁符（保命底牌，拍场常客）
+auction_ningshen,pill_ningshen,25,12,3,凝神丹
+auction_jingang,pill_jingang,22,10,3,金刚丹
+auction_fire_jiuyou,item_fire_jiuyou,80,40,8,九幽冥火（拍卖限定高价）
+auction_xuelian,item_xuelian,35,15,4,天山雪莲
