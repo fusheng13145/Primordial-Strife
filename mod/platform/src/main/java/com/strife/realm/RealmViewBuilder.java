@@ -57,6 +57,18 @@ public final class RealmViewBuilder {
         long now = player.server.getTickCount();
         MeditationState meditation = data.meditation();
         CultivationFactors.Coefficients factors = CultivationFactors.coefficients(player);
+        // ADR-040 心魔上屏（披露批 #8）：层数与剩余秒随面板视图走——拉取式，不动 delta 位序契约。
+        // 时间基 level().getGameTime()，与 CultivationHandler 的心魔结算同一基准（附件持久化 expiryTick）。
+        var demon = player.getData(StrifeAttachmentTypes.HEART_DEMON);
+        int demonStacks = demon.stacks();
+        long demonSeconds = 0L;
+        if (demon.active()) {
+            demonSeconds =
+                    Math.max(
+                            0L,
+                            (demon.expiryTick() - player.level().getGameTime())
+                                    / StrifeTime.TICKS_PER_SECOND);
+        }
         return new StrifeRealmView(
                 realm.id(),
                 realm.ordinal(),
@@ -77,6 +89,8 @@ public final class RealmViewBuilder {
                 factors.technique(),
                 factors.pill(),
                 data.techniques().equipped(),
-                core.yearsOf(data.lifespanTicks()));
+                core.yearsOf(data.lifespanTicks()),
+                demonStacks,
+                demonSeconds);
     }
 }

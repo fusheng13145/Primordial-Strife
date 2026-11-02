@@ -65,6 +65,7 @@
   "gui.strife.panel.factor_breakdown": "速率系数：灵根 %s × 环境 %s × 功法 %s × 丹药 %s",
   "gui.strife.panel.failure_cost": "失败代价：修为回退至上限的 %s–%s",
   "gui.strife.panel.final_realm": "已至此界尽头",
+  "gui.strife.panel.heart_demon": "✦ 心魔缠身：%s 层（约 %s 秒后消散）——修为速率下降",
   "gui.strife.panel.lifespan": "寿元：%s 年（%s 刻）",
   "gui.strife.panel.lifespan_unknown": "寿元：换算率不可用（%s 刻）",
   "gui.strife.panel.no_data": "等待服务端权威数据（登录后自动同步）",

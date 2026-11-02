@@ -31,6 +31,9 @@ import net.minecraft.nbt.CompoundTag;
  * @param pillRatio 四因子之一：丹药加成 {@code (1 + bonus)}
  * @param equippedTechnique 当前装备的功法内容 ID；空串 = 未装备（面板据此拼 {@code technique.strife.<id>}）
  * @param lifespanYears 剩余寿元年数；负数 = 换算率不可用
+ * @param heartDemonStacks 心魔层数（ADR-040）；0 = 无心魔。视图拉取式承载（不动 delta 位序契约），面板据此显示 debuff——
+ *     15%/层的修为折减不该是个看不见的数字。
+ * @param heartDemonSecondsLeft 心魔剩余秒数；无活跃心魔时 0。
  */
 public record StrifeRealmView(
         String realmId,
@@ -52,7 +55,9 @@ public record StrifeRealmView(
         double techniqueRatio,
         double pillRatio,
         String equippedTechnique,
-        long lifespanYears) {
+        long lifespanYears,
+        int heartDemonStacks,
+        long heartDemonSecondsLeft) {
 
     private static final String KEY_REALM_ID = "realm_id";
     private static final String KEY_REALM_ORDINAL = "realm_ordinal";
@@ -74,6 +79,8 @@ public record StrifeRealmView(
     private static final String KEY_PILL_RATIO = "pill_ratio";
     private static final String KEY_EQUIPPED_TECHNIQUE = "equipped_technique";
     private static final String KEY_LIFESPAN_YEARS = "lifespan_years";
+    private static final String KEY_HEART_DEMON_STACKS = "heart_demon_stacks";
+    private static final String KEY_HEART_DEMON_SECONDS = "heart_demon_seconds";
 
     public CompoundTag toTag() {
         CompoundTag tag = new CompoundTag();
@@ -97,6 +104,8 @@ public record StrifeRealmView(
         tag.putDouble(KEY_PILL_RATIO, pillRatio);
         tag.putString(KEY_EQUIPPED_TECHNIQUE, equippedTechnique);
         tag.putLong(KEY_LIFESPAN_YEARS, lifespanYears);
+        tag.putInt(KEY_HEART_DEMON_STACKS, heartDemonStacks);
+        tag.putLong(KEY_HEART_DEMON_SECONDS, heartDemonSecondsLeft);
         return tag;
     }
 
@@ -121,7 +130,9 @@ public record StrifeRealmView(
                 tag.getDouble(KEY_TECHNIQUE_RATIO),
                 tag.getDouble(KEY_PILL_RATIO),
                 tag.getString(KEY_EQUIPPED_TECHNIQUE),
-                tag.getLong(KEY_LIFESPAN_YEARS));
+                tag.getLong(KEY_LIFESPAN_YEARS),
+                tag.getInt(KEY_HEART_DEMON_STACKS),
+                tag.getLong(KEY_HEART_DEMON_SECONDS));
     }
 
     /** 修为是否已满（可押注的前置条件之一）。 */

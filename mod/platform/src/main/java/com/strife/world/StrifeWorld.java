@@ -58,6 +58,15 @@ public final class StrifeWorld {
                     Registries.DIMENSION,
                     ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, "upper_realm"));
 
+    /**
+     * EP2 秘境维度（ADR-036 ⑨）：数据包维度 {@code data/strife/dimension/miji_realm.json}（dimensions.csv 产出）。
+     * world 侧职责同上界——只引用 ID，注册归 core 治理体系；入口门禁在 RealmCommand（试炼旗）。
+     */
+    static final ResourceKey<Level> MIJI_REALM =
+            ResourceKey.create(
+                    Registries.DIMENSION,
+                    ResourceLocation.fromNamespaceAndPath(StrifeMod.MOD_ID, "miji_realm"));
+
     /** 场缓存：键 = 世界种子 + 维度 ID（换存档必须换场，否则新世界会沿用旧世界的灵气分布）。 */
     private static final Map<String, AmbientQiField> FIELDS = new ConcurrentHashMap<>();
 

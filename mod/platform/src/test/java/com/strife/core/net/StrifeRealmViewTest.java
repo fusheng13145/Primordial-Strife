@@ -34,7 +34,9 @@ class StrifeRealmViewTest {
                 1.15,
                 1.25,
                 "tech_qingxin_jue",
-                120L);
+                120L,
+                0,
+                0L);
     }
 
     @Test
@@ -42,6 +44,40 @@ class StrifeRealmViewTest {
         StrifeRealmView view = sample();
 
         assertEquals(view, StrifeRealmView.fromTag(view.toTag()));
+    }
+
+    /** ADR-040 心魔上屏：层数与剩余秒随视图往返（拉取式，不动 delta 契约）。 */
+    @Test
+    void heartDemonFieldsRoundTrip() {
+        StrifeRealmView base = sample();
+        StrifeRealmView withDemon =
+                new StrifeRealmView(
+                        base.realmId(),
+                        base.realmOrdinal(),
+                        base.stage(),
+                        base.stageCount(),
+                        base.qi(),
+                        base.qiMax(),
+                        base.finalRealm(),
+                        base.successRate(),
+                        base.attempts(),
+                        base.qiResetRatioMin(),
+                        base.qiResetRatioMax(),
+                        base.meditating(),
+                        base.cooldownSeconds(),
+                        base.qiPerSecond(),
+                        base.spiritrootRatio(),
+                        base.environmentRatio(),
+                        base.techniqueRatio(),
+                        base.pillRatio(),
+                        base.equippedTechnique(),
+                        base.lifespanYears(),
+                        2,
+                        425L);
+        StrifeRealmView decoded = StrifeRealmView.fromTag(withDemon.toTag());
+        assertEquals(2, decoded.heartDemonStacks());
+        assertEquals(425L, decoded.heartDemonSecondsLeft());
+        assertEquals(withDemon, decoded);
     }
 
     @Test
@@ -66,14 +102,14 @@ class StrifeRealmViewTest {
         StrifeRealmView full =
                 new StrifeRealmView(
                         "qili", 1, 9, 9, 230, 230, false, 0.9, 0, 0.6, 0.8, false, 0, 0.8, 1.20,
-                        1.45, 1.15, 1.25, "", 120L);
+                        1.45, 1.15, 1.25, "", 120L, 0, 0L);
         assertTrue(full.qiFull());
         assertTrue(full.canBreakthrough());
 
         StrifeRealmView finalRealm =
                 new StrifeRealmView(
                         "dujie", 8, 1, 1, 67000, 67000, true, 0.0, 0, 0.6, 0.8, false, 0, 20.5,
-                        1.40, 1.45, 1.0, 1.0, "", 12000L);
+                        1.40, 1.45, 1.0, 1.0, "", 12000L, 0, 0L);
         assertTrue(finalRealm.qiFull());
         assertFalse(finalRealm.canBreakthrough(), "最高境界没有下一境可去");
     }
@@ -84,7 +120,7 @@ class StrifeRealmViewTest {
         StrifeRealmView overCap =
                 new StrifeRealmView(
                         "qili", 1, 9, 9, 240, 230, false, 0.9, 0, 0.6, 0.8, false, 0, 0.8, 1.20,
-                        1.45, 1.0, 1.0, "", 120L);
+                        1.45, 1.0, 1.0, "", 120L, 0, 0L);
 
         assertTrue(overCap.qiFull());
         assertTrue(overCap.canBreakthrough());

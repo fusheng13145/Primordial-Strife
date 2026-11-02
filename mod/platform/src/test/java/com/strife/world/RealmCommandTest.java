@@ -35,6 +35,35 @@ class RealmCommandTest {
     }
 
     @Test
+    void mijiResolvesToTheStrifeMijiRealm() {
+        assertEquals(StrifeWorld.MIJI_REALM, RealmCommand.resolveTarget("miji"));
+        assertEquals(
+                ResourceLocation.fromNamespaceAndPath("strife", "miji_realm"),
+                RealmCommand.resolveTarget("miji").location());
+    }
+
+    /** 门禁旗与 quests_ep2.csv trial_entry 的奖励 flag 同源——漂移的表现是门禁永远拒绝（任务做完了也进不去）。 */
+    @Test
+    void trialGateFlagMatchesTheShippedQuestReward() {
+        var quests = com.strife.testing.ShippedProducts.ep2Quests().getAsJsonArray("quests");
+        boolean shipped = false;
+        for (var element : quests) {
+            var q = element.getAsJsonObject();
+            if ("quest_ep2_trial_entry_01".equals(q.get("id").getAsString())) {
+                for (var reward : q.getAsJsonArray("rewards")) {
+                    var r = reward.getAsJsonObject();
+                    if ("flag".equals(r.get("type").getAsString())
+                            && RealmCommand.TRIAL_ACCEPTED_FLAG.equals(r.get("id").getAsString())) {
+                        shipped = true;
+                    }
+                }
+            }
+        }
+        org.junit.jupiter.api.Assertions.assertTrue(
+                shipped, "trial_entry 奖励必须携带 RealmCommand.TRIAL_ACCEPTED_FLAG 同值 flag");
+    }
+
+    @Test
     void unknownNamesReturnNullForTheCallerToReport() {
         assertNull(RealmCommand.resolveTarget("nether"));
         assertNull(RealmCommand.resolveTarget(""));

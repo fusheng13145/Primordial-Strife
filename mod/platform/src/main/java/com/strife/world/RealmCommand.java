@@ -26,6 +26,9 @@ import net.minecraft.world.level.Level;
  */
 final class RealmCommand {
 
+    /** EP2 秘境门禁旗：quests_ep2.csv trial_entry 的奖励 flag（内容 ID 同源单点）。 */
+    static final String TRIAL_ACCEPTED_FLAG = "fac_yuelai:ep2:trial_accepted";
+
     private RealmCommand() {}
 
     /** 挂到 {@code /strife world} 下的子树（由 {@link StrifeWorld} 构造期注册进 core 的挂载点）。 */
@@ -37,7 +40,8 @@ final class RealmCommand {
                                 .then(Commands.literal("upper").executes(RealmCommand::goUpper))
                                 .then(
                                         Commands.literal("overworld")
-                                                .executes(RealmCommand::goOverworld)));
+                                                .executes(RealmCommand::goOverworld))
+                                .then(Commands.literal("miji").executes(RealmCommand::goMiji)));
     }
 
     private static int status(CommandContext<CommandSourceStack> context) {
@@ -47,7 +51,7 @@ final class RealmCommand {
                         Component.literal(
                                         "当前维度 "
                                                 + source.getLevel().dimension().location()
-                                                + "；可去：/strife world realm go upper|overworld")
+                                                + "；可去：/strife world realm go upper|overworld|miji")
                                 .withStyle(ChatFormatting.GOLD),
                 false);
         return 1;
@@ -59,6 +63,32 @@ final class RealmCommand {
 
     private static int goOverworld(CommandContext<CommandSourceStack> context) {
         return go(context, Level.OVERWORLD, "overworld");
+    }
+
+    /**
+     * EP2 秘境（ADR-036 ⑨ 收尾）：入口门禁——须已接过传承考验（quest_ep2_trial_entry_01 的奖励 flag）。 门禁查的是 core 附件里的任务
+     * flag，flag 字符串与 quests_ep2.csv 奖励同源，{@code RealmCommandTest} 钉两侧一致。
+     */
+    private static int goMiji(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player;
+        try {
+            player = source.getPlayerOrException();
+        } catch (Exception e) {
+            source.sendFailure(Component.literal("跨维度导航需要玩家执行"));
+            return 0;
+        }
+        boolean accepted =
+                player.getData(com.strife.core.StrifeAttachmentTypes.PLAYER_DATA)
+                        .quests()
+                        .hasFlag(TRIAL_ACCEPTED_FLAG);
+        if (!accepted) {
+            source.sendFailure(
+                    Component.literal("（玄尚未认可你——先到秘境入口寻秘境守护者接下传承考验）")
+                            .withStyle(ChatFormatting.YELLOW));
+            return 0;
+        }
+        return go(context, StrifeWorld.MIJI_REALM, "miji");
     }
 
     private static int go(
@@ -120,6 +150,7 @@ final class RealmCommand {
         return switch (name.toLowerCase(Locale.ROOT)) {
             case "upper" -> StrifeWorld.UPPER_REALM;
             case "overworld" -> Level.OVERWORLD;
+            case "miji" -> StrifeWorld.MIJI_REALM;
             default -> null;
         };
     }

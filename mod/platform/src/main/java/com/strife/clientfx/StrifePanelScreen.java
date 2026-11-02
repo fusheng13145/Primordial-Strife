@@ -164,6 +164,15 @@ public final class StrifePanelScreen extends Screen {
                             format(view.environmentRatio()),
                             format(view.techniqueRatio()),
                             format(view.pillRatio())));
+            // ADR-040 心魔上屏：debuff 活跃时在速率区下方显眼示警（层数 × 剩余秒），消散后自然消失
+            if (view.heartDemonStacks() > 0) {
+                lines.add(
+                        Component.translatable(
+                                        "gui.strife.panel.heart_demon",
+                                        view.heartDemonStacks(),
+                                        view.heartDemonSecondsLeft())
+                                .withStyle(net.minecraft.ChatFormatting.DARK_PURPLE));
+            }
             lines.add(
                     view.equippedTechnique().isEmpty()
                             ? Component.translatable("gui.strife.panel.technique_none")
