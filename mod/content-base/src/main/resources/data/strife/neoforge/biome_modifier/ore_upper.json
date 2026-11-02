@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "strife:upper_realm_biome",
+  "features": "strife:block_qi_crystal",
+  "step": "underground_ores"
+}

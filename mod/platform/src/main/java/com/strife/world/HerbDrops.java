@@ -38,7 +38,17 @@ public final class HerbDrops {
         }
         RandomSource random = level.random;
         BlockPos pos = event.getPos();
-        for (Map.Entry<String, Double> entry : tables.herbGrassDropProb().entrySet()) {
+        // 秘境灵草（ADR-036 ⑨ 产出钩子）：仅 miji_realm 的草丛追加秘境表——天元果等 secret_realm 产物的野外获取路径
+        if (level.dimension() == StrifeWorld.MIJI_REALM) {
+            dropFrom(tables.secretRealmHerbDropProb(), level, random, pos);
+        }
+        dropFrom(tables.herbGrassDropProb(), level, random, pos);
+    }
+
+    /** 单表逐键概率掉落（包内可见供用例覆盖形状；调用方已判服务端与草类）。 */
+    static void dropFrom(
+            Map<String, Double> probTable, ServerLevel level, RandomSource random, BlockPos pos) {
+        for (Map.Entry<String, Double> entry : probTable.entrySet()) {
             if (random.nextDouble() >= entry.getValue()) {
                 continue;
             }

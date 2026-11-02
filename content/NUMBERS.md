@@ -256,6 +256,7 @@ upper_qi_min: 1.50
 upper_qi_max: 3.00
 beast_loot_rolls: 3
 herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05, item_hanshi_cao: 0.03, item_zijin_hua: 0.03, item_baiyu_guo: 0.03, item_qingxin_lan: 0.03, item_yaodan: 0.01 }
+secret_realm_herb_drop_prob: { item_tianguo: 0.04, item_xuelian: 0.06, item_yaodan: 0.02 }   # 秘境灵草：仅 miji_realm 生效（mat_* source: secret_realm 的落地，[拟]）
 ```
 
 ## §24. 限速参数

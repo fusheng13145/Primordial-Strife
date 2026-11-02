@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:8c594e379632f5014e7f42d9a8f34b8b55cdf54826553eb73c41dd05fd743fe4",
+  "@generated": "from content/NUMBERS.md @ sha256:8e2fb0c5d0974bce02dee886a36a7ac362a8f35231133adbe99091c26ba54766",
   "id": "world_rules",
   "world": {
     "ambient_qi_min": 0.5,
@@ -22,6 +22,11 @@
     "item_baiyu_guo": 0.03,
     "item_qingxin_lan": 0.03,
     "item_yaodan": 0.01
+  },
+    "secret_realm_herb_drop_prob": {
+    "item_tianguo": 0.04,
+    "item_xuelian": 0.06,
+    "item_yaodan": 0.02
   }
   }
 }

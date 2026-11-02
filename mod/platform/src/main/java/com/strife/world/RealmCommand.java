@@ -122,6 +122,11 @@ final class RealmCommand {
             return 0;
         }
         BlockPos spawn = targetLevel.getSharedSpawnPos();
+        // 浮空岛 strife 维度（上界/秘境）：共享出生点悬空 = "进门即坠"。落地前检查脚下三格，
+        // 悬空则按原版末地平台先例铺 3×3 石台（原版 End Portal 落地平台的同款处理）。
+        if (target.equals(StrifeWorld.UPPER_REALM) || target.equals(StrifeWorld.MIJI_REALM)) {
+            ensureLandingPad(targetLevel, spawn);
+        }
         double x = spawn.getX() + 0.5;
         double y = spawn.getY();
         double z = spawn.getZ() + 0.5;
@@ -143,6 +148,26 @@ final class RealmCommand {
                                 .withStyle(ChatFormatting.GOLD),
                 false);
         return 1;
+    }
+
+    /** 落地平台：脚下两格全空即视为悬空，铺 3×3 圆石并清空站位两格。包内可见供用例钉"三格非空不铺"的保守口径—— 平台只在确定会摔的时候出现，不覆盖既有地形。 */
+    static void ensureLandingPad(net.minecraft.server.level.ServerLevel level, BlockPos spawn) {
+        boolean floating =
+                level.getBlockState(spawn.below()).isAir()
+                        && level.getBlockState(spawn.below(2)).isAir();
+        if (!floating) {
+            return;
+        }
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                BlockPos padPos = spawn.below().offset(dx, 0, dz);
+                if (level.getBlockState(padPos).isAir()) {
+                    level.setBlockAndUpdate(
+                            padPos,
+                            net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+                }
+            }
+        }
     }
 
     /** 导航名 → 维度 key（G-4 任务导航复用的维度 API）。未知名字返回 null，由调用方报错—— 包内可见以便用例不依赖服务器即可覆盖全部分支。 */

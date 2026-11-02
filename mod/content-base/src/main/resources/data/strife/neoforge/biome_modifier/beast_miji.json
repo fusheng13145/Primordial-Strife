@@ -1,0 +1,30 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "strife:miji_biome",
+  "spawners": [
+    {
+      "type": "strife:monster",
+      "weight": 40,
+      "minCount": 1,
+      "maxCount": 3
+    },
+    {
+      "type": "strife:wolf_beast",
+      "weight": 25,
+      "minCount": 2,
+      "maxCount": 3
+    },
+    {
+      "type": "strife:fire_fox",
+      "weight": 10,
+      "minCount": 1,
+      "maxCount": 2
+    },
+    {
+      "type": "strife:shadow_leopard",
+      "weight": 8,
+      "minCount": 1,
+      "maxCount": 1
+    }
+  ]
+}

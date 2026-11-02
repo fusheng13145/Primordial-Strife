@@ -27,6 +27,8 @@ public final class WorldTables {
     /** 草类方块的草药掉落概率：键 = 物品内容 ID 全名（strife:item_x），值 = 0–1 独立掷骰概率。 */
     private final Map<String, Double> herbGrassDropProb = new LinkedHashMap<>();
 
+    private final Map<String, Double> secretRealmHerbDropProb = new LinkedHashMap<>();
+
     private final Ambient ambient;
 
     /** 上界维度（strife:upper_realm，ADR-021）的灵气参数：浓度区间独立，region/refine 沿用人界。 */
@@ -63,6 +65,10 @@ public final class WorldTables {
         JsonObject herbs = world.getAsJsonObject("herb_grass_drop_prob");
         if (herbs != null) {
             herbGrassDropProb.putAll(parseHerbs(herbs));
+        }
+        JsonObject secretHerbs = world.getAsJsonObject("secret_realm_herb_drop_prob");
+        if (secretHerbs != null) {
+            this.secretRealmHerbDropProb.putAll(parseHerbs(secretHerbs));
         }
         this.ambient = parseAmbient(world);
         this.upperAmbient = parseUpperAmbient(world, this.ambient);
@@ -163,6 +169,14 @@ public final class WorldTables {
 
     public Map<String, Double> herbGrassDropProb() {
         return Map.copyOf(herbGrassDropProb);
+    }
+
+    /**
+     * 秘境灵草掉落表（NUMBERS @@world secret_realm_herb_drop_prob，[拟]）：仅 miji_realm 的草丛生效—— mat_* 表里 {@code
+     * source: secret_realm} 的落地口；天元果（epic）在此才有野外获取路径，智慧试炼靠它闭环。
+     */
+    public Map<String, Double> secretRealmHerbDropProb() {
+        return Map.copyOf(secretRealmHerbDropProb);
     }
 
     /** 灵气场参数（NUMBERS @@world）。 */
