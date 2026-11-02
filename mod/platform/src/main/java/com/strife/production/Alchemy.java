@@ -225,6 +225,21 @@ public final class Alchemy {
     }
 
     /** 一次炼制（服务端主线程；命令与未来炼制 UI 共用）。 */
+    /** 在背包中找火种物品；找到返回 ItemStack（可消耗），否则 null。 */
+    private static ItemStack findFireItem(
+            InventoryOps.PlayerContainers containers, String fireItemId) {
+        var item = InventoryOps.resolve(fireItemId).orElse(null);
+        if (item == null) return null;
+        if (InventoryOps.countOwned(containers, fireItemId) > 0) {
+            // 从主背包找
+            for (int i = 0; i < containers.main().getContainerSize(); i++) {
+                var stack = containers.main().getItem(i);
+                if (stack.getItem() == item && !stack.isEmpty()) return stack;
+            }
+        }
+        return null;
+    }
+
     public static void craft(ServerPlayer player, String pillId) {
         AlchemyRecipe recipe = RECIPES.get(pillId);
         if (recipe == null) {
@@ -266,15 +281,68 @@ public final class Alchemy {
             }
         }
 
+        // ── ADR-038：炉加成 + 异火消耗（EP1 丹药体系集成）──
+        var furnace = StrifeAlchemyBlocks.findNearbyStats(player);
+        double secondChance = furnace != null ? furnace.successBonus() : 0.0;
+        String furnaceName = furnace != null ? furnace.name() : null;
+
+        // 异火：从背包找火种，找到则消耗并取加成
+        String fireName = null;
+        double fireBonus = 0.0;
+        record FireDef(String itemId, String name, double bonus) {}
+        var fireItems =
+                java.util.List.of(
+                        new FireDef("item_fire_mu", "木灵火", 0.0),
+                        new FireDef("item_fire_dixin", "地心火", 0.03),
+                        new FireDef("item_fire_xuanbing", "玄冰焰", 0.0),
+                        new FireDef("item_fire_chiyan", "赤炎", 0.0),
+                        new FireDef("item_fire_jiuyou", "九幽冥火", 0.08),
+                        new FireDef("item_fire_taiyang", "太阳真火", 0.0));
+        for (var fire : fireItems) {
+            var fireStack = findFireItem(containers, fire.itemId());
+            if (fireStack != null) {
+                fireName = fire.name();
+                fireBonus = fire.bonus();
+                fireStack.shrink(1);
+                break;
+            }
+        }
+        double totalBonus = secondChance + fireBonus;
+
         // 概率抽签 → 发放或失败（失败损失材料）
         var output = recipe.roll(new Random()::nextInt);
+        if (output.isEmpty() && totalBonus > 0) {
+            // 炉/异火二次判定：加成率作为"第二把火"的成功率
+            var retry = new Random();
+            if (retry.nextInt(1000) < (int) (totalBonus * 1000)) {
+                output = recipe.roll(retry::nextInt);
+            }
+        }
         if (output.isEmpty()) {
+            // 废丹回收（紫金鼎/龙纹鼎）
+            if (furnace != null && furnace.wasteRecycle() > 0) {
+                var mat = recipe.materials().get(0);
+                InventoryOps.resolve(mat.itemId())
+                        .ifPresent(
+                                item ->
+                                        player.getInventory()
+                                                .add(
+                                                        new ItemStack(
+                                                                item,
+                                                                Math.min(
+                                                                        furnace.wasteRecycle(),
+                                                                        mat.count()))));
+            }
+            String wasteMsg = "丹火失控——药材已毁，这一炉没有成丹。";
+            if (furnaceName != null) wasteMsg += "（" + furnaceName + "回收了部分材料）";
             player.displayClientMessage(
-                    Component.literal("丹火失控——药材已毁，这一炉没有成丹。")
-                            .withStyle(net.minecraft.ChatFormatting.DARK_RED),
+                    Component.literal(wasteMsg).withStyle(net.minecraft.ChatFormatting.DARK_RED),
                     false);
             return;
         }
+        String bonusMsg = "";
+        if (furnaceName != null) bonusMsg += " · " + furnaceName;
+        if (fireName != null) bonusMsg += " · " + fireName;
         AlchemyRecipe.Output out = output.get();
         InventoryOps.resolve(out.itemId())
                 .ifPresentOrElse(

@@ -43,6 +43,15 @@ public final class StrifeItems {
     public static final DeferredHolder<Item, Item> GUIDE_INTRO =
             ITEMS.register("item_guide_intro", GuideItem::new);
 
+    /** 异火（EP1，ADR-038 §17.4）：炼丹火种，消耗品。7 种火各有品质偏置与五行亲和。 */
+    public static final DeferredHolder<Item, Item> FIRE_MU = register("item_fire_mu");
+
+    public static final DeferredHolder<Item, Item> FIRE_DIXIN = register("item_fire_dixin");
+    public static final DeferredHolder<Item, Item> FIRE_XUANBING = register("item_fire_xuanbing");
+    public static final DeferredHolder<Item, Item> FIRE_CHIYAN = register("item_fire_chiyan");
+    public static final DeferredHolder<Item, Item> FIRE_JIUYOU = register("item_fire_jiuyou");
+    public static final DeferredHolder<Item, Item> FIRE_TAIYANG = register("item_fire_taiyang");
+
     private static DeferredHolder<Item, Item> register(String name) {
         return ITEMS.register(name, () -> new Item(new Item.Properties()));
     }

@@ -90,5 +90,31 @@ public final class StrifeAlchemyBlocks {
         return null;
     }
 
+    /**
+     * 附近炉的铸造参数（从 furnaces.csv 产物解析）。返回 null = 没有炉。 v1 简化：参数硬编码自 NUMBERS 定稿值（ADR-038
+     * §17.3），方块实体化后从产物读。
+     */
+    public static AlchemyFurnace findNearbyStats(Player player) {
+        String furnaceId = findNearby(player);
+        if (furnaceId == null) {
+            return null;
+        }
+        return switch (furnaceId) {
+            case "furnace_shi" -> new AlchemyFurnace("青石炉", 0.00, "di", 0, 0.00);
+            case "furnace_tie" -> new AlchemyFurnace("玄铁炉", 0.05, "tian", 0, 0.00);
+            case "furnace_zijin" -> new AlchemyFurnace("紫金鼎", 0.10, "tian", 1, 0.00);
+            case "furnace_long" -> new AlchemyFurnace("龙纹鼎", 0.20, "tian", 2, 0.10);
+            default -> null;
+        };
+    }
+
+    /** 炼丹炉铸造参数（NUMBERS §17.3 定稿值）。 */
+    public record AlchemyFurnace(
+            String name,
+            double successBonus,
+            String qualityCap,
+            int wasteRecycle,
+            double doubleOutput) {}
+
     private StrifeAlchemyBlocks() {}
 }

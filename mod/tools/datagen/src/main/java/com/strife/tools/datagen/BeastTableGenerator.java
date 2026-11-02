@@ -30,6 +30,9 @@ public final class BeastTableGenerator implements TableGenerator {
         fields.put("id", "beasts");
         fields.put("entries", entries);
         return List.of(
-                new Product("data/strife/strife_alchemy/beasts.json", fields, source.generatedHeader()));
+                new Product(
+                        "data/strife/strife_alchemy/beasts.json",
+                        fields,
+                        source.generatedHeader()));
     }
 }
