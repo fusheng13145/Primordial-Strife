@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:0bb810605388d09116fdf30db554650897b5c2fa255f956bb42784911ea26c98",
+  "@generated": "from content/NUMBERS.md @ sha256:8c594e379632f5014e7f42d9a8f34b8b55cdf54826553eb73c41dd05fd743fe4",
   "id": "world_rules",
   "world": {
     "ambient_qi_min": 0.5,
@@ -16,7 +16,12 @@
     "beast_loot_rolls": 3,
     "herb_grass_drop_prob": {
     "item_ningxu": 0.12,
-    "item_duanxue": 0.05
+    "item_duanxue": 0.05,
+    "item_hanshi_cao": 0.03,
+    "item_zijin_hua": 0.03,
+    "item_baiyu_guo": 0.03,
+    "item_qingxin_lan": 0.03,
+    "item_yaodan": 0.01
   }
   }
 }

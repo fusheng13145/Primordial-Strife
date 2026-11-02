@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 
@@ -222,6 +223,8 @@ public final class CultivationHandler {
             }
             RealmEvents.postBreakthrough(
                     player, realm.breakthroughKey(), false, data.breakthroughAttempts() + 1);
+            // ADR-040：心魔触发（突破失败 → 概率入体，叠层上限由 NUMBERS 控制）。
+            triggerHeartDemon(player, random);
         }
         RealmViewBuilder.pushTo(player);
     }
@@ -396,6 +399,42 @@ public final class CultivationHandler {
 
     private static String secondsOf(long ticks) {
         return Long.toString(Math.max(0L, ticks) / StrifeTime.TICKS_PER_SECOND);
+    }
+
+    /**
+     * ADR-040 心魔触发：突破失败后按概率入体。独立附件（StrifeAttachmentTypes.HEART_DEMON）， 规则从 rules.json @@heart_demon
+     * 块读取。触发后修为速率按层数递减，洗尘丹可清。
+     */
+    private static void triggerHeartDemon(ServerPlayer player, RandomSource random) {
+        try {
+            var res =
+                    player.getServer()
+                            .getResourceManager()
+                            .getResource(
+                                    ResourceLocation.fromNamespaceAndPath(
+                                            "strife", "strife_realms/rules.json"));
+            if (res.isEmpty()) return;
+            com.google.gson.JsonObject rules;
+            try (var reader =
+                    new java.io.InputStreamReader(
+                            res.get().open(), java.nio.charset.StandardCharsets.UTF_8)) {
+                rules = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
+            }
+            com.google.gson.JsonObject hd = rules.getAsJsonObject("heart_demon");
+            if (hd == null) return;
+            double chance = hd.get("trigger_chance").getAsDouble();
+            if (random.nextDouble() >= chance) return;
+            int maxStacks = hd.get("max_stacks").getAsInt();
+            long durationTicks =
+                    (long) (hd.get("duration_sec").getAsDouble() * StrifeTime.TICKS_PER_SECOND);
+            var demon = player.getData(StrifeAttachmentTypes.HEART_DEMON);
+            var updated = demon.trigger(player.level().getGameTime(), durationTicks, maxStacks);
+            player.setData(StrifeAttachmentTypes.HEART_DEMON, updated);
+            player.displayClientMessage(
+                    Component.literal("✦ 心魔入体——修为速率下降（" + updated.stacks() + " 层）"), true);
+        } catch (Exception ignored) {
+            // 心魔是锦上添花的 debuff，读取失败静默跳过
+        }
     }
 
     /** 只改寿元（core 的 wither 替代手拼 13 个字段——漏一个字段是这类构造最常见的错法）。 */

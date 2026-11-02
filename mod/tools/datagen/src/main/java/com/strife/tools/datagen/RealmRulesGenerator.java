@@ -28,7 +28,8 @@ public final class RealmRulesGenerator implements NumbersGenerator {
                     "lifespan",
                     "sect",
                     "seclusion",
-                    "shenshi");
+                    "shenshi",
+                    "heart_demon");
 
     @Override
     public List<Product> generate(NumbersSource numbers) {

@@ -255,7 +255,7 @@ ore_drop_weights: { common: 70, rare: 25, spirit: 5 }
 upper_qi_min: 1.50
 upper_qi_max: 3.00
 beast_loot_rolls: 3
-herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }
+herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05, item_hanshi_cao: 0.03, item_zijin_hua: 0.03, item_baiyu_guo: 0.03, item_qingxin_lan: 0.03, item_yaodan: 0.01 }
 ```
 
 ## §24. 限速参数

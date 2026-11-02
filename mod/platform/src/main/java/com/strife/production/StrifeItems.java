@@ -32,6 +32,19 @@ public final class StrifeItems {
     public static final DeferredHolder<Item, Item> YAOCAI = register("item_yaocai");
     public static final DeferredHolder<Item, Item> XUANYU = register("item_xuanyu");
 
+    // ── EP1 炼丹材料（ADR-038 丹药体系）──
+    public static final DeferredHolder<Item, Item> HANSHI_CAO = register("item_hanshi_cao");
+    public static final DeferredHolder<Item, Item> ZIJIN_HUA = register("item_zijin_hua");
+    public static final DeferredHolder<Item, Item> BAIYU_GUO = register("item_baiyu_guo");
+    public static final DeferredHolder<Item, Item> QINGXIN_LAN = register("item_qingxin_lan");
+    public static final DeferredHolder<Item, Item> XUELIAN = register("item_xuelian");
+    public static final DeferredHolder<Item, Item> YAODAN = register("item_yaodan");
+    public static final DeferredHolder<Item, Item> XUANTIE = register("item_xuantie");
+    public static final DeferredHolder<Item, Item> WUSE_SHI = register("item_wuse_shi");
+    public static final DeferredHolder<Item, Item> TIANGUO = register("item_tianguo");
+    public static final DeferredHolder<Item, Item> LONGXUE = register("item_longxue");
+    public static final DeferredHolder<Item, Item> FENGXUE = register("item_fengxue");
+
     /** 丹方产物 pill_* 对应的可服用品（右键服用，行为在 {@link StrifePills}）。 */
     public static final DeferredHolder<Item, Item> PILL_JUQI = registerPill("pill_juqi");
 

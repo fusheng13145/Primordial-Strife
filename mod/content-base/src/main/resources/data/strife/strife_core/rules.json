@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:0bb810605388d09116fdf30db554650897b5c2fa255f956bb42784911ea26c98",
+  "@generated": "from content/NUMBERS.md @ sha256:8c594e379632f5014e7f42d9a8f34b8b55cdf54826553eb73c41dd05fd743fe4",
   "id": "core_rules",
   "limits": {
     "growth_ratio_min": 1.8,
