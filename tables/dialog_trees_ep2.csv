@@ -1,0 +1,2 @@
+id,npc,root,nodes,effects,max_depth_levels,_note
+dlg_ep2_trial,npc_miji_guardian,nd_miji_welcome,id=nd_miji_welcome;speaker=秘境守护者·玄;text_key=dialog.strife.nd_miji_welcome;options=((text_key=dialog.strife.nd_miji_welcome_opt1;next=nd_miji_trial)|(text_key=dialog.strife.nd_miji_welcome_opt2;next=nd_miki_bye))|id=nd_miji_trial;speaker=秘境守护者·玄;text_key=dialog.strife.nd_miji_trial;options=((text_key=dialog.strife.nd_miji_trial_opt1;next=nd_miki_bye))|id=nd_miki_bye;speaker=秘境守护者·玄;text_key=dialog.strife.nd_miki_bye,,8,EP2 传承考验引导

@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/places.csv @ sha256:197b923c1b535bc45bdbdb2f79efd783de0a568ed41eee0cb905fd3b2e6a7d8d",
+  "@generated": "from tables/places.csv @ sha256:1e161cc209d4005345b6b8a555c2e73c083ba03f711f85a98f23650ffb933ab0",
   "id": "qi_wenjiang",
   "dimension": "minecraft:overworld",
   "name": "文津渡",

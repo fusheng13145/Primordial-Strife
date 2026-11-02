@@ -164,233 +164,179 @@ beast_attack: 3.0  # 妖兽基础攻击伤害
 beast_speed: 0.30  # 妖兽移动速度
 beast_follow_range: 16.0  # 妖兽索敌/追击半径（格）
 
+```
 # —— 妖兽种类（EP1，ADR-039；值 2026-11-02 定值，随实机批校准）——
 @@beasts
 ```yaml
-wolf:
-  name: 野狼
-  health: 15.0
-  attack: 3.0
-  speed: 0.38
-  follow_range: 20.0
-  xp: 5
-rock:
-  name: 岩甲兽
-  health: 40.0
-  attack: 4.0
-  speed: 0.18
-  follow_range: 12.0
-  xp: 10
-fire_fox:
-  name: 炎狐
-  health: 12.0
-  attack: 5.0
-  speed: 0.42
-  follow_range: 24.0
-  xp: 8
-ice_serpent:
-  name: 寒蛟
-  health: 25.0
-  attack: 4.0
-  speed: 0.22
-  follow_range: 16.0
-  xp: 10
-shadow_leopard:
-  name: 暗影豹
-  health: 18.0
-  attack: 6.0
-  speed: 0.45
-  follow_range: 28.0
-  xp: 15
-treant:
-  name: 古树妖
-  health: 50.0
-  attack: 3.0
-  speed: 0.08
-  follow_range: 10.0
-  xp: 20
+beast_wolf_health: 15.0
+beast_wolf_attack: 3.0
+beast_wolf_speed: 0.38
+beast_wolf_follow_range: 20.0
+beast_wolf_xp: 5
+beast_rock_health: 40.0
+beast_rock_attack: 4.0
+beast_rock_speed: 0.18
+beast_rock_follow_range: 12.0
+beast_rock_xp: 10
+beast_fire_fox_health: 12.0
+beast_fire_fox_attack: 5.0
+beast_fire_fox_speed: 0.42
+beast_fire_fox_follow_range: 24.0
+beast_fire_fox_xp: 8
+beast_ice_serpent_health: 25.0
+beast_ice_serpent_attack: 4.0
+beast_ice_serpent_speed: 0.22
+beast_ice_serpent_follow_range: 16.0
+beast_ice_serpent_xp: 10
+beast_shadow_leopard_health: 18.0
+beast_shadow_leopard_attack: 6.0
+beast_shadow_leopard_speed: 0.45
+beast_shadow_leopard_follow_range: 28.0
+beast_shadow_leopard_xp: 15
+beast_treant_health: 50.0
+beast_treant_attack: 3.0
+beast_treant_speed: 0.08
+beast_treant_follow_range: 10.0
+beast_treant_xp: 20
 ```
-# —— 法宝副手属性加成（P1-01；副手装备法宝时按品阶生效，卸下即撤——2026-11-01 定值，随实机批校准 ADR-031 ③）——
-artifact_bonus_fan:  { attack_pct: 0.05, health_flat: 0.0 }  # 凡品（法器）
-artifact_bonus_di:   { attack_pct: 0.10, health_flat: 1.0 }  # 地品（法宝）
-artifact_bonus_tian: { attack_pct: 0.20, health_flat: 2.0 }  # 天品（灵宝）
-# —— 法器分级（EP1，ADR-036；品阶 → 四阶映射与阶位倍率，仙器 EP4 前不可达）——
-tier_of_fan: fa      # 凡品 → 法器
-tier_of_di: fa_bao   # 地品 → 法宝
-tier_of_tian: ling_bao  # 天品 → 灵宝
-tier_multiplier: { fa: 1.0, fa_bao: 1.5, ling_bao: 2.0, xian_qi: 3.0 }  # 阶位属性倍率（乘 artifact_bonus_*）
-```
-
-## 9. 世界与掉落（M4 / 04 分册 §2）
-
-@@world
-```yaml
-ambient_qi_min: 0.50  # 环境系数下限（绝不为 0，避免"零成长无可解释"）
-ambient_qi_max: 2.00  # 上限（灵脉/宗门核心区）
-ambient_region_chunks: 16  # 灵气场粗粒度：16×16 区块一值（03 §6 的"区域粗粒度缓存"），细化层在其上加局部差异
-ambient_refine_weight: 0.25  # 细化层权重：局部差异占最终环境系数的比例（0 = 完全粗粒度，1 = 只看局部）
-ore_drop_weights: { common: 70, rare: 25, spirit: 5 }  # 矿石品质权重（和 = 100）
-upper_qi_min: 1.50  # 上界维度（strife:upper_realm）环境系数下限——灵气浓度整体高于人界（人界 0.50–2.00），ADR-021 授权后实现；数值待本人复核
-upper_qi_max: 3.00  # 上界维度环境系数上限
-beast_loot_rolls: 3  # 妖兽掉落表默认 roll 次数
-herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }  # 草丛采集 MVP：破坏草类方块时各草药独立掷此概率（序章 #3/#8 的采集来源；键 = 物品内容 ID 全名；2026-11-01 定稿）
-```
-
-## 10. 限速参数（03 分册 §4 表内基线；运行时真值以本块为准）
-
-@@rate_limits
-```yaml
-cast_per_sec: 5      # [锚] 施法意图
-sit_per_sec: 2       # [锚] 打坐起止
-quest_per_sec: 2     # [锚] 任务交互/交付
-artifact_per_sec: 5  # [锚] 法宝主动使用
-breakthrough_per_min: 6  # 突破请求（防连点刷 fail_step）
-panel_per_sec: 4  # 面板视图拉取（03 §5 拉取式：C2S 请求 → S2C 视图包）
-```
-
-## 11. 坊市（EP1，ADR-032；值 2026-11-01 定值，随实机批/Beta 周更校准）
-
-@@market
-```yaml
-tier_zhong: 10   # 中品灵石 = 下品 ×10（兑换命令用，服务端权威）
-tier_shang: 100  # 上品灵石 = 下品 ×100
-appraise_cost: 5  # 鉴定阁：每件未鉴定品的手续费（下品灵石）
-```
-
-## 12. 定稿记录
-
-- 2026-11-01 按 `deliverables/真相源定稿决策表-2026-11-01.md` 建议值批量定稿（ADR-031 ②授权）：N1–N11 采纳现值；保留项 = 大限键名与实现修正捆绑禁区批（Z2）、`@@artifact/@@pvp/@@companion` 值随实机批校准（ADR-031 ③）。
-- `@@limits` 的 S2C 预算 `[锚]` 与 03 §5/§6 一致；`@@downgrade` 段待建（ADR-026 ①），建段时同步本文件与 `DashengMath` 修正批。
-
-## 13. 宗门职级（EP1，ADR-032；值 2026-11-01 定值，随实机批校准）
-
-@@sect
-```yaml
-rank_neimen: 30   # 内门：对所属势力声望 ≥30
-rank_zhenchuan: 60  # 真传：对所属势力声望 ≥60（低于内门线为外门，无所属=散修）
-```
-
-## 14. 符箓与保命道具（EP1，ADR-035；值 2026-11-01 定值，随实机批校准）
-
-@@talisman
-```yaml
-substitute_health: 1.0   # 替身草人触发后保留的生命（半颗心）
-escape_cooldown_sec: 30  # 遁符使用冷却（秒）
-escape_place: qi_fangshi  # 遁符落点（地点内容 ID——"遁回坊市"；经 core 只读桥解析）
-```
-
-## 15. 闭关时间跳变（EP1，ADR-034；值 2026-11-01 定值，随实机批校准）
+## 19. 闭关（EP1，ADR-034）
 
 @@seclusion
 ```yaml
-shichen_ticks: 12000   # 1 时辰 = 现实 10 分钟等值刻数（结算粒度）
-max_shichen: 12        # 单次闭关上限（12 时辰 = 6 修行年寿元代价）
-safety_radius: 8       # 入定安全半径：格内存在敌对生物即拒入
+shichen_ticks: 12000
+max_shichen: 12
+safety_radius: 8
 ```
 
-## 16. 拍卖行（EP1，ADR-037 ①；值 2026-11-02 定值，随实机批校准）
+## 20. 符箓（EP1，ADR-035）
+
+@@talisman
+```yaml
+substitute_health: 1.0
+escape_cooldown_sec: 30
+escape_place: qi_fangshi
+```
+
+## 21. 拍卖行（EP1，ADR-037 ①）
 
 @@auction
 ```yaml
-slot_shichen: 2   # 每件拍品的轮换时长（2 时辰 = 4 现实分钟等值；价格确定性推导自游戏时间）
+slot_shichen: 2
 ```
 
-## 17. 丹药体系（EP1 百艺·专项设计，ADR-038；值 2026-11-02 定值，随实机批校准）
-
-### 17.1 设计原则
-
-丹药不是"吃蓝瓶"——每种丹有**主效**与**代价**（副作用/限制/依赖），让炼丹师在配方选择时
-做有意义的取舍，而不是无脑堆最强丹。三层结构：
-
-- **丹药**（效果）：作用于玩家属性/状态，有时长与衰减；
-- **丹方**（配方）：决定材料消耗与产出概率分布（含废丹）；
-- **器具与火**（ modifiers）：炉改变成功率与品质上限，火改变品质偏置与容差。
-
-### 17.2 丹药效果（按分类）
-
-@@alchemy_pills
-```yaml
-# 修炼辅助
-pill_juqi:     { qi_rate_bonus: 0.25, duration_sec: 300, repeat_step: 0.05, repeat_floor: 0.10 }
-pill_peiyuan:  { qi_rate_bonus: 0.60, duration_sec: 120, repeat_step: 0.10, repeat_floor: 0.20 }
-pill_xuanyu:   { qi_rate_bonus: 0.50, duration_sec: 180, repeat_step: 0.08, repeat_floor: 0.15 }
-pill_ningshen: { sense_regen_bonus: 2, duration_sec: 180 }            # 凝神丹：神识恢复加速
-pill_xisui:    { spiritroot_upgrade: 1 }                              # 洗髓丹：灵根品阶 +1（一次性，上限 tier1）
-# 疗伤
-pill_huichun:  { heal_health: 10.0 }                                 # 回春丹：即时回血
-pill_liaoshang: { heal_health: 6.0, clear_debuff: true }             # 疗伤丹：回血+清负面
-# 突破辅助
-pill_pojing:   { breakthrough_bonus: 0.10 }                          # 破境丹：下次突破成功率 +10%（一次性）
-pill_wenyuan:  { fail_keep_ratio_bonus: 0.10 }                       # 稳元丹：失败回退比率 +10%（一次性）
-# 战斗（有时长，互斥：同类同时只生效一个）
-pill_baoxue:   { attack_flat: 4.0, defense_flat: -2.0, duration_sec: 120 }  # 暴血丹：攻+4 防-2
-pill_jingang:  { defense_flat: 4.0, attack_flat: -1.0, duration_sec: 120 }  # 金刚丹：防+4 攻-1
-pill_jifeng:   { speed_flat: 0.03, duration_sec: 90 }                # 疾风丹：移速 +0.03
-# 毒/解
-pill_jiedu:    { clear_poison: true }                                # 解毒丹
-# 特殊
-pill_wugou:    { clear_causality: 1 }                                # 洗尘丹：清 1 笔因果标记
-```
-
-### 17.3 炼丹炉（furnace）
-
-@@alchemy_furnaces
-```yaml
-furnace_shi:    { name: 青石炉, success_bonus: 0.00, quality_cap: di,   waste_recycle: 0 }   # 基础
-furnace_tie:    { name: 玄铁炉, success_bonus: 0.05, quality_cap: tian, waste_recycle: 0 }   # 中阶
-furnace_zijin:  { name: 紫金鼎, success_bonus: 0.10, quality_cap: tian, waste_recycle: 1 }   # 高阶：废丹回收 1 材料
-furnace_long:   { name: 龙纹鼎, success_bonus: 0.20, quality_cap: tian, waste_recycle: 2, double_output: 0.10 }  # 传说：10% 双产
-```
-
-### 17.4 异火（fires）
-
-@@alchemy_fires
-```yaml
-fire_normal:    { name: 凡火,     tolerance: 0.00, quality_shift: 0.00, affinity: none }       # 默认
-fire_mu:        { name: 木灵火,   tolerance: 0.05, quality_shift: 0.00, affinity: mu }          # 木系亲和
-fire_dixin:     { name: 地心火,   tolerance: 0.00, quality_shift: 0.00, affinity: tu,  success_bonus: 0.03 }
-fire_xuanbing:  { name: 玄冰焰,   tolerance: 0.00, quality_shift: 0.00, affinity: shui, waste_reduce: 0.05 }
-fire_chiyian:   { name: 赤炎,     tolerance: 0.00, quality_shift: 0.05, affinity: huo }          # 品质+5%
-fire_jiuyou:    { name: 九幽冥火, tolerance: 0.03, quality_shift: 0.03, affinity: none, success_bonus: 0.08 }
-fire_taiyang:   { name: 太阳真火, tolerance: 0.05, quality_shift: 0.10, affinity: none }          # 传说：品质+10%
-```
-
-### 17.5 天材地宝（materials）
-
-@@alchemy_materials
-```yaml
-# 灵药（herb）：采集/种植获取，对应五行
-mat_ningxu:      { name: 凝须草,   element: mu,   rarity: common,   source: gather }
-mat_yuejian:     { name: 月见草,   element: huo,  rarity: common,   source: gather }
-mat_hanshi_cao:  { name: 寒石草,   element: shui, rarity: uncommon, source: gather }
-mat_zijin_hua:   { name: 紫金花,   element: huo,  rarity: uncommon, source: gather }
-mat_baiyu_guo:   { name: 白玉果,   element: tu,   rarity: uncommon, source: gather }
-mat_qingxin_lan: { name: 青心兰,   element: mu,   rarity: uncommon, source: farm }     # 灵田种植
-mat_xuelian:     { name: 天山雪莲, element: shui, rarity: rare,     source: secret_realm }
-# 矿石/兽核
-mat_yaodan:      { name: 妖丹,     element: none, rarity: uncommon, source: drop }     # 妖兽内丹
-mat_xuantie:     { name: 玄铁,     element: jin,  rarity: common,   source: mine }
-mat_wuse_shi:    { name: 五色石,   element: none, rarity: rare,     source: mine }     # 五行合一
-mat_duanxue:     { name: 断血,     element: none, rarity: common,   source: drop }
-# 天材地宝（treasure）
-mat_tianguo:     { name: 天元果,   element: none, rarity: epic,     source: secret_realm }  # 直接增修为
-mat_longxue:     { name: 龙血草,   element: huo,  rarity: epic,     source: secret_realm }
-mat_fengxue:     { name: 凤血,     element: huo,  rarity: epic,     source: secret_realm }
-```
-
-### 17.6 品质偏置机制
-
-异火的 quality_shift 不是直接改概率——它是把产出概率从低品质段向高品质段<b>平移</b>：
-shift 0.05 = 每个低品段的 5% 概率转移到紧邻的高品段。如果丹方只有一个输出，shift 无效。
-这一设计使异火改变品质分布而不改变成败——成败由炉与材料稀有度控制。
-
-## 18. 神识（EP1，ADR-036 ⑦；值 2026-11-02 定值，随实机批校准）
+## 22. 神识（EP1，ADR-036 ⑦）
 
 @@shenshi
 ```yaml
-max_base: 10           # 凡人基础神识上限
-max_per_ordinal: 5     # 每境界 +5（练气=15, 筑基=20, 金丹=25 ...）
-regen_per_minute: 1    # 自然恢复：每现实分钟 +1
-sense_cost: 3          # /strife sense 消耗
-sense_radius: 24       # 探查半径（格）
+max_base: 10
+max_per_ordinal: 5
+regen_per_minute: 1
+sense_cost: 3
+sense_radius: 24
+```
+
+## §23. 世界与掉落
+
+@@world
+```yaml
+ambient_qi_min: 0.50
+ambient_qi_max: 2.00
+ambient_region_chunks: 16
+ambient_refine_weight: 0.25
+ore_drop_weights: { common: 70, rare: 25, spirit: 5 }
+upper_qi_min: 1.50
+upper_qi_max: 3.00
+beast_loot_rolls: 3
+herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05 }
+```
+
+## §24. 限速参数
+
+@@rate_limits
+```yaml
+cast_per_sec: 5
+sit_per_sec: 2
+quest_per_sec: 2
+artifact_per_sec: 5
+breakthrough_per_min: 6
+panel_per_sec: 4
+```
+
+## §25. 坊市
+
+@@market
+```yaml
+tier_zhong: 10
+tier_shang: 100
+appraise_cost: 5
+```
+
+## §26. 丹药体系数值
+
+@@alchemy_pills
+```yaml
+pill_ningshen: { sense_regen_bonus: 2 }
+pill_huichun: { heal_health: 10.0 }
+pill_liaoshang: { heal_health: 6.0, clear_debuff: true }
+pill_baoxue: { attack_flat: 4.0, defense_flat: -2.0, duration_sec: 120 }
+pill_jingang: { defense_flat: 4.0, attack_flat: -1.0, duration_sec: 120 }
+pill_jifeng: { speed_flat: 0.03, duration_sec: 90 }
+pill_jiedu: { clear_poison: true }
+pill_pojing: { breakthrough_bonus: 0.10 }
+pill_wenyuan: { fail_keep_ratio_bonus: 0.10 }
+pill_wugou: { clear_causality: 1 }
+pill_xisui: { spiritroot_upgrade: 1 }
+```
+
+## §27. 炼丹炉
+
+@@alchemy_furnaces
+```yaml
+furnace_shi: { success_bonus: 0.00, quality_cap: di, waste_recycle: 0, double_output: 0.00 }
+furnace_tie: { success_bonus: 0.05, quality_cap: tian, waste_recycle: 0, double_output: 0.00 }
+furnace_zijin: { success_bonus: 0.10, quality_cap: tian, waste_recycle: 1, double_output: 0.00 }
+furnace_long: { success_bonus: 0.20, quality_cap: tian, waste_recycle: 2, double_output: 0.10 }
+```
+
+## §28. 异火
+
+@@alchemy_fires
+```yaml
+fire_normal: { tolerance: 0.00, quality_shift: 0.00, affinity: none, success_bonus: 0.00, waste_reduce: 0.00 }
+fire_mu: { tolerance: 0.05, quality_shift: 0.00, affinity: mu, success_bonus: 0.00, waste_reduce: 0.00 }
+fire_dixin: { tolerance: 0.00, quality_shift: 0.00, affinity: tu, success_bonus: 0.03, waste_reduce: 0.00 }
+fire_xuanbing: { tolerance: 0.00, quality_shift: 0.00, affinity: shui, success_bonus: 0.00, waste_reduce: 0.05 }
+fire_chiyan: { tolerance: 0.00, quality_shift: 0.05, affinity: huo, success_bonus: 0.00, waste_reduce: 0.00 }
+fire_jiuyou: { tolerance: 0.03, quality_shift: 0.03, affinity: none, success_bonus: 0.08, waste_reduce: 0.00 }
+fire_taiyang: { tolerance: 0.05, quality_shift: 0.10, affinity: none, success_bonus: 0.00, waste_reduce: 0.00 }
+```
+
+## §29. 炼丹材料
+
+@@alchemy_materials
+```yaml
+mat_ningxu: { element: mu, rarity: common, source: gather }
+mat_yuejian: { element: huo, rarity: common, source: gather }
+mat_duanxue: { element: none, rarity: common, source: drop }
+mat_lingshi: { element: none, rarity: common, source: mine }
+mat_xuanyu: { element: none, rarity: common, source: craft }
+mat_hanshi_cao: { element: shui, rarity: uncommon, source: gather }
+mat_zijin_hua: { element: huo, rarity: uncommon, source: gather }
+mat_baiyu_guo: { element: tu, rarity: uncommon, source: gather }
+mat_qingxin_lan: { element: mu, rarity: uncommon, source: farm }
+mat_xuelian: { element: shui, rarity: rare, source: secret_realm }
+mat_yaodan: { element: none, rarity: uncommon, source: drop }
+mat_xuantie: { element: jin, rarity: common, source: mine }
+mat_wuse_shi: { element: none, rarity: rare, source: mine }
+mat_tianguo: { element: none, rarity: epic, source: secret_realm }
+mat_longxue: { element: huo, rarity: epic, source: secret_realm }
+mat_fengxue: { element: huo, rarity: epic, source: secret_realm }
+```
+
+## §30. 宗门职级
+
+@@sect
+```yaml
+rank_neimen: 30
+rank_zhenchuan: 60
 ```

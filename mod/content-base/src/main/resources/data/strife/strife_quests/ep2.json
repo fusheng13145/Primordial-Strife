@@ -1,0 +1,240 @@
+{
+  "@generated": "from tables/quests_ep2.csv @ sha256:355a4f619510406a558bac792bf32740df5505017d45525f46f93b53e40e1350",
+  "id": "quest_ep2_trial_entry_01",
+  "chapter": "ep2",
+  "quests": [
+    {
+    "id": "quest_ep2_trial_entry_01",
+    "entry": true,
+    "prerequisites": [],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_miji_guardian",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:trial_accepted",
+    "count": null,
+    "unlock_key": null
+  },
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 3,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 2
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep2_trial_courage_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep2_trial_entry_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "kill",
+    "target": "",
+    "count": 8,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 8,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:trial_courage",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 3
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep2_trial_wisdom_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep2_trial_courage_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "collect",
+    "target": "item_tianguo",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 12,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:trial_wisdom",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 3
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep2_trial_will_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep2_trial_wisdom_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "survive",
+    "target": "",
+    "count": 120,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 15,
+    "unlock_key": null
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:trial_will",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 5
+  }
+  ],
+    "causality": [
+    {
+    "kind": "debt",
+    "subject_id": "npc_miji_guardian",
+    "note_key": "ep2_trial_will"
+  }
+  ],
+    "timer": {
+    "sec": 120,
+    "fail_goto": "quest_ep2_trial_will_01"
+  },
+    "fail_goto": "quest_ep2_trial_will_01",
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  },
+    {
+    "id": "quest_ep2_trial_complete_01",
+    "entry": false,
+    "prerequisites": [
+    "quest_ep2_trial_will_01"
+  ],
+    "objectives": [
+    {
+    "id": "1",
+    "type": "talk",
+    "target": "npc_miji_guardian",
+    "count": 1,
+    "optional": false
+  }
+  ],
+    "conditions": null,
+    "rewards": [
+    {
+    "type": "item",
+    "id": "item_lingshi",
+    "count": 30,
+    "unlock_key": null
+  },
+    {
+    "type": "unlock",
+    "id": null,
+    "count": null,
+    "unlock_key": "tribulation"
+  },
+    {
+    "type": "flag",
+    "id": "fac_yuelai:ep2:heir_apparent",
+    "count": null,
+    "unlock_key": null
+  }
+  ],
+    "reputation_delta": [
+    {
+    "faction_id": "fac_yuelai",
+    "delta": 8
+  }
+  ],
+    "causality": null,
+    "timer": null,
+    "fail_goto": null,
+    "flags_set": null,
+    "repeatable": "no",
+    "hidden": false,
+    "price_reward": null
+  }
+  ]
+}

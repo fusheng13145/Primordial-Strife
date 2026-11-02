@@ -1,0 +1,13 @@
+{
+  "@generated": "from tables/dialog_ep2_text.csv @ sha256:5de25791c9cc93dafa18da4c6f8845cd053406223c482259424409997f78cdb9",
+  "id": "dialog_text_ep2",
+  "chapter": "ep2",
+  "texts": {
+    "dialog.strife.nd_miji_welcome": "你来了……等了三千年的有缘人。此地是上古修士的洞天遗境，三重试炼过后，传承归你。",
+    "dialog.strife.nd_miji_welcome_opt1": "我愿接受试炼",
+    "dialog.strife.nd_miji_welcome_opt2": "容我先看看周围",
+    "dialog.strife.nd_miji_trial": "第一重：勇气——秘境深处有妖兽盘踞，去证明你的胆识。第二重：智慧——天元果隐于秘境深处，寻它便是考验。第三重：心性——在试炼台上坚守两分钟，不动如山。",
+    "dialog.strife.nd_miji_trial_opt1": "我明白了",
+    "dialog.strife.nd_miki_bye": "去吧。秘境之门为你而开。"
+  }
+}

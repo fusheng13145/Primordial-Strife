@@ -1,0 +1,12 @@
+{
+  "@generated": "from tables/places.csv @ sha256:1e161cc209d4005345b6b8a555c2e73c083ba03f711f85a98f23650ffb933ab0",
+  "id": "qi_miji_entry",
+  "dimension": "minecraft:overworld",
+  "name": "秘境入口",
+  "x": -256,
+  "y": 80,
+  "z": -768,
+  "radius": 128,
+  "qi_scale": 1.2,
+  "chapter": "ep2"
+}

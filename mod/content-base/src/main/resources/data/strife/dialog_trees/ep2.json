@@ -1,0 +1,54 @@
+{
+  "@generated": "from tables/dialog_trees_ep2.csv @ sha256:088b95aed4fa576aef7012d6b2536761846602959af451aa930a311161794d07",
+  "id": "nd_miji_welcome",
+  "chapter": "ep2",
+  "trees": [
+    {
+    "id": "dlg_ep2_trial",
+    "npc": "npc_miji_guardian",
+    "root": "nd_miji_welcome",
+    "nodes": [
+    {
+    "id": "nd_miji_welcome",
+    "speaker": "秘境守护者·玄",
+    "text_key": "dialog.strife.nd_miji_welcome",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_miji_welcome_opt1",
+    "next": "nd_miji_trial"
+  },
+    {
+    "text_key": "dialog.strife.nd_miji_welcome_opt2",
+    "next": "nd_miki_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_miji_trial",
+    "speaker": "秘境守护者·玄",
+    "text_key": "dialog.strife.nd_miji_trial",
+    "conditions": null,
+    "next": null,
+    "options": [
+    {
+    "text_key": "dialog.strife.nd_miji_trial_opt1",
+    "next": "nd_miki_bye"
+  }
+  ]
+  },
+    {
+    "id": "nd_miki_bye",
+    "speaker": "秘境守护者·玄",
+    "text_key": "dialog.strife.nd_miki_bye",
+    "conditions": null,
+    "next": null,
+    "options": null
+  }
+  ],
+    "effects": null,
+    "max_depth_levels": 8
+  }
+  ]
+}
