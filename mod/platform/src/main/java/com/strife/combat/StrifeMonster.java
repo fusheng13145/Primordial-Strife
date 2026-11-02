@@ -78,6 +78,14 @@ public class StrifeMonster extends Monster {
     /** 实体属性注册事件（{@code StrifeCombat} 挂 mod 总线）。 */
     public static void onAttributes(EntityAttributeCreationEvent event) {
         event.put(StrifeCombatEntities.MONSTER.get(), createAttributes().build());
+        // EP1 妖兽种类 + 供奉武士：全部共用同一套基础属性（数据驱动的差异由 NUMBERS @@beasts 承载）。
+        event.put(StrifeCombatEntities.WOLF_BEAST.get(), createAttributes().build());
+        event.put(StrifeCombatEntities.ROCK_BEAST.get(), createAttributes().build());
+        event.put(StrifeCombatEntities.FIRE_FOX.get(), createAttributes().build());
+        event.put(StrifeCombatEntities.ICE_SERPENT.get(), createAttributes().build());
+        event.put(StrifeCombatEntities.SHADOW_LEOPARD.get(), createAttributes().build());
+        event.put(StrifeCombatEntities.TREANT.get(), createAttributes().build());
+        event.put(StrifeCombatEntities.MERCENARY.get(), StrifeMercenary.createAttributes());
     }
 
     /** 诊断用：目标是否妖兽（任务链路集成测试的判别口径）。 */
