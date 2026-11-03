@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/guide.csv @ sha256:21e61204641b10977aaddd923eb34f27e6cad506d1bb6c2351f3a6d8165e6d52",
+  "@generated": "from tables/guide.csv @ sha256:7b3813a3f544d5e1fed985e983b06c1d224f9613dc57e51f6905f78e2249042b",
   "id": "guide",
   "sections": {
     "realm": [
@@ -108,6 +108,11 @@
     "id": "guide_production_hire",
     "title": "供奉武士",
     "text": "/strife hire 花灵石雇供奉武士随行护法，到期自去，同时只供一位。"
+  },
+    {
+    "id": "guide_production_talisman",
+    "title": "保命底牌",
+    "text": "遁符危急时传回坊市，替身草人代你死一次。坊市常备，拍场也常见——好死不如赖活着。"
   }
   ],
     "quest": [

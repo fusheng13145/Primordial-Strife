@@ -1,0 +1,36 @@
+# CHANGELOG 0.1.0（草案）——2026-11-03 会话增量
+
+> 本文件是 0.0.1 之后同日十二个批次的发布候选清单，全部 [拟-待本人定稿]。
+> 提交链：`27df74d → 98ba346 → 241c719 → a794ca1 → 129b807 → 657753a → 582c6b6 → 23fe429 → c2d0ff0 → 96c678c → 5802a38`。
+> 门禁：全程 spotlessCheck build test validator 全绿，tests 644 → 690。
+
+## Added（新增）
+
+- **炼丹炉交互屏**：右键四阶炉开炼丹界面——材料齐缺着色、产出概率、炉/异火状态；craft_pill 意图限速 2/s fail-closed（241c719）。core 新增 `StrifeUiBridge` + `StrifeUiPayload`（服务端驱动 UI 信封，协议版本 1→2）。
+- **拍卖密封投标**（ADR-041 第三批）：`/strife auction bid <拍品> <价格>` 托管制、槽末懒结算（最高价胜、同价先出价胜、一价密封）、待领取池 + claim（a794ca1）。与荷兰拍双轨并存。
+- **EP2 心魔劫任务链**：闻道/集药/道心三段（全部走已接线事件源）+ 玄的心魔对话分支（洗尘丹后 flag 条件反馈）（129b807）。
+- **秘境可达**：`/strife world realm go miji`——试炼旗门禁 + 浮空维度落点安全（悬空自动铺 3×3 石台）（657753a）。
+- **秘境/上界产出物**：beast_miji 刷怪（妖兽/狼/狐/豹）、结晶矿点两界同挂、秘境灵草表（天元果 4%/雪莲 6%/妖丹 2%，仅 miji 草丛）——智慧试炼"寻找天元果"从此可完成（582c6b6）。
+- **心魔上屏**：面板视图拉取式 +2 字段，"心魔缠身 N 层（约 X 秒）"紫色示警（657753a）。
+- **天骄榜**：`/strife sect ranking [宗门]`——声望降序（Unicode 码序同分）、职级 + 星评（外门★/内门★★/真传★★★）、仅在线修士（c2d0ff0）。
+
+## Fixed（声称已交付但缺失/存根的补齐）
+
+- **心魔修为惩罚真实生效**：`qiRateMultiplier` 此前定义了但从未接线（debuff 纯摆设）；到期结算补齐（时间基统一 gameTime 防旧档重启复活）；触发改类型化表访问，删裸读 rules.json 平行路径（98ba346）。
+- **四丹真接线**：破境丹/稳元丹（此前"只给反馈"，现经 BreakthroughAidState 附件在押注时真实生效）、凝神丹（神识系统已实装但丹药还在走"尚未实装"分派）、洗髓丹（品阶向 tier1 移动，天品封顶）（5802a38）。
+- **天骄榜补齐**：439574e 声称 `/strife sect ranking` 但代码只有 `sect status`（c2d0ff0）。
+- **异火/丹炉数值零字面量**：fires.json/furnaces.json 运行时表落地，删除 Alchemy.craft 内联 FireDef 与 StrifeAlchemyBlocks 硬编码 switch；品质偏置（quality_shift）与废丹回收（waste_reduce）真实生效，蒙特卡洛 20 万次验证（27df74d）。
+- **雇佣坊市门禁**：ADR-036 ②"坊市按次雇佣"此前哪都能雇——现须距文津坊市锚点 48 格内（fail-closed）（c2d0ff0）。
+- **洗尘丹真清因果**：QuestProgress.withoutFlag 落地，撤销"标记留给叙事"的妥协（98ba346）。
+- **rules.json 裸读收口**：SectStatus/ShenShiCommand/SeclusionCommand 三处手工解析改 RealmTables 类型化访问（96c678c）。
+
+## Content（内容）
+
+- 炼丹材料获取路径（草药入草地掉落 + 11 材料注册）、35 件物品贴图、心魔对话链、指引 15→26 条、待验证台账 N1–N29。
+- EP2 任务与对话全部标注 [拟-待STORY追认]。
+
+## 需本人定稿项
+
+1. ADR-027～041 追认（含 038/039/040 复原稿核对——docs/08）。
+2. [拟] 数值定稿：@@heart_demon、secret_realm_herb_drop_prob、beast_miji 密度、雇佣圈 48 格、星评档位。
+3. 实机批：台账 A–N 组（重点 N1–N29）。

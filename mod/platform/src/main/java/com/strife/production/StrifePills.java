@@ -321,12 +321,6 @@ public final class StrifePills {
         return clearedStacks > 0 || hadSmuggler;
     }
 
-    /** 依赖未实装系统的丹药：诚实提示，不假装生效（ADR-037 ④ 同纪律）。 */
-    private static boolean applyDeferred(ServerPlayer player, String pillId, String system) {
-        player.displayClientMessage(Component.literal("（" + system + "尚未实装——丹力暂时封存，不会浪费）"), true);
-        return false;
-    }
-
     private static void tell(ServerPlayer player, Component message) {
         player.displayClientMessage(message, true);
     }
