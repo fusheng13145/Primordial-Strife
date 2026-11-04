@@ -35,6 +35,7 @@ public final class WorldTables {
     private final Ambient upperAmbient;
 
     private final Ambient mijiAmbient;
+    private final FireCrystal fireCrystal;
 
     /**
      * 灵气场参数（NUMBERS @@world 的 ambient_* 四项）。
@@ -75,6 +76,7 @@ public final class WorldTables {
         this.ambient = parseAmbient(world);
         this.upperAmbient = parseUpperAmbient(world, this.ambient);
         this.mijiAmbient = parseMijiAmbient(world, this.upperAmbient);
+        this.fireCrystal = parseFireCrystal(world);
     }
 
     /**
@@ -212,6 +214,76 @@ public final class WorldTables {
     /** 秘境维度灵气参数（{@code miji_qi_min/max}，H4 [拟]；键未定稿时=上界）。 */
     public Ambient mijiAmbient() {
         return mijiAmbient;
+    }
+
+    /** 上界灵晶引导异火的规则（{@code fires_crystal_*}，[拟]）。 */
+    public FireCrystal fireCrystal() {
+        return fireCrystal;
+    }
+
+    /** 灵晶引导规则：冷却秒 + 归一化权重表（none=灵气涣散；权重可为小数，逐项须 >0）。 */
+    public record FireCrystal(long cooldownSec, Map<String, Double> weights) {
+        /** 归一化抽取（纯函数）：total 为零/负时恒回 none（表配错不崩引导，退化为无事发生）。 */
+        public String roll(java.util.function.DoubleSupplier rng) {
+            double total = weights.values().stream().mapToDouble(Double::doubleValue).sum();
+            if (total <= 0) {
+                return "none";
+            }
+            double pick = rng.getAsDouble() * total;
+            for (Map.Entry<String, Double> e : weights.entrySet()) {
+                pick -= e.getValue();
+                if (pick < 0) {
+                    return e.getKey();
+                }
+            }
+            return "none";
+        }
+    }
+
+    static FireCrystal parseFireCrystal(JsonObject world) {
+        if (!world.has("fires_crystal_cooldown_sec")) {
+            return new FireCrystal(60L, defaultFireCrystalWeights()); // [拟] 键未定稿的显式回退
+        }
+        long cooldown = require(world, "fires_crystal_cooldown_sec").getAsLong();
+        JsonObject weightsJson = world.getAsJsonObject("fires_crystal_weights");
+        if (weightsJson == null || weightsJson.isEmpty()) {
+            throw new IllegalStateException("fires_crystal_weights 缺失或为空——引导无从抽取");
+        }
+        Map<String, Double> weights = new LinkedHashMap<>();
+        weightsJson
+                .entrySet()
+                .forEach(
+                        e -> {
+                            double w = e.getValue().getAsDouble();
+                            if (w <= 0) {
+                                throw new IllegalStateException(
+                                        "fires_crystal_weights.'"
+                                                + e.getKey()
+                                                + "' = "
+                                                + w
+                                                + "——权重必须 >0");
+                            }
+                            weights.put(e.getKey(), w);
+                        });
+        return new FireCrystal(cooldown, Map.copyOf(weights));
+    }
+
+    private static Map<String, Double> defaultFireCrystalWeights() {
+        return Map.of(
+                "none",
+                40.0,
+                "fire_mu",
+                24.0,
+                "fire_dixin",
+                18.0,
+                "fire_xuanbing",
+                12.0,
+                "fire_chiyan",
+                4.0,
+                "fire_jiuyou",
+                1.5,
+                "fire_taiyang",
+                0.5);
     }
 
     private static JsonObject read(Resource resource) {

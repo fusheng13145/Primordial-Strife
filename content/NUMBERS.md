@@ -259,6 +259,9 @@ miji_qi_max: 3.50
 beast_loot_rolls: 3
 herb_grass_drop_prob: { item_ningxu: 0.12, item_duanxue: 0.05, item_hanshi_cao: 0.03, item_zijin_hua: 0.03, item_baiyu_guo: 0.03, item_qingxin_lan: 0.03, item_yaodan: 0.01 }
 secret_realm_herb_drop_prob: { item_tianguo: 0.04, item_xuelian: 0.06, item_yaodan: 0.02 }   # 秘境灵草：仅 miji_realm 生效（mat_* source: secret_realm 的落地，[拟]）
+
+fires_crystal_cooldown_sec: 60   # 上界灵晶引导异火的同玩家冷却（服务端内存态，重启即清 [拟]）
+fires_crystal_weights: { none: 40, fire_mu: 24, fire_dixin: 18, fire_xuanbing: 12, fire_chiyan: 4, fire_jiuyou: 1.5, fire_taiyang: 0.5 }   # 引导权重（归一化，[拟]）：越贵越稀有；none=灵气涣散
 ```
 
 ## §24. 限速参数

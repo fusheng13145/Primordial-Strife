@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:e8c1881737ebbd5dc1685bbae515b93705de81b8ecccec64cd7d37963a311e0d",
+  "@generated": "from content/NUMBERS.md @ sha256:63605f3cd203e1725d596a603133f48e94c6f33257bfe34d8853b221f7ba8028",
   "id": "world_rules",
   "world": {
     "ambient_qi_min": 0.5,
@@ -29,6 +29,16 @@
     "item_tianguo": 0.04,
     "item_xuelian": 0.06,
     "item_yaodan": 0.02
+  },
+    "fires_crystal_cooldown_sec": 60,
+    "fires_crystal_weights": {
+    "none": 40,
+    "fire_mu": 24,
+    "fire_dixin": 18,
+    "fire_xuanbing": 12,
+    "fire_chiyan": 4,
+    "fire_jiuyou": 1.5,
+    "fire_taiyang": 0.5
   }
   }
 }

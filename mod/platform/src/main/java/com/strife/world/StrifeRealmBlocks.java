@@ -34,12 +34,12 @@ public final class StrifeRealmBlocks {
     /** 结晶内容 ID（供测试与生成链对照：产物 configured 的 Name 必须等于 {@code "strife:" + 本值}）。 */
     static final String QI_CRYSTAL_ID = "block_qi_crystal";
 
-    /** 灵气结晶：上界专属发光矿藏（M4 世界设计核心辨识物）。 */
+    /** 灵气结晶：上界专属发光矿藏（M4）——右键引灵（QiCrystalBlock，异火野外路径）。 */
     public static final DeferredHolder<Block, Block> QI_CRYSTAL =
             BLOCKS.register(
                     QI_CRYSTAL_ID,
                     () ->
-                            new Block(
+                            new QiCrystalBlock(
                                     BlockBehaviour.Properties.of()
                                             .mapColor(MapColor.COLOR_CYAN)
                                             .lightLevel(state -> 10)
