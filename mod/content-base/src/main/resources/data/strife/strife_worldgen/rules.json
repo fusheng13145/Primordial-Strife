@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:8e2fb0c5d0974bce02dee886a36a7ac362a8f35231133adbe99091c26ba54766",
+  "@generated": "from content/NUMBERS.md @ sha256:e8c1881737ebbd5dc1685bbae515b93705de81b8ecccec64cd7d37963a311e0d",
   "id": "world_rules",
   "world": {
     "ambient_qi_min": 0.5,
@@ -13,6 +13,8 @@
   },
     "upper_qi_min": 1.5,
     "upper_qi_max": 3.0,
+    "miji_qi_min": 2.5,
+    "miji_qi_max": 3.5,
     "beast_loot_rolls": 3,
     "herb_grass_drop_prob": {
     "item_ningxu": 0.12,

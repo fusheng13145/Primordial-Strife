@@ -34,6 +34,8 @@ public final class WorldTables {
     /** 上界维度（strife:upper_realm，ADR-021）的灵气参数：浓度区间独立，region/refine 沿用人界。 */
     private final Ambient upperAmbient;
 
+    private final Ambient mijiAmbient;
+
     /**
      * 灵气场参数（NUMBERS @@world 的 ambient_* 四项）。
      *
@@ -72,6 +74,7 @@ public final class WorldTables {
         }
         this.ambient = parseAmbient(world);
         this.upperAmbient = parseUpperAmbient(world, this.ambient);
+        this.mijiAmbient = parseMijiAmbient(world, this.upperAmbient);
     }
 
     /**
@@ -101,6 +104,23 @@ public final class WorldTables {
                     "upper_qi_min(" + min + ") > upper_qi_max(" + max + ")——浓度区间写反");
         }
         return new Ambient(min, max, overworld.regionChunks(), overworld.refineWeight());
+    }
+
+    /**
+     * 解析 NUMBERS @@world 的 {@code miji_qi_min/max}（秘境维度，H4 最小实装 [拟]）。浓度独立于上界（默认更浓—— 幽冥暗域"灵气浓郁而危险"，与
+     * beast_miji 的妖兽密度配套构成"去秘境修炼"的循环）；region/refine 沿用上界值。
+     */
+    static Ambient parseMijiAmbient(JsonObject world, Ambient upper) {
+        if (!world.has("miji_qi_min")) {
+            return upper; // H4 值未定稿前退化为上界浓度——键是 [拟]，不因缺键红整个表
+        }
+        double min = require(world, "miji_qi_min").getAsDouble();
+        double max = require(world, "miji_qi_max").getAsDouble();
+        if (min > max) {
+            throw new IllegalStateException(
+                    "miji_qi_min(" + min + ") > miji_qi_max(" + max + ")——浓度区间写反");
+        }
+        return new Ambient(min, max, upper.regionChunks(), upper.refineWeight());
     }
 
     /** 解析草药掉落概率表，并逐项校验落在 [0,1]（概率越界是内容错误，必须在加载期红掉）。 */
@@ -187,6 +207,11 @@ public final class WorldTables {
     /** 上界维度灵气参数（{@code upper_qi_min/max}，ADR-021；region/refine 沿用人界）。 */
     public Ambient upperAmbient() {
         return upperAmbient;
+    }
+
+    /** 秘境维度灵气参数（{@code miji_qi_min/max}，H4 [拟]；键未定稿时=上界）。 */
+    public Ambient mijiAmbient() {
+        return mijiAmbient;
     }
 
     private static JsonObject read(Resource resource) {

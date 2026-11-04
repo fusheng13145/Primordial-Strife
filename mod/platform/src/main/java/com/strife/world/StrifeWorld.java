@@ -175,9 +175,16 @@ public final class StrifeWorld {
             }
             return null;
         }
-        // 维度参数分支（ADR-021）：上界灵气浓度整体高于人界（NUMBERS @@world upper_qi_*），其余维度用人界区间。
-        WorldTables.Ambient params =
-                level.dimension().equals(UPPER_REALM) ? tables.upperAmbient() : tables.ambient();
+        // 维度参数分支（ADR-021 + H4 [拟]）：上界浓于人界，秘境最浓（幽冥暗域，妖兽密度配套）；
+        // 其余维度用人界区间。
+        WorldTables.Ambient params;
+        if (level.dimension().equals(MIJI_REALM)) {
+            params = tables.mijiAmbient();
+        } else if (level.dimension().equals(UPPER_REALM)) {
+            params = tables.upperAmbient();
+        } else {
+            params = tables.ambient();
+        }
         AmbientQiField built = build(level.dimension(), level.getSeed(), params);
         FIELDS.put(key, built);
         LOGGER.info(
