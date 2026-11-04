@@ -2,6 +2,7 @@ package com.strife.world;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
@@ -65,19 +66,39 @@ class SecretRealmYieldTest {
         assertTrue(types.toString().contains("strife:monster"));
     }
 
+    /**
+     * 结晶矿点注入路径（2026-11-04 RCON 冒烟抓到的崩溃回归锚）：biomes.csv 的 ores= 列由 BiomeGenerator 直接写进群系
+     * features[6]——若再叠一份 add_features modifier（ore_miji/ore_upper）就是 Feature order cycle，区块生成期崩服。
+     * 本用例钉"群系产物带矿、且不再有重复 modifier"。
+     */
     @Test
-    void qiCrystalOreGeneratesInMijiAndUpperRealms() {
-        // biomes.csv 秘境行注记'结晶矿点同上界'——两维度都挂 block_qi_crystal placed feature
-        for (String name : new String[] {"ore_miji", "ore_upper"}) {
-            JsonObject ore = biomeModifier(name);
-            assertEquals("neoforge:add_features", ore.get("type").getAsString());
-            assertEquals("strife:block_qi_crystal", ore.get("features").getAsString());
-            assertEquals("underground_ores", ore.get("step").getAsString());
+    void qiCrystalOreLivesInBiomeFeaturesNotInModifiers() throws Exception {
+        for (String biome : new String[] {"miji_biome", "upper_realm_biome"}) {
+            try (InputStream stream =
+                    SecretRealmYieldTest.class.getResourceAsStream(
+                            "/data/strife/worldgen/biome/" + biome + ".json")) {
+                assertNotNull(stream, biome + " 产物缺失");
+                JsonObject root =
+                        JsonParser.parseReader(
+                                        new InputStreamReader(stream, StandardCharsets.UTF_8))
+                                .getAsJsonObject();
+                boolean hasCrystal = false;
+                for (var step : root.getAsJsonArray("features")) {
+                    for (var feature : step.getAsJsonArray()) {
+                        if ("strife:block_qi_crystal".equals(feature.getAsString())) {
+                            hasCrystal = true;
+                        }
+                    }
+                }
+                assertTrue(hasCrystal, biome + " 的 features[underground_ores] 必须带结晶矿");
+            }
         }
-        String mijiBiomes = biomeModifier("ore_miji").get("biomes").getAsString();
-        String upperBiomes = biomeModifier("ore_upper").get("biomes").getAsString();
-        assertEquals("strife:miji_biome", mijiBiomes);
-        assertEquals("strife:upper_realm_biome", upperBiomes);
+        try (InputStream modDir =
+                SecretRealmYieldTest.class.getResourceAsStream(
+                        "/data/strife/neoforge/biome_modifier/ore_miji.json")) {
+            assertNull(
+                    modDir, "ore_miji/ore_upper modifier 不得复活——与群系内建矿重复 = Feature order cycle 崩服");
+        }
     }
 
     /** placed feature 必须真实存在（引用漂移的表现是区块生成期静默跳过，矿点永远不出现）。 */

@@ -2067,7 +2067,80 @@ public final class ValidatorMain {
     }
 
     public static List<Check> checks() {
-        return List.of(ValidatorMain::duplicateIds, ValidatorMain::staleGeneratedHeaders);
+        return List.of(
+                ValidatorMain::duplicateIds,
+                ValidatorMain::staleGeneratedHeaders,
+                ValidatorMain::removedBiomeIds);
+    }
+
+    /**
+     * V-BIOME（启动期阻断缺陷的门禁补位）：worldgen/biome 引用了 1.18+ 已删除的群系 ID 时， 注册表加载整段拒绝——服务器/客户端都起不来，而此前 15
+     * 项检查全放行（2026-11-04 RCON 冒烟实测抓到 minecraft:mountains）。 拒入名单取 1.18 群系更名中被工具链误用的常见项；新名字一律放行。
+     */
+    static List<String> removedBiomeIds(Options options) {
+        List<String> problems = new ArrayList<>();
+        for (Path file : jsonFiles(options.dataRoot())) {
+            JsonObject root;
+            try {
+                root =
+                        com.google.gson.JsonParser.parseReader(
+                                        new java.io.InputStreamReader(
+                                                java.nio.file.Files.newInputStream(file),
+                                                java.nio.charset.StandardCharsets.UTF_8))
+                                .getAsJsonObject();
+            } catch (Exception e) {
+                continue; // JSON 合法性由既有检查负责
+            }
+            collectBiomeProblems(file.toString(), root, problems);
+        }
+        return problems;
+    }
+
+    private static final java.util.Set<String> REMOVED_BIOMES =
+            java.util.Set.of(
+                    "minecraft:mountains",
+                    "minecraft:wooded_mountains",
+                    "minecraft:gravelly_mountains",
+                    "minecraft:extreme_hills",
+                    "minecraft:wooded_hills",
+                    "minecraft:mountain_edge",
+                    "minecraft:shattered_savanna",
+                    "minecraft:bamboo_jungle_hills");
+
+    private static void collectBiomeProblems(String file, JsonObject node, List<String> problems) {
+        for (var entry : node.entrySet()) {
+            var value = entry.getValue();
+            if ("biomes".equals(entry.getKey())) {
+                if (value.isJsonPrimitive()) {
+                    checkRemovedBiome(file, value.getAsString(), problems);
+                } else if (value.isJsonArray()) {
+                    for (var e : value.getAsJsonArray()) {
+                        if (e.isJsonPrimitive()) {
+                            checkRemovedBiome(file, e.getAsString(), problems);
+                        }
+                    }
+                }
+            } else if (value.isJsonObject()) {
+                collectBiomeProblems(file, value.getAsJsonObject(), problems);
+            } else if (value.isJsonArray()) {
+                for (var e : value.getAsJsonArray()) {
+                    if (e.isJsonObject()) {
+                        collectBiomeProblems(file, e.getAsJsonObject(), problems);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void checkRemovedBiome(String file, String id, List<String> problems) {
+        if (REMOVED_BIOMES.contains(id)) {
+            problems.add(
+                    file
+                            + ": 引用已删除群系 '"
+                            + id
+                            + "'（1.18 更名，如 mountains → windswept_hills）——注册表加载将整段拒绝、服务器无法启动"
+                            + " (V-BIOME)");
+        }
     }
 
     public static void main(String[] args) {

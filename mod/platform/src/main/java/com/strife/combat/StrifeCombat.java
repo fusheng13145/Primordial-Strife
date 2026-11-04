@@ -61,8 +61,25 @@ public final class StrifeCombat {
      * 不在此硬编码群系列表（数据驱动，便于 C 调整密度/分布）。
      */
     private void registerBeastSpawn(RegisterSpawnPlacementsEvent event) {
+        // 六种具名妖兽与 monster 共用同一放置判定——2026-11-04 RCON 冒烟抓到它们的 biome_modifier
+        // 刷怪条目自妖兽体系批起就缺 placement 注册（ERROR 刷屏 + 无落地限制地刷）。
+        registerPlacement(event, StrifeCombatEntities.MONSTER);
+        registerPlacement(event, StrifeCombatEntities.WOLF_BEAST);
+        registerPlacement(event, StrifeCombatEntities.ROCK_BEAST);
+        registerPlacement(event, StrifeCombatEntities.FIRE_FOX);
+        registerPlacement(event, StrifeCombatEntities.ICE_SERPENT);
+        registerPlacement(event, StrifeCombatEntities.SHADOW_LEOPARD);
+        registerPlacement(event, StrifeCombatEntities.TREANT);
+    }
+
+    /** 单实体放置注册（六妖兽 + monster 共用同一判定；具名妖兽自体系批起漏注册，RCON 冒烟抓到）。 */
+    private static void registerPlacement(
+            RegisterSpawnPlacementsEvent event,
+            net.neoforged.neoforge.registries.DeferredHolder<
+                            EntityType<?>, EntityType<StrifeMonster>>
+                    holder) {
         event.register(
-                StrifeCombatEntities.MONSTER.get(),
+                holder.get(),
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 StrifeCombat::beastSpawnRules,
