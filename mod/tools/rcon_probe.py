@@ -66,15 +66,15 @@ def connect(password: str = PASSWORD) -> socket.socket:
 # locate 类命令的成功输出是 "The nearest <what> is at [x, y, z]"；setblock 前必须 forceload 区块。
 SUITE = [
     ("产物面：配方机加载全部丹方", "strife recipe list", ["pill_huichun", "pill_xisui"]),
-    ("经济面：坊市价目可读", "strife market list", ["item_lingshi"]),
+    ("经济面：坊市价目可读", "strife market list", ["pill_peiyuan"]),
     ("经济面：拍卖行目录", "strife auction list", ["剩余"]),
     ("维度面：miji_realm 已注册", "execute in strife:miji_realm positioned 0 90 0 run locate biome strife:miji_biome", ["nearest strife:miji_biome"]),
     ("维度面：upper_realm 已注册", "execute in strife:upper_realm positioned 0 90 0 run locate biome strife:upper_realm_biome", ["nearest strife:upper_realm_biome"]),
-    ("加载面：秘境探针区块 forceload", "execute in strife:miji_realm run forceload add -16 -16 16 16", ["marked"]),
-    ("方块面：炼丹炉四阶已注册", "execute in strife:miji_realm run setblock -216 90 -720 strife:furnace_long", ["Changed the block"]),
-    ("实体面：秘境妖兽类型已注册", "execute in strife:miji_realm run summon strife:fire_fox -216 92 -720", ["Summoned new"]),
+    ("加载面：秘境探针区块 forceload", "execute in strife:miji_realm run forceload add -16 -16 16 16", ["chunks"]),
+    ("方块面：炼丹炉四阶已注册", "execute in strife:miji_realm run setblock 8 100 8 strife:furnace_long", ["Changed the block"]),
+    ("实体面：秘境妖兽类型已注册", "execute in strife:miji_realm run summon strife:fire_fox 8 92 8", ["Summoned new"]),
     ("结构面：望仙台可定位", "execute in strife:upper_realm run locate structure strife:wangxian_tai", ["nearest strife:wangxian_tai"]),
-    ("清理：炉/探针区还原", "execute in strife:miji_realm run setblock -216 90 -720 minecraft:air", ["Changed the block"]),
+    ("清理：炉/探针区还原", "execute in strife:miji_realm run setblock 8 100 8 minecraft:air", ["Changed the block"]),
 ]
 
 
