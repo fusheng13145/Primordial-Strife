@@ -89,6 +89,8 @@ public final class StrifeWorld {
         CultivationFactors.registerEnvironment(StrifeWorld::environmentCoefficient);
         // G-4 / ADR-023：把地点只读查询接进 core 桥，quest 的 reach 目标导航由此取坐标（quest 不 import world）。
         PlaceBridges.registerPlaceLookup(Places::lookup);
+        // H4 配套：秘境入口石门落位器——玩家走近 qi_miji_entry 锚点时幂等立门（玄守的"门"从此存在）。
+        MijiGatePlacer.register();
         StrifeCommands.MODULE_SUBTREES.add(OreCommand.subtree());
         StrifeCommands.MODULE_SUBTREES.add(RealmCommand.subtree());
         StrifeCommands.MODULE_SUBTREES.add(PlaceCommand.subtree());

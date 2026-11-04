@@ -127,4 +127,26 @@ class WorldTablesTest {
         assertTrue(ratio >= ambient.min() && ratio <= ambient.max(), "系数应落在表定区间内：" + ratio);
         assertTrue(ratio > 0.0, "环境系数不得为 0");
     }
+
+    /** H4 最小实装 [拟]：秘境浓度独立于上界（更浓），region/refine 沿用；区间写反加载期红。 */
+    @Test
+    void parsesMijiAmbientRicherThanUpper() {
+        JsonObject world = worldBlock();
+        WorldTables.Ambient upper =
+                WorldTables.parseUpperAmbient(world, WorldTables.parseAmbient(world));
+
+        WorldTables.Ambient miji = WorldTables.parseMijiAmbient(world, upper);
+        assertEquals(2.50, miji.min(), 1e-9, "@@world.miji_qi_min [拟]");
+        assertEquals(3.50, miji.max(), 1e-9, "@@world.miji_qi_max [拟]");
+        assertEquals(upper.regionChunks(), miji.regionChunks(), "实现粒度沿用，不另设键");
+        assertTrue(miji.min() > upper.min() && miji.max() > upper.max(), "秘境浓于上界——'去秘境修炼'的机械意义");
+
+        var reversed = world.deepCopy();
+        reversed.addProperty("miji_qi_min", 4.0);
+        reversed.addProperty("miji_qi_max", 3.0);
+        assertThrows(
+                IllegalStateException.class,
+                () -> WorldTables.parseMijiAmbient(reversed, upper),
+                "浓度区间写反是内容错误，加载期红掉");
+    }
 }
