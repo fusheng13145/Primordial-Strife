@@ -2,7 +2,7 @@
 
 > 本文件是 0.0.1 之后同日十二个批次的发布候选清单，全部 [拟-待本人定稿]。
 > 提交链：`27df74d → 98ba346 → 241c719 → a794ca1 → 129b807 → 657753a → 582c6b6 → 23fe429 → c2d0ff0 → 96c678c → 5802a38`。
-> 门禁：全程 spotlessCheck build test validator 全绿，tests 644 → 690。
+> 门禁：全程 spotlessCheck build test validator 全绿，tests 644 → **708**（2026-11-04 ASCII 复跑：platform 500 / datagen 111 / validator 90 + buildSrc 7）。
 
 ## Added（新增）
 
@@ -13,6 +13,7 @@
 - **EP2 心魔劫任务链**：闻道/集药/道心三段（全部走已接线事件源）+ 玄的心魔对话分支（洗尘丹后 flag 条件反馈）（129b807）。
 - **秘境可达**：`/strife world realm go miji`——试炼旗门禁 + 浮空维度落点安全（悬空自动铺 3×3 石台）（657753a）。
 - **秘境/上界产出物**：beast_miji 刷怪（妖兽/狼/狐/豹）、结晶矿点两界同挂、秘境灵草表（天元果 4%/雪莲 6%/妖丹 2%，仅 miji 草丛）——智慧试炼"寻找天元果"从此可完成（582c6b6）。
+- **心性试炼台**（2026-11-04）：`quest_ep2_trial_will_01` 的 SURVIVE 目标此前无推进源；新增方块 + 秘境锚点落位器 + 会话（1 秒 = 1 进度、离台判负、30 秒一波心魔、同屏上限 6）+ `TrialMath` 纯数学 3 例；方块资产/中英 lang 补齐（占位贴图紫珀块）。**未实机**，台账 N32。
 - **心魔上屏**：面板视图拉取式 +2 字段，"心魔缠身 N 层（约 X 秒）"紫色示警（657753a）。
 - **天骄榜**：`/strife sect ranking [宗门]`——声望降序（Unicode 码序同分）、职级 + 星评（外门★/内门★★/真传★★★）、仅在线修士（c2d0ff0）。
 
@@ -25,6 +26,7 @@
 - **雇佣坊市门禁**：ADR-036 ②"坊市按次雇佣"此前哪都能雇——现须距文津坊市锚点 48 格内（fail-closed）（c2d0ff0）。
 - **洗尘丹真清因果**：QuestProgress.withoutFlag 落地，撤销"标记留给叙事"的妥协（98ba346）。
 - **rules.json 裸读收口**：SectStatus/ShenShiCommand/SeclusionCommand 三处手工解析改 RealmTables 类型化访问（96c678c）。
+- **门禁红修复（2026-11-04）**：`ores.csv` / `beasts.csv` / `NUMBERS.md` 改后未重跑 DataGen，Validator 报 59 个 `@generated` 哈希不一致 + `qi_trial_altar` 未进索引；重跑后 `problems=0`（产物内容未变，仅哈希与索引一行）。
 
 ## Content（内容）
 
@@ -34,5 +36,5 @@
 ## 需本人定稿项
 
 1. ADR-027～041 追认（含 038/039/040 复原稿核对——docs/08）。
-2. [拟] 数值定稿：@@heart_demon、secret_realm_herb_drop_prob、beast_miji 密度、雇佣圈 48 格、星评档位。
-3. 实机批：台账 A–N 组（重点 N1–N29）。
+2. [拟] 数值定稿：@@heart_demon、secret_realm_herb_drop_prob、beast_miji 密度、雇佣圈 48 格、星评档位、试炼台 120 秒/30 秒波次/6 只上限。
+3. 实机批：台账 A–N 组（重点 N1–N32）；D14 配额已超（129 ⬜），需本人裁决停新功能或豁免。
