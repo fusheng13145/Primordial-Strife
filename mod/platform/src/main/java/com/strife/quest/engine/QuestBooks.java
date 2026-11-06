@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 多章任务簿（2026-11-06 章节接线）：序章 / ch1 / ep2 各自是一份 {@link QuestBook}，运行时同引擎并行装载。
+ * 多章任务簿（2026-11-06 章节接线）：prologue / ch1 / ep1 / ep2 各自是一份 {@link QuestBook}，运行时同引擎并行装载。
  *
- * <p>为什么需要这一层：{@code QuestAdapter} 此前只读 {@code prologue.json}，ch1 与 ep2 的产物只出现在单测里——第一章和 EP2
+ * <p>为什么需要这一层：{@code QuestAdapter} 此前只读 {@code prologue.json}，其余章节的产物只出现在单测里——第一章与 EP1/EP2
  * 任务在游戏里既不推进也不上追踪条。本类把 "多份章簿"收成一个纯对象：推进/对账/追踪条/状态一览都遍历全部章簿，追踪条按章序取第一个可接取任务（序章优先，其后按 chapter id
  * 字典序）。
  *

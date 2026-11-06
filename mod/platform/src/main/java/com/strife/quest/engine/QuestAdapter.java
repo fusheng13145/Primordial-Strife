@@ -38,8 +38,8 @@ import net.minecraft.world.item.ItemStack;
  * talk/deliver 节点用 {@code /strife quest talk|deliver <npc>} 交互（交付 UI 属 M3/M4）。击杀口径：任意生物（妖兽实体与专属掉落是
  * M2）。
  *
- * <p>2026-11-06 起章簿不再只读序章：{@code strife_quests/*.json} 全部装载进 {@link QuestBooks}（序章 → ch1 → ep2 章序）。
- * 此前只有 {@code prologue.json} 被加载，ch1/EP2 的任务在游戏里既不推进也不上追踪条——产物与单测都在，运行时却是死的。
+ * <p>2026-11-06 起章簿不再只读序章：{@code strife_quests/*.json} 全部装载进 {@link QuestBooks}（序章固定第一，ch1 / ep1 /
+ * ep2 按章 id 排序）。此前只有 {@code prologue.json} 被加载，其余章节的任务在游戏里既不推进也不上追踪条——产物与单测都在，运行时却是死的。
  */
 public final class QuestAdapter implements RewardSink {
 
