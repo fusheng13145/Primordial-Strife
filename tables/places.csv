@@ -8,3 +8,4 @@ qi_fangshi,minecraft:overworld,文津坊市,-448,64,-560,192,1.0,ep1,EP1 商圈�
 qi_dongfu,minecraft:overworld,青石洞府,320,80,300,96,1.6,ep1,洞府（EP1，ADR-036 ④）：青石观后山私有洞天，灵气浓于山麓（灵田子地点随灵植批）
 qi_lingtian,minecraft:overworld,青石灵田,340,78,320,64,1.3,ep1,灵田（EP1）：洞府向阳坡的药圃（采集增益随灵植批）
 qi_miji_entry,minecraft:overworld,秘境入口,-256,80,-768,128,1.2,ep2,秘境维度入口（EP2，ADR-036 ⑨；方位文津渡西北远处山地）
+qi_trial_altar,strife:miji_realm,试炼台,8,90,8,16,1.5,ep2,心性试炼台（秘境出生台地——右键开启 120 秒坚守，SURVIVE 唯一推进口；y 为名义值，落位器按地表取高 [拟]）

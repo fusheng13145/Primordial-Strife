@@ -1,0 +1,7 @@
+{
+  "__comment": "心性试炼台：秘境出生台地的坚守锚点（占位贴图用紫珀块，专用贴图随美术批替换）。",
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "minecraft:block/purpur_block"
+  }
+}

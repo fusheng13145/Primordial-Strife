@@ -31,6 +31,11 @@ public final class StrifeQuest {
         // quest 域实体（NPC：对话载体）与对话网络——注册编排留在 quest 侧入口，
         // core 不 import 任何模块（03 §2 依赖方向；实体/协议都是 quest 域对象）。
         StrifeEntities.ENTITY_TYPES.register(modEventBus);
+        // 试炼台批：心性试炼的物理锚点（SURVIVE 目标的唯一推进口在此）。
+        TrialBlocks.BLOCKS.register(modEventBus);
+        TrialBlocks.ITEMS.register(modEventBus);
+        TrialSessions.register();
+        TrialAltarPlacer.register();
         modEventBus.addListener(StrifeNpcEntity::onAttributes);
         com.strife.quest.dialog.DialogNetwork.register(modEventBus);
         // 兜底命令随模块进表（03 §9）：经 core 挂载点并入 /strife 根

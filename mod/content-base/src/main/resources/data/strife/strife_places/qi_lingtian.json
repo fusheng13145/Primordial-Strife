@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/places.csv @ sha256:1e161cc209d4005345b6b8a555c2e73c083ba03f711f85a98f23650ffb933ab0",
+  "@generated": "from tables/places.csv @ sha256:3cb49d813265995fc7672490ee145e46c4dbf8c54fec66448d76e33dbfa06b32",
   "id": "qi_lingtian",
   "dimension": "minecraft:overworld",
   "name": "青石灵田",
