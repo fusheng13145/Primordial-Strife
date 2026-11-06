@@ -264,4 +264,52 @@ class QuestTrackerTest {
                         && "region.strife.qi_wenjiang".equals(translatable.getKey()),
                 "降级路径必须可预期，不能变成编造的名字");
     }
+
+    @Test
+    void chapterOneTrackerTargetsCarryNamesAndNavigation() {
+        // P1-07：追踪条不只覆盖序章。用第一章真实产物走同一条 targetName / navigationFor 链。
+        QuestBook ch1 = QuestBook.parse(ShippedProducts.ch1Quests());
+
+        QuestBook.QuestView survey =
+                ch1.trackable(QuestState.of(Set.of(), Map.of()), null).orElseThrow();
+        assertEquals("quest_ch1_pingcang_survey_01", survey.id());
+        JsonObject place = ShippedProducts.place("qi_wenjiang");
+        PlaceBridges.PlaceLookup lookup =
+                (server, id) ->
+                        "qi_wenjiang".equals(id)
+                                ? Optional.of(
+                                        new PlaceBridges.PlaceCoords(
+                                                OVERWORLD,
+                                                place.get("name").getAsString(),
+                                                place.get("x").getAsInt(),
+                                                place.get("y").getAsInt(),
+                                                place.get("z").getAsInt()))
+                                : Optional.empty();
+        assertEquals(
+                Component.literal("文津渡"),
+                QuestTracker.targetName("qi_wenjiang", lookup, null),
+                "第一章 reach 目标必须显示地点表中文名");
+
+        JsonObject zh = ShippedProducts.lang("zh_cn");
+        JsonObject en = ShippedProducts.lang("en_us");
+        assertTrue(zh.has("item.strife.item_yaocai"), "第一章采集目标缺中文提示名");
+        assertTrue(en.has("item.strife.item_yaocai"), "第一章采集目标缺英文提示名");
+
+        QuestBook.QuestView offer =
+                ch1.trackable(QuestState.of(Set.of("quest_ch1_pingcang_survey_01"), Map.of()), null)
+                        .orElseThrow();
+        assertEquals("quest_ch1_pingcang_offer_01", offer.id());
+        String npc = offer.objectives().get(0).target();
+        assertEquals("npc_yuelai_deng", npc);
+        assertTrue(zh.has("npc.strife." + npc), "第一章对话目标缺中文提示名");
+        assertTrue(en.has("npc.strife." + npc), "第一章对话目标缺英文提示名");
+
+        List<NpcPlacements.Placement> placements =
+                ShippedProducts.allNpcPlacements().stream().map(NpcPlacements::fromJson).toList();
+        QuestTracker.Navigation nav =
+                QuestTracker.navigationFor(npc, placements, OVERWORLD, -508, -520).orElseThrow();
+        assertTrue(nav.sameDimension());
+        assertEquals(4L, nav.distanceBlocks(), "挑灯人在 (-508,-516)，玩家 (-508,-520) 相距 4 格");
+        assertEquals("gui.strife.tracker.dir.s", nav.directionKey());
+    }
 }
