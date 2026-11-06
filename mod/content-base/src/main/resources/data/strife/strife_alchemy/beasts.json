@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/beasts.csv @ sha256:601334ed1a16ca877edf76d3c50bda56c30b3ae8a7fc038d5126f82b33220f2d",
+  "@generated": "from tables/beasts.csv @ sha256:45ebc069a1fe0ca53b52179eef6863456716892929be6c59a14c1201bed83d67",
   "id": "beasts",
   "entries": [
     {

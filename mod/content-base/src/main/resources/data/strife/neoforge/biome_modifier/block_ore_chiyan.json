@@ -1,5 +1,5 @@
 {
-  "@generated": "from tables/ores.csv @ sha256:45a43ce8cde611c7890137b91790aea8bd869b87341652606f894ab67dcc2f5a",
+  "@generated": "from tables/ores.csv @ sha256:57f0b4e330a5398b9bd7926c82efc00ae8de701d8bfcc54e4035a0163e394066",
   "type": "neoforge:add_features",
   "biomes": [
     "minecraft:desert",
