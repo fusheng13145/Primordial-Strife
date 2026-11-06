@@ -2,7 +2,7 @@
 
 > 本文件是 0.0.1 之后同日十二个批次的发布候选清单，全部 [拟-待本人定稿]。
 > 提交链：`27df74d → 98ba346 → 241c719 → a794ca1 → 129b807 → 657753a → 582c6b6 → 23fe429 → c2d0ff0 → 96c678c → 5802a38`。
-> 门禁：全程 spotlessCheck build test validator 全绿，tests 644 → **708**（2026-11-04 ASCII 复跑：platform 500 / datagen 111 / validator 90 + buildSrc 7）。
+> 门禁：全程 spotlessCheck build test validator 全绿，tests 644 → **708**（2026-11-04 ASCII 复跑：platform 500 / datagen 111 / validator 90 + buildSrc 7）；章节任务接线后 **715**（2026-11-06：platform 507 / datagen 111 / validator 90 + buildSrc 7）。
 
 ## Added（新增）
 
@@ -27,6 +27,8 @@
 - **洗尘丹真清因果**：QuestProgress.withoutFlag 落地，撤销"标记留给叙事"的妥协（98ba346）。
 - **rules.json 裸读收口**：SectStatus/ShenShiCommand/SeclusionCommand 三处手工解析改 RealmTables 类型化访问（96c678c）。
 - **门禁红修复（2026-11-04）**：`ores.csv` / `beasts.csv` / `NUMBERS.md` 改后未重跑 DataGen，Validator 报 59 个 `@generated` 哈希不一致 + `qi_trial_altar` 未进索引；重跑后 `problems=0`（产物内容未变，仅哈希与索引一行）。
+- **章节任务运行时死链（2026-11-06）**：`QuestAdapter` 只加载 `prologue.json`，ch1/ep1/ep2 的任务产物与单测都在、游戏里却不推进也不上追踪条；改为从 datapack 全量装载 `strife_quests/*.json`（`QuestBooks` 多章簿，序章第一、其余按章 id 排序），推进/对账/状态/追踪条全部遍历。
+- **试炼台门槛恒拒（2026-11-06）**：`TrialAltarBlock` 用 `quests.activated()` 当门槛，而内容没有任何 `start_quest`（激活集恒空），试炼台永远拒绝；改 `QuestAdapter.isAvailable`（前置 + conditions），不新增跨章门槛。
 
 ## Content（内容）
 
@@ -37,4 +39,4 @@
 
 1. ADR-027～041 追认（含 038/039/040 复原稿核对——docs/08）。
 2. [拟] 数值定稿：@@heart_demon、secret_realm_herb_drop_prob、beast_miji 密度、雇佣圈 48 格、星评档位、试炼台 120 秒/30 秒波次/6 只上限。
-3. 实机批：台账 A–N 组（重点 N1–N32）；D14 配额已超（129 ⬜），需本人裁决停新功能或豁免。
+3. 实机批：台账 A–N 组（重点 N1–N32）；D14 配额已超（129 ⬜）。**2026-11-06 本人裁决：先补工程侧欠账**（P1-07/P1-08 已补用例；P1-19 待补），实机债等开游戏时一次性清。

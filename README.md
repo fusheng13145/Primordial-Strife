@@ -65,7 +65,7 @@ M0–M3 主链已闭环；M4 四项本体（灵气场 / 矿石 / 宗门结构 / 
 - **生产域**：统一配方机（炼丹 + 炼器）——材料校验 → 扣除 → 抽签（丹：Σprob<1 差额判废丹；器：境界门禁 + `quality_probs` 抽品阶）；`/strife recipe list|show`、`/strife recipe artifact list|show`、`/strife craft pill|artifact <id>`。
 - **世界域**：灵气浓度场（`ImprovedNoise` 双层，粗粒度 16×16 区块一值 + 细化层，按世界种子+维度缓存）、草类方块草药掉落、三种矿石 placement（各 5 产物 + `/strife world ore status` 自检）、宗门结构 `sect_hall`（ADR-022）、上界维度（ADR-021）。
 - **内容管线**：135 个 DataGen 产物（见上手节），`*_key` 列从 NUMBERS `@@块` 内联展开，zh_cn/en_us lang 在库；16 项 Validator 门禁全绿（`checks=16 problems=0`），含 V-DSL、V-REF 二期、V-NAME（ID 用拼音、文本用中文，见 [docs/11](docs/11-命名与目录规范.md)）、V-BIOME 与 V-INDEX（运行时加载器只读生成索引）。
-- **质量基线**：单测 **708 例**全绿（platform 500 / tools 201 + buildSrc 7，2026-11-04 ASCII 复跑），`spotlessCheck build test validator` 全绿（Validator 16 项 `problems=0`），纯净服务端 jar 无头冒烟通过；`runClient` 客户端实测进世界、ERROR=0。
+- **质量基线**：单测 **715 例**全绿（platform 507 / tools 201 + buildSrc 7，2026-11-06 ASCII 复跑），`spotlessCheck build test validator` 全绿（Validator 16 项 `problems=0`），纯净服务端 jar 无头冒烟通过；`runClient` 客户端实测进世界、ERROR=0。
 - **资产**：43 张物品贴图 + 52 份物品模型 + 9 份方块模型/blockstate（2026-11-03 批量生成 35 件物品资产；`item_xuanyu` / `pill_xuanyu` 复用存量贴图）+ 通用 NPC/妖兽贴图，生成方式与替换流程见 [CREDITS.md](CREDITS.md)。
 
 **已知遗留**（详见交接文档 §3）

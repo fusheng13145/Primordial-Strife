@@ -13,7 +13,7 @@
 ```bash
 ./gradlew spotlessCheck        # 格式门禁
 ./gradlew build                # 编译 + 依赖断言（本机中文路径下用 build -x test，见 §4）
-./gradlew validator            # 内容校验（15 项门禁：V-DUP/V-FRESH/V-INDEX/V-DAG/V-REF×2/V-GROWTH/V-RANGE×3/V-TEXT/V-PROB/V-DSL/V-NAME/price）
+./gradlew validator            # 内容校验（16 项门禁：V-DUP/V-FRESH/V-INDEX/V-DAG/V-REF×2/V-GROWTH/V-RANGE×3/V-TEXT/V-PROB/V-DSL/V-NAME/V-FMT/V-DRIFT/V-BIOME）
 ./gradlew :tools:datagen:run   # 表 + NUMBERS → content-base 产物
 ./gradlew :platform:runClient  # 开发客户端（进游戏看效果）
 ./gradlew :platform:runServer  # 开发服务端（需自备 run/server/eula.txt）
