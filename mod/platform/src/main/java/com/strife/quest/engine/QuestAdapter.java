@@ -1,6 +1,5 @@
 package com.strife.quest.engine;
 
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.strife.core.QuestProgress;
 import com.strife.core.RewardBridges;
@@ -38,6 +37,9 @@ import net.minecraft.world.item.ItemStack;
  * <p>序章 #1（talk npc_qingshi_zhizhi）由世界 NPC 对话结束事件推进（tables/npcs.csv 摆位， NpcPlacementSpawner 生成）；其余
  * talk/deliver 节点用 {@code /strife quest talk|deliver <npc>} 交互（交付 UI 属 M3/M4）。击杀口径：任意生物（妖兽实体与专属掉落是
  * M2）。
+ *
+ * <p>2026-11-06 起章簿不再只读序章：{@code strife_quests/*.json} 全部装载进 {@link QuestBooks}（序章 → ch1 → ep2 章序）。
+ * 此前只有 {@code prologue.json} 被加载，ch1/EP2 的任务在游戏里既不推进也不上追踪条——产物与单测都在，运行时却是死的。
  */
 public final class QuestAdapter implements RewardSink {
 
@@ -153,18 +155,29 @@ public final class QuestAdapter implements RewardSink {
     /** {@code /strife quest status} 的落地：任务一览（状态 + 目标进度），供命令与后续面板消费。 */
     public static String status(ServerPlayer player) {
         QuestAdapter instance = adapter(player);
-        return prologueBook(player.server).describe(instance.state, instance.dslContext());
+        return books(player.server).describe(instance.state, instance.dslContext());
     }
 
     /** 追踪条的数据源：当前可接取任务的必做目标视图（与引擎共用同一可用性判定）。 */
     public static Optional<QuestBook.QuestView> trackable(ServerPlayer player) {
         QuestAdapter instance = adapter(player);
-        return prologueBook(player.server).trackable(instance.state, instance.dslContext());
+        return books(player.server).trackable(instance.state, instance.dslContext());
+    }
+
+    /**
+     * 只读可用性查询（试炼台等世界钩子用）：任务在当前进度下是否可接 = 前置完成（或已 start_quest 激活）+ conditions 通过。
+     *
+     * <p>为什么不用 {@code activated()}：激活集只由对话树 {@code start_quest} 填充，当前内容没有任何
+     * start_quest——拿激活集当门槛等于永远拒绝。可用性才是表里 {@code prerequisites} 表达的真实门槛。
+     */
+    public static boolean isAvailable(ServerPlayer player, String questId) {
+        QuestAdapter instance = adapter(player);
+        return books(player.server).isAvailable(instance.state, questId, instance.dslContext());
     }
 
     private void report(QuestBook.ObjectiveType type, String target, long amount) {
         List<QuestBook.AppliedReward> applied =
-                prologueBook(player.server).report(type, target, amount, state, this, dslContext());
+                books(player.server).report(type, target, amount, state, this, dslContext());
         save();
         announceCompleted(applied);
     }
@@ -177,10 +190,10 @@ public final class QuestAdapter implements RewardSink {
 
     /** COLLECT 对账循环：补报直到收敛（级联上限给足链长，正常两三轮即空）。 */
     private void syncCollect() {
-        QuestBook book = prologueBook(player.server);
+        QuestBooks books = books(player.server);
         for (int guard = 0; guard < 16; guard++) {
             List<QuestBook.CollectDelta> deltas =
-                    book.collectDeltas(state, dslContext(), itemId -> countOwned(player, itemId));
+                    books.collectDeltas(state, dslContext(), itemId -> countOwned(player, itemId));
             if (deltas.isEmpty()) {
                 return;
             }
@@ -228,39 +241,47 @@ public final class QuestAdapter implements RewardSink {
         return count;
     }
 
-    /** 序章任务簿由 quest 模块自己从 datapack 加载（realm 不反向依赖 quest）。 */
-    private static QuestBook prologueBook(MinecraftServer server) {
-        QuestBook book = PROLOGUE;
-        if (book == null) {
+    /** 全部章簿由 quest 模块自己从 datapack 加载（realm 不反向依赖 quest）；{@code /reload} 不刷新，重启生效。 */
+    private static QuestBooks books(MinecraftServer server) {
+        QuestBooks loaded = BOOKS;
+        if (loaded == null) {
             synchronized (QuestAdapter.class) {
-                book = PROLOGUE;
-                if (book == null) {
-                    try (var stream =
-                                    server.getResourceManager()
-                                            .getResource(
-                                                    ResourceLocation.fromNamespaceAndPath(
-                                                            "strife",
-                                                            "strife_quests/prologue.json"))
-                                            .orElseThrow(
-                                                    () ->
-                                                            new IllegalStateException(
-                                                                    "strife_quests/prologue.json not in jar"))
-                                            .open();
-                            var reader =
-                                    new java.io.InputStreamReader(
-                                            stream, java.nio.charset.StandardCharsets.UTF_8)) {
-                        JsonObject object = JsonParser.parseReader(reader).getAsJsonObject();
-                        PROLOGUE = book = QuestBook.parse(object);
-                    } catch (Exception e) {
-                        throw new IllegalStateException("cannot load prologue quest book", e);
-                    }
+                loaded = BOOKS;
+                if (loaded == null) {
+                    BOOKS = loaded = loadBooks(server);
                 }
             }
         }
-        return book;
+        return loaded;
     }
 
-    private static volatile QuestBook PROLOGUE;
+    private static QuestBooks loadBooks(MinecraftServer server) {
+        List<QuestBook> parsed = new java.util.ArrayList<>();
+        var resources =
+                server.getResourceManager()
+                        .listResources(
+                                "strife_quests",
+                                id ->
+                                        id.getNamespace().equals("strife")
+                                                && id.getPath().endsWith(".json"));
+        for (ResourceLocation id : resources.keySet()) {
+            try (var stream = resources.get(id).open();
+                    var reader =
+                            new java.io.InputStreamReader(
+                                    stream, java.nio.charset.StandardCharsets.UTF_8)) {
+                parsed.add(QuestBook.parse(JsonParser.parseReader(reader).getAsJsonObject()));
+            } catch (Exception e) {
+                throw new IllegalStateException("cannot load quest book " + id, e);
+            }
+        }
+        if (parsed.isEmpty()) {
+            throw new IllegalStateException(
+                    "strife_quests 目录为空：DataGen 未产出任务簿（quests_*.csv 被清空或产物未进 jar）");
+        }
+        return QuestBooks.of(parsed);
+    }
+
+    private static volatile QuestBooks BOOKS;
 
     private void save() {
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);

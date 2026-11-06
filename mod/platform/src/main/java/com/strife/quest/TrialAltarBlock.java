@@ -1,5 +1,6 @@
 package com.strife.quest;
 
+import com.strife.quest.engine.QuestAdapter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -40,8 +41,9 @@ public final class TrialAltarBlock extends Block {
             player.displayClientMessage(Component.literal("（试炼已在进行——站稳，莫离台）"), true);
             return;
         }
-        var quests = player.getData(com.strife.core.StrifeAttachmentTypes.PLAYER_DATA).quests();
-        if (!quests.activated().contains(WILL_TRIAL_QUEST)) {
+        // 可用性 = 前置完成（entry→勇气→智慧）+ 未完成；激活集只由 start_quest 填，当前内容没有 start_quest，
+        // 拿 activated 当门槛会让试炼台永远拒绝玩家。
+        if (!QuestAdapter.isAvailable(player, WILL_TRIAL_QUEST)) {
             player.displayClientMessage(Component.literal("（先向玄接下三重试炼——此台只回应有备之人）"), true);
             return;
         }
