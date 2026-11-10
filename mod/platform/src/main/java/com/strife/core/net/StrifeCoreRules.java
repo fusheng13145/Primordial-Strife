@@ -65,6 +65,8 @@ public final class StrifeCoreRules {
         rates.put(IntentRateLimiter.CRAFT, rateLimits.get("craft_per_sec").getAsDouble());
         rates.put(IntentRateLimiter.MARKET, rateLimits.get("market_per_sec").getAsDouble());
         rates.put(IntentRateLimiter.AUCTION, rateLimits.get("auction_per_sec").getAsDouble());
+        rates.put(
+                IntentRateLimiter.BLACKMARKET, rateLimits.get("blackmarket_per_sec").getAsDouble());
         return rates;
     }
 

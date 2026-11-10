@@ -100,6 +100,11 @@ public final class StrifeUiBridge {
         public static final String STATUS = "status";
         public static final String PAYOUTS = "payouts";
 
+        /** 黑市看板（production BlackMarketUi 组数据 / clientfx BlackMarketScreen 渲染，2026-11-11）。 */
+        public static final String BLACKMARKET_SCREEN = "blackmarket";
+
+        public static final String CAUTION = "caution";
+
         private Keys() {}
     }
 }

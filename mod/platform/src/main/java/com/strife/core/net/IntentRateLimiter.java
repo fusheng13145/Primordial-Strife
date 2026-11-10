@@ -34,6 +34,9 @@ public final class IntentRateLimiter {
     /** 拍卖看板（StrifeUiBridge 第三屏）：荷兰拍当场购买按钮——与 /strife auction buy 同一业务口。 */
     public static final String AUCTION = "auction";
 
+    /** 黑市看板（StrifeUiBridge 第四屏）：赃货购买按钮——与 /strife blackmarket buy 同一业务口（代价即因果）。 */
+    public static final String BLACKMARKET = "blackmarket";
+
     private final Map<String, TokenBucket> buckets;
     private final Set<String> unknown = new LinkedHashSet<>();
 

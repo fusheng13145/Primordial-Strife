@@ -125,6 +125,15 @@ public final class StrifeClientFx {
                             .setScreen(new AuctionBoardScreen(data));
                     return true;
                 });
+
+        // 黑市看板批：第四屏开启器——右键暗柜路由到本侧 BlackMarketScreen。
+        com.strife.core.StrifeUiBridge.registerOpener(
+                com.strife.core.StrifeUiBridge.Keys.BLACKMARKET_SCREEN,
+                data -> {
+                    net.minecraft.client.Minecraft.getInstance()
+                            .setScreen(new BlackMarketScreen(data));
+                    return true;
+                });
     }
 
     private void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

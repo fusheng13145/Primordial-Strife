@@ -43,6 +43,24 @@ public final class StrifeProduction {
         AuctionBlocks.BLOCKS.register(modEventBus);
         AuctionBlocks.ITEMS.register(modEventBus);
         AuctionBoardPlacer.register();
+        // 黑市看板批：看板家族第四成员（坊市暗柜）+ 赃货购买意图（代价即因果）。
+        BlackMarketBlocks.BLOCKS.register(modEventBus);
+        BlackMarketBlocks.ITEMS.register(modEventBus);
+        BlackMarketPlacer.register();
+        com.strife.core.net.StrifeIntents.register(
+                com.strife.core.net.IntentRateLimiter.BLACKMARKET,
+                invocation -> {
+                    var args = invocation.args();
+                    if (args == null) {
+                        return;
+                    }
+                    String item = args.getString("item");
+                    if (item.isEmpty()) {
+                        return;
+                    }
+                    int count = Math.max(1, Math.min(64, args.getInt("count")));
+                    BlackMarketCommands.buyFor(invocation.player(), item, count);
+                });
         com.strife.core.net.StrifeIntents.register(
                 com.strife.core.net.IntentRateLimiter.AUCTION,
                 invocation -> {

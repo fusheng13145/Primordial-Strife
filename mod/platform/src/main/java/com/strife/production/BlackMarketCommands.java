@@ -98,13 +98,19 @@ public final class BlackMarketCommands {
         return 1;
     }
 
+    /** 命令包装：控制台拒绝后走玩家直参内核（内核与黑市看板意图共用）。 */
     private static int buy(CommandSourceStack source, String itemId, int count)
             throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
+        return buyFor(player, itemId, count) ? 1 : 0;
+    }
+
+    /** 购入内核（玩家直参；黑市看板意图与命令共用，含因果标记与正道声望代价）。返回是否成交。 */
+    static boolean buyFor(ServerPlayer player, String itemId, int count) {
         Integer price = price(itemId).orElse(null);
         if (price == null) {
-            source.sendFailure(Component.literal("（黑市没有这件货：" + itemId + "）"));
-            return 0;
+            player.displayClientMessage(Component.literal("（黑市没有这件货：" + itemId + "）"), true);
+            return false;
         }
         int cost = price * count;
         InventoryOps.PlayerContainers containers =
@@ -112,18 +118,18 @@ public final class BlackMarketCommands {
                         player.getInventory(), player.getEnderChestInventory());
         if (InventoryOps.countOwned(containers, "item_lingshi") < cost) {
             player.displayClientMessage(Component.literal("（灵石不足：需 " + cost + "）"), true);
-            return 0;
+            return false;
         }
         long removed = InventoryOps.remove(containers, "item_lingshi", cost);
         if (removed < cost) {
             player.displayClientMessage(Component.literal("（结算异常已回滚）"), true);
-            return 0;
+            return false;
         }
         Item item = InventoryOps.resolve(itemId).orElse(null);
         if (item == null) {
             player.getInventory().add(new ItemStack(StrifeItems.LINGSHI.get(), (int) removed));
             player.displayClientMessage(Component.literal("（该货暂未到岸，已退灵石）"), true);
-            return 0;
+            return false;
         }
         ItemStack bought = new ItemStack(item, count);
         // ADR-037 ③：黑市货未鉴定——鉴定阁去除标记前，品阶与加成对玩家隐藏。
@@ -143,7 +149,7 @@ public final class BlackMarketCommands {
 
         player.displayClientMessage(
                 Component.literal("✦ 黑市交割 " + itemId + " ×" + count + "（灵石 " + cost + "）"), true);
-        return 1;
+        return true;
     }
 
     private static volatile Map<String, Integer> cache;
