@@ -4,6 +4,7 @@
 deliverables/artifacts/p1-18-采样记录.csv。结束判据：首尾差 <200MB。
 """
 import csv
+import os
 import subprocess
 import sys
 import time
@@ -30,19 +31,21 @@ def sample_rss_mb() -> int:
 
 
 def main() -> int:
+    # 逐行追加（进度可存活——上一版只在结束时写，进程被收割即全丢）
+    if not os.path.exists(OUT):
+        with open(OUT, "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow(["sample", "time", "rss_mb"])
     rows = []
     for i in range(SAMPLES):
         ts = time.strftime("%H:%M:%S")
         rss = sample_rss_mb()
         label = "baseline" if i == 0 else f"t+{i * 10}min"
         rows.append((label, ts, rss))
+        with open(OUT, "a", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow([label, ts, rss])
         print(f"{label},{ts},{rss} MB", flush=True)
         if i < SAMPLES - 1:
             time.sleep(INTERVAL_SEC)
-    with open(OUT, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["sample", "time", "rss_mb"])
-        writer.writerows(rows)
     first, last = rows[0][2], rows[-1][2]
     delta = last - first
     verdict = "PASS (<200MB)" if abs(delta) < 200 else f"REVIEW (delta={delta}MB)"
