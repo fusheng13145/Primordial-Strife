@@ -86,6 +86,20 @@ public final class StrifeUiBridge {
         public static final String EXCHANGE_SHANG = "exchange_shang";
         public static final String APPRAISE_FEE = "appraise_fee";
 
+        /** 拍卖看板（production AuctionUi 组数据 / clientfx AuctionBoardScreen 渲染，2026-11-10）。 */
+        public static final String AUCTION_SCREEN = "auction";
+
+        public static final String LOTS = "lots";
+        public static final String LOT = "lot";
+        public static final String PRICE = "price";
+        public static final String MIN = "min";
+        public static final String REMAIN = "remain_shichen";
+        public static final String CURRENT = "current";
+        public static final String MY_BIDS = "my_bids";
+        public static final String AMOUNT = "amount";
+        public static final String STATUS = "status";
+        public static final String PAYOUTS = "payouts";
+
         private Keys() {}
     }
 }

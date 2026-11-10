@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:fff97a6b30d2dfc8200365d62be0181a565a6e3e9547c3738cf10274e6b960ac",
+  "@generated": "from content/NUMBERS.md @ sha256:0ce94be054e825f65d14e9b54688d9adccca6ea7e1da056c0f3b0651c19c52c7",
   "id": "core_rules",
   "limits": {
     "growth_ratio_min": 1.8,
@@ -23,7 +23,8 @@
     "breakthrough_per_min": 6,
     "panel_per_sec": 4,
     "craft_per_sec": 2,
-    "market_per_sec": 5
+    "market_per_sec": 5,
+    "auction_per_sec": 5
   },
   "derived": {
     "ticks_per_year": 24000

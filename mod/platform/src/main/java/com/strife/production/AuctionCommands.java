@@ -100,19 +100,25 @@ public final class AuctionCommands {
         return 1;
     }
 
+    /** 命令包装：控制台拒绝后走玩家直参内核（内核与看板意图共用）。 */
     private static int buy(CommandSourceStack source, String lotId) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
+        return buyFor(player, lotId) ? 1 : 0;
+    }
+
+    /** 荷兰拍购买内核（玩家直参；看板意图与 /strife auction buy 共用）。返回是否成交（false = 未扣资产）。 */
+    static boolean buyFor(ServerPlayer player, String lotId) {
         AuctionBidding.settleAndPersist(player.server);
         long gameTime = player.level().getGameTime();
         AuctionHouse.Lot lot = AuctionHouse.lots().get(lotId);
         if (lot == null) {
-            source.sendFailure(Component.literal("（拍品不存在：" + lotId + "）"));
-            return 0;
+            player.displayClientMessage(Component.literal("（拍品不存在：" + lotId + "）"), true);
+            return false;
         }
         if (!lot.equals(AuctionHouse.currentLot(gameTime))) {
-            source.sendFailure(
-                    Component.literal("（" + lotId + " 不在本槽——等轮换，/strife auction list 看当前）"));
-            return 0;
+            player.displayClientMessage(
+                    Component.literal("（" + lotId + " 不在本槽——等轮换，/strife auction list 看当前）"), true);
+            return false;
         }
         int price =
                 AuctionHouse.currentPrice(
@@ -122,18 +128,18 @@ public final class AuctionCommands {
                         player.getInventory(), player.getEnderChestInventory());
         if (InventoryOps.countOwned(containers, "item_lingshi") < price) {
             player.displayClientMessage(Component.literal("（灵石不足：需 " + price + "——等降价也是策略）"), true);
-            return 0;
+            return false;
         }
         long removed = InventoryOps.remove(containers, "item_lingshi", price);
         if (removed < price) {
             player.displayClientMessage(Component.literal("（结算异常已回滚）"), true);
-            return 0;
+            return false;
         }
         Item item = InventoryOps.resolve(lot.itemId()).orElse(null);
         if (item == null) {
             player.getInventory().add(new ItemStack(StrifeItems.LINGSHI.get(), (int) removed));
             player.displayClientMessage(Component.literal("（拍品暂未到岸，已退灵石）"), true);
-            return 0;
+            return false;
         }
         player.getInventory().add(new ItemStack(item, 1));
         StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
@@ -143,7 +149,7 @@ public final class AuctionCommands {
                 StrifeAttachmentTypes.PLAYER_DATA, data.withReputation(Map.copyOf(reputation)));
         player.displayClientMessage(
                 Component.literal("✦ 落槌！" + lot.itemId() + " 以 " + price + " 灵石归你"), true);
-        return 1;
+        return true;
     }
 
     // ═══ 密封投标（ADR-041 第三批）═══

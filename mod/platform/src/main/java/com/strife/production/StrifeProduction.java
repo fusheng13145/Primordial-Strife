@@ -6,6 +6,7 @@ import com.strife.core.StrifeCommands;
 import com.strife.core.StrifeMod;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -38,6 +39,33 @@ public final class StrifeProduction {
         MarketBlocks.BLOCKS.register(modEventBus);
         MarketBlocks.ITEMS.register(modEventBus);
         MarketBoardPlacer.register();
+        // 拍卖看板批：看板家族第三成员（文津渡锚点）+ 荷兰拍购买意图。
+        AuctionBlocks.BLOCKS.register(modEventBus);
+        AuctionBlocks.ITEMS.register(modEventBus);
+        AuctionBoardPlacer.register();
+        com.strife.core.net.StrifeIntents.register(
+                com.strife.core.net.IntentRateLimiter.AUCTION,
+                invocation -> {
+                    var args = invocation.args();
+                    if (args == null) {
+                        return;
+                    }
+                    String action = args.getString("action");
+                    if ("claim".equals(action)) {
+                        String claimed = AuctionBidding.dispense(invocation.player());
+                        if (claimed == null) {
+                            invocation
+                                    .player()
+                                    .displayClientMessage(Component.literal("（暗箱里没有你的东西）"), true);
+                        }
+                        return;
+                    }
+                    String lot = args.getString("lot");
+                    if (!"buy".equals(action) || lot.isEmpty()) {
+                        return;
+                    }
+                    AuctionCommands.buyFor(invocation.player(), lot);
+                });
         com.strife.core.net.StrifeIntents.register(
                 com.strife.core.net.IntentRateLimiter.MARKET,
                 invocation -> {

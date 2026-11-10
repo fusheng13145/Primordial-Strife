@@ -116,6 +116,15 @@ public final class StrifeClientFx {
                             .setScreen(new MarketBoardScreen(data));
                     return true;
                 });
+
+        // 拍卖看板批：看板开启器——右键拍卖告示柱路由到本侧 AuctionBoardScreen。
+        com.strife.core.StrifeUiBridge.registerOpener(
+                com.strife.core.StrifeUiBridge.Keys.AUCTION_SCREEN,
+                data -> {
+                    net.minecraft.client.Minecraft.getInstance()
+                            .setScreen(new AuctionBoardScreen(data));
+                    return true;
+                });
     }
 
     private void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
