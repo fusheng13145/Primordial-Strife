@@ -75,6 +75,9 @@ SUITE = [
     ("实体面：秘境妖兽类型已注册", "execute in strife:miji_realm run summon strife:fire_fox 8 92 8", ["Summoned new"]),
     ("结构面：望仙台可定位", "execute in strife:upper_realm run locate structure strife:wangxian_tai", ["nearest strife:wangxian_tai"]),
     ("清理：炉/探针区还原", "execute in strife:miji_realm run setblock 8 100 8 minecraft:air", ["Changed the block"]),
+    ("试炼台：方块注册（心性试炼物理锚点）", "execute in strife:miji_realm run setblock 8 92 8 strife:block_trial_altar", ["Changed the block"]),
+    # places 锚点（qi_trial_altar）的解析验证走玩家 tick 落位路径（place info 命令需玩家上下文，控制台拒）——实机批项
+    ("清理：试炼台还原", "execute in strife:miji_realm run setblock 8 92 8 minecraft:air", ["Changed the block"]),
 ]
 
 
