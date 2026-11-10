@@ -48,6 +48,8 @@
   "gui.strife.artifact.no_active": "Active: none",
   "gui.strife.artifact.slot": "Artifact Slot (Offhand)",
   "gui.strife.artifact.title": "Artifact",
+  "gui.strife.auctionboard.amount_hint": "lingshi",
+  "gui.strife.auctionboard.bid": "Bid",
   "gui.strife.auctionboard.buy": "Buy now (dutch price)",
   "gui.strife.auctionboard.claim": "Claim box (%s)",
   "gui.strife.auctionboard.header": "Dutch auction: cheaper if you wait. ▶ = current slot (sealed bids: /strife auction bid)",

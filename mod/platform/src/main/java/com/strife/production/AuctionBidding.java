@@ -195,6 +195,30 @@ public final class AuctionBidding {
         List<AuctionBids.PayoutRow> payouts = new ArrayList<>(state.payouts());
         payouts.addAll(result.payouts());
         save(server, new AuctionBids(result.bids(), payouts));
+        notifySettled(server, result.payouts());
+    }
+
+    /**
+     * 结算通知（修仙世界感配套）：暗箱开在交互瞬间，但中拍/退款的人不该靠"碰巧路过"才知道—— 在线者即时播报；离线者靠下次任何 auction 交互或 claim
+     * 兜底（延迟领取池语义不变）。
+     */
+    private static void notifySettled(
+            MinecraftServer server, List<AuctionBids.PayoutRow> freshPayouts) {
+        for (AuctionBids.PayoutRow row : freshPayouts) {
+            var online =
+                    server.getPlayerList().getPlayer(java.util.UUID.fromString(row.playerId()));
+            if (online == null) {
+                continue;
+            }
+            String message =
+                    !row.itemId().isEmpty()
+                            ? "✦ 暗箱开——" + row.itemId() + " 归你！/strife auction claim 领取"
+                            : "✦ 暗箱开——你的投标未中，退款 " + row.lingshi() + " 灵石入池";
+            online.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal(message)
+                            .withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE),
+                    false);
+        }
     }
 
     // ═══ 发放（待领取池 → 在线玩家）═══

@@ -35,6 +35,8 @@ public final class AuctionBoardScreen extends Screen {
     private int scroll;
     private int selected = -1;
     private Button buyButton;
+    private Button bidButton;
+    private net.minecraft.client.gui.components.EditBox bidAmount;
 
     private record LotRow(
             String lotId, String itemId, int price, int min, long remain, boolean current) {}
@@ -87,6 +89,28 @@ public final class AuctionBoardScreen extends Screen {
                                         button -> buySelected())
                                 .bounds(left + 12, top + PANEL_HEIGHT - 24, 90, 18)
                                 .build());
+        // 密封投标入口（ADR-041 交互闭环）：金额框 + 出价钮——服务端复判底价/灵石/当前槽，客户端只做可用性提示
+        bidAmount =
+                addRenderableWidget(
+                        new net.minecraft.client.gui.components.EditBox(
+                                this.font,
+                                left + 108,
+                                top + PANEL_HEIGHT - 24,
+                                64,
+                                18,
+                                Component.translatable("gui.strife.auctionboard.amount_hint")));
+        bidAmount.setMaxLength(9);
+        bidAmount.setHint(Component.translatable("gui.strife.auctionboard.amount_hint"));
+        bidAmount.setFilter(
+                value -> value.chars().allMatch(Character::isDigit) && value.length() <= 9);
+        addRenderableWidget(bidAmount);
+        bidButton =
+                addRenderableWidget(
+                        Button.builder(
+                                        Component.translatable("gui.strife.auctionboard.bid"),
+                                        button -> bidSelected())
+                                .bounds(left + 178, top + PANEL_HEIGHT - 24, 56, 18)
+                                .build());
         addRenderableWidget(
                 Button.builder(
                                 Component.translatable("gui.strife.alchemy.close"),
@@ -111,6 +135,23 @@ public final class AuctionBoardScreen extends Screen {
         CompoundTag args = new CompoundTag();
         args.putString("action", "buy");
         args.putString("lot", rows.get(selected).lotId());
+        ClientIntents.send(IntentRateLimiter.AUCTION, args);
+        onClose();
+    }
+
+    /** 密封投标：金额框取数 → 意图（服务端复判；非法/空金额按钮本就不可用）。 */
+    private void bidSelected() {
+        if (selected < 0 || selected >= rows.size()) {
+            return;
+        }
+        String raw = bidAmount.getValue().trim();
+        if (raw.isEmpty() || !raw.chars().allMatch(Character::isDigit)) {
+            return;
+        }
+        CompoundTag args = new CompoundTag();
+        args.putString("action", "bid");
+        args.putString("lot", rows.get(selected).lotId());
+        args.putInt("amount", Integer.parseInt(raw));
         ClientIntents.send(IntentRateLimiter.AUCTION, args);
         onClose();
     }
@@ -195,6 +236,11 @@ public final class AuctionBoardScreen extends Screen {
 
         boolean currentSelected = selected >= 0 && rows.get(selected).current();
         buyButton.active = currentSelected;
+        boolean numeric =
+                bidAmount != null
+                        && !bidAmount.getValue().isBlank()
+                        && bidAmount.getValue().chars().allMatch(Character::isDigit);
+        bidButton.active = currentSelected && numeric;
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 

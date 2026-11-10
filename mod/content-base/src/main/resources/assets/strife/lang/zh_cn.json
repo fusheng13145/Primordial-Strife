@@ -48,6 +48,8 @@
   "gui.strife.artifact.no_active": "主动：无",
   "gui.strife.artifact.slot": "法宝槽（副手）",
   "gui.strife.artifact.title": "法宝",
+  "gui.strife.auctionboard.amount_hint": "灵石数",
+  "gui.strife.auctionboard.bid": "出价",
   "gui.strife.auctionboard.buy": "当场买下（荷兰价）",
   "gui.strife.auctionboard.claim": "领取暗箱（%s 笔）",
   "gui.strife.auctionboard.header": "荷兰拍：越等越便宜 ▶=本槽拍品（密封投标用 /strife auction bid）",

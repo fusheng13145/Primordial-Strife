@@ -61,6 +61,12 @@ public final class StrifeProduction {
                         return;
                     }
                     String lot = args.getString("lot");
+                    if ("bid".equals(action) && !lot.isEmpty()) {
+                        // 密封投标（ADR-041）：金额全额托管由 AuctionBidding.bid 校验（底价/灵石/当前槽）
+                        int amount = Math.max(1, args.getInt("amount"));
+                        AuctionBidding.bid(invocation.player(), lot, amount);
+                        return;
+                    }
                     if (!"buy".equals(action) || lot.isEmpty()) {
                         return;
                     }
