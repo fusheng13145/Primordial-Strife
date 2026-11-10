@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 
@@ -37,6 +38,14 @@ public final class CultivationHandler {
     private static final Map<UUID, Position> POSITIONS = new ConcurrentHashMap<>();
 
     private record Position(double x, double y, double z) {}
+
+    // 修仙世界感·顿悟参数（[拟]，随实机校准）
+    private static final int ENLIGHTEN_ONE_IN = 100;
+    private static final long ENLIGHTEN_MIN_MEDITATION_TICKS = 30L * StrifeTime.TICKS_PER_SECOND;
+    private static final int ENLIGHTEN_SECONDS = 60;
+    // 修仙世界感·渡劫雷雨参数（[拟]）：渡入天劫境成功也挨雷——六道天雷落在身周 4 格内
+    private static final int TRIBULATION_STRIKES = 6;
+    private static final double TRIBULATION_STRIKE_RADIUS = 4.0;
 
     private CultivationHandler() {}
 
@@ -68,6 +77,7 @@ public final class CultivationHandler {
                 data = greatLimit(player, data, realm, tables);
                 // 大限可能让境界跌落：后面的打坐结算必须用新境界的上限与速率，否则会按旧境界继续涨修为。
                 active = tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
+                RealmTitles.apply(player);
             } else {
                 data = write(player, data, d -> withLifespan(d, remaining));
             }
@@ -233,6 +243,31 @@ public final class CultivationHandler {
                             .withStyle(ChatFormatting.GOLD),
                     false);
             RealmEvents.postBreakthrough(player, realm.breakthroughKey(), true, 0);
+            // 修仙世界感·渡劫雷雨（[拟]）：渡入天劫境成功也要挨雷——真雷（有伤害有火），天劫从不体面
+            if (next.tribulation()) {
+                ServerLevel level = player.serverLevel();
+                for (int i = 0; i < TRIBULATION_STRIKES; i++) {
+                    var bolt = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(level);
+                    if (bolt == null) {
+                        break;
+                    }
+                    double angle = random.nextDouble() * Math.PI * 2;
+                    double radius = random.nextDouble() * TRIBULATION_STRIKE_RADIUS;
+                    bolt.moveTo(
+                            player.getX() + Math.cos(angle) * radius,
+                            player.getY(),
+                            player.getZ() + Math.sin(angle) * radius);
+                    bolt.setVisualOnly(false);
+                    level.addFreshEntity(bolt);
+                }
+                player.displayClientMessage(
+                        Component.translatable(
+                                        "msg.strife.tribulation.success",
+                                        Component.translatable("realm.strife." + next.id()))
+                                .withStyle(ChatFormatting.LIGHT_PURPLE),
+                        false);
+                RealmTitles.apply(player);
+            }
         } else {
             double ratio =
                     tables.rules().qiResetRatioMin()
@@ -317,11 +352,35 @@ public final class CultivationHandler {
         }
         MeditationMath.Applied applied = MeditationMath.apply(data.qi(), delta, realm.qiMax());
         int credited = meditation.creditedQi() + Math.max(0, applied.applied());
+        // 修仙世界感·顿悟（[拟]）：入定满 30 秒后，每次结算 1/100 概率灵台清明——按当前速率瞬得 60 秒修为。
+        // 一次性瞬得，零新状态（不引入计时增益的第二套机制，与丹药增益共存不互斥）。
+        int bonusQi = 0;
+        long meditatedTicks = now - meditation.startTick();
+        if (meditatedTicks >= ENLIGHTEN_MIN_MEDITATION_TICKS
+                && player.getRandom().nextInt(ENLIGHTEN_ONE_IN) == 0) {
+            bonusQi =
+                    (int)
+                            Math.max(
+                                    0L,
+                                    Math.min(
+                                            (long)
+                                                    (qiPerTick
+                                                            * ENLIGHTEN_SECONDS
+                                                            * StrifeTime.TICKS_PER_SECOND),
+                                            realm.qiMax() - applied.qi()));
+        }
+        if (bonusQi > 0) {
+            tell(
+                    player,
+                    Component.translatable("msg.strife.enlightenment", bonusQi)
+                            .withStyle(ChatFormatting.LIGHT_PURPLE));
+        }
+        final int finalQi = applied.qi() + bonusQi;
         return write(
                 player,
                 data,
                 d ->
-                        withQiAndStage(d, applied.qi(), realm)
+                        withQiAndStage(d, finalQi, realm)
                                 .withMeditation(meditation.withCreditedQi(credited)));
     }
 

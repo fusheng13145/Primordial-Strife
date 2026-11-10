@@ -123,6 +123,7 @@ public final class StrifeRealm {
     private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player && !player.level().isClientSide) {
             CultivationHandler.onLogin(player);
+            RealmTitles.apply(player);
             RealmViewBuilder.pushTo(player);
         }
     }
