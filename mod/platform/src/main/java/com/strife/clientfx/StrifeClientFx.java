@@ -108,6 +108,14 @@ public final class StrifeClientFx {
                     net.minecraft.client.Minecraft.getInstance().setScreen(new AlchemyScreen(data));
                     return true;
                 });
+        // 坊市看板批：看板开启器——右键告示牌经 StrifeUiPayload 路由到本侧 MarketBoardScreen。
+        com.strife.core.StrifeUiBridge.registerOpener(
+                com.strife.core.StrifeUiBridge.Keys.MARKET_SCREEN,
+                data -> {
+                    net.minecraft.client.Minecraft.getInstance()
+                            .setScreen(new MarketBoardScreen(data));
+                    return true;
+                });
     }
 
     private void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

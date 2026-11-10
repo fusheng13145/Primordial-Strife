@@ -75,6 +75,17 @@ public final class StrifeUiBridge {
         public static final String COUNT = "count";
         public static final String PROB = "prob";
 
+        /** 坊市看板（production MarketUi 组数据 / clientfx MarketBoardScreen 渲染，2026-11-10）。 */
+        public static final String MARKET_SCREEN = "market";
+
+        public static final String PRICES = "prices";
+        public static final String BUY = "buy";
+        public static final String SELL = "sell";
+        public static final String OWNED = "owned";
+        public static final String EXCHANGE_ZHONG = "exchange_zhong";
+        public static final String EXCHANGE_SHANG = "exchange_shang";
+        public static final String APPRAISE_FEE = "appraise_fee";
+
         private Keys() {}
     }
 }

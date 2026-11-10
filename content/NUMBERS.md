@@ -275,6 +275,7 @@ artifact_per_sec: 5
 breakthrough_per_min: 6
 panel_per_sec: 4
 craft_per_sec: 2    # 炼丹（炉交互屏炼制按钮与 /strife craft pill 同口，ADR-038 交互层）
+market_per_sec: 5   # 坊市看板买/卖按钮（与 /strife market buy|sell 同口，2026-11-10）
 ```
 
 ## §25. 坊市

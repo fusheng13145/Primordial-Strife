@@ -148,6 +148,7 @@ public final class MarketCommands {
         return 1;
     }
 
+    /** 命令包装：控制台拒绝后走玩家直参内核（内核与看板意图共用）。 */
     private static int buy(CommandSourceStack source, String itemId, int count) {
         ServerPlayer player;
         try {
@@ -156,10 +157,15 @@ public final class MarketCommands {
             source.sendFailure(Component.literal("market 需要玩家上下文（不能由控制台执行）"));
             return 0;
         }
+        return buyFor(player, itemId, count) ? 1 : 0;
+    }
+
+    /** 购入内核（玩家直参；看板意图与 /strife market buy 共用）。返回是否成交（false = 未扣任何资产）。 */
+    static boolean buyFor(ServerPlayer player, String itemId, int count) {
         Optional<MarketPrices.Quote> quote = MarketPrices.quote(itemId);
         if (quote.isEmpty()) {
-            source.sendFailure(Component.literal("（坊市未上架：" + itemId + "）"));
-            return 0;
+            player.displayClientMessage(Component.literal("（坊市未上架：" + itemId + "）"), true);
+            return false;
         }
         int cost = quote.get().buyLingshi() * count;
         InventoryOps.PlayerContainers containers =
@@ -174,27 +180,28 @@ public final class MarketCommands {
                                     + InventoryOps.countOwned(containers, "item_lingshi")
                                     + "）"),
                     true);
-            return 0;
+            return false;
         }
         long removed = InventoryOps.remove(containers, "item_lingshi", cost);
         if (removed < cost) {
             player.displayClientMessage(
                     Component.literal("（结算异常：实扣 " + removed + "/" + cost + "，已回滚数量校验）"), true);
-            return 0;
+            return false;
         }
         Item item = InventoryOps.resolve(itemId).orElse(null);
         if (item == null) {
             // 价格表有、注册表无：内容热更半途，按未上架处理（钱已扣则补偿——不吞玩家资产）。
             player.getInventory().add(new ItemStack(StrifeItems.LINGSHI.get(), (int) removed));
             player.displayClientMessage(Component.literal("（该物品暂未注册，已退回灵石）"), true);
-            return 0;
+            return false;
         }
         player.getInventory().add(new ItemStack(item, count));
         player.displayClientMessage(
                 Component.literal("✦ 购入 " + itemId + " ×" + count + "（付灵石 " + cost + "）"), true);
-        return 1;
+        return true;
     }
 
+    /** 命令包装：控制台拒绝后走玩家直参内核（内核与看板意图共用）。 */
     private static int sell(CommandSourceStack source, String itemId, int count) {
         ServerPlayer player;
         try {
@@ -203,10 +210,15 @@ public final class MarketCommands {
             source.sendFailure(Component.literal("market 需要玩家上下文（不能由控制台执行）"));
             return 0;
         }
+        return sellFor(player, itemId, count) ? 1 : 0;
+    }
+
+    /** 回收内核（玩家直参；看板意图与 /strife market sell 共用）。返回是否成交。 */
+    static boolean sellFor(ServerPlayer player, String itemId, int count) {
         Optional<MarketPrices.Quote> quote = MarketPrices.quote(itemId);
         if (quote.isEmpty()) {
-            source.sendFailure(Component.literal("（坊市未回收：" + itemId + "）"));
-            return 0;
+            player.displayClientMessage(Component.literal("（坊市未回收：" + itemId + "）"), true);
+            return false;
         }
         InventoryOps.PlayerContainers containers =
                 new InventoryOps.PlayerContainers(
@@ -215,7 +227,7 @@ public final class MarketCommands {
         if (owned < count) {
             player.displayClientMessage(
                     Component.literal("（数量不足：现有 " + owned + "，需 " + count + "）"), true);
-            return 0;
+            return false;
         }
         long removed = InventoryOps.remove(containers, itemId, count);
         int payout = quote.get().sellLingshi() * (int) removed;
@@ -223,7 +235,7 @@ public final class MarketCommands {
         player.displayClientMessage(
                 Component.literal("✦ 回收 " + itemId + " ×" + removed + "（得灵石 " + payout + "）"),
                 true);
-        return 1;
+        return true;
     }
 
     /** 鉴定阁（ADR-037 ③）：清点主背包+末影箱的未鉴定器胚，按件收费去除标记。 无未鉴定品=无事发生不扣费。 */

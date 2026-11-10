@@ -6,6 +6,7 @@ import com.strife.core.StrifeCommands;
 import com.strife.core.StrifeMod;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -33,6 +34,30 @@ public final class StrifeProduction {
         // EP1（ADR-038）：炼丹炉方块——站附近使用炼丹命令吃到阶位加成。
         StrifeAlchemyBlocks.BLOCKS.register(modEventBus);
         StrifeAlchemyBlocks.ITEMS.register(modEventBus);
+        // 坊市看板批：告示牌（右键开看板）+ 锚点落位 + 看板意图。
+        MarketBlocks.BLOCKS.register(modEventBus);
+        MarketBlocks.ITEMS.register(modEventBus);
+        MarketBoardPlacer.register();
+        com.strife.core.net.StrifeIntents.register(
+                com.strife.core.net.IntentRateLimiter.MARKET,
+                invocation -> {
+                    var args = invocation.args();
+                    if (args == null) {
+                        return;
+                    }
+                    String action = args.getString("action");
+                    String item = args.getString("item");
+                    int count = Math.max(1, Math.min(64, args.getInt("count")));
+                    if (item.isEmpty() || action.isEmpty()) {
+                        return;
+                    }
+                    ServerPlayer player = invocation.player();
+                    if ("buy".equals(action)) {
+                        MarketCommands.buyFor(player, item, count);
+                    } else if ("sell".equals(action)) {
+                        MarketCommands.sellFor(player, item, count);
+                    }
+                });
         CultivationFactors.registerPill(StrifePills::coefficient);
         Alchemy.register();
         ArtifactTables.register();

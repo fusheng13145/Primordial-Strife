@@ -28,6 +28,9 @@ public final class IntentRateLimiter {
     /** 炼丹（炉交互屏的炼制按钮，ADR-038 交互层）：与 /strife craft pill 同一业务口，同一份限速。 */
     public static final String CRAFT = "craft_pill";
 
+    /** 坊市看板（StrifeUiBridge 第二屏）：看板上的买/卖按钮——与 /strife market buy|sell 同一业务口。 */
+    public static final String MARKET = "market";
+
     private final Map<String, TokenBucket> buckets;
     private final Set<String> unknown = new LinkedHashSet<>();
 
