@@ -220,6 +220,7 @@ ITEMS = {
     'item_fengxue': draw_crystal(C(0xFF8844)),                   # 凤血：橙红晶
     # ── 功能物品（4）──
     'item_dunfu':         draw_talisman(C(0xEEEECC), C(0xCC2222)),  # 遁符：白纸红符
+    'item_bushou_fu':     draw_talisman(C(0xEEDDAA), C(0x884422)),  # 捕兽符：黄纸兽纹
     'item_tishen_caoren': draw_scarecrow(C(0xCCBB77), C(0xDDBB88)),  # 替身草人：草黄
     'item_guide_intro':   draw_book(C(0x8B4513), C(0xDAA520)),    # 修真入门：棕金书
     'item_zijin_hua_fall': draw_herb(C(0xAA66CC), C(0x554477)),   # 紫金花副本（已有）

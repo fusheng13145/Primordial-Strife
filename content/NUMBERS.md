@@ -158,6 +158,8 @@ formula_burst: { base: 12, scale: realm_coeff, self_cost_qi: 0.15 }  # 爆发系
 technique_proficiency_per_tier: 100    # 功法熟练度：每施法 100 次 +1 档 [拟]
 technique_proficiency_bonus_per_tier: 0.05   # 每档速率加成 +5% [拟]
 technique_proficiency_cap: 0.20        # 加成封顶 +20%（4 档/400 次）[拟]
+beast_taming_max_health_ratio: 0.35    # 捕兽符：目标生命 ≤35% 才可捕 [拟]
+beast_taming_chance: 0.60              # 捕兽符：满足阈值后驯服成功率 [拟]
 spell_cost_qi: { light: 6,  medium: 18, heavy: 45 }  # 灵气/修为消耗三档
 spell_cooldown_sec: { light: 1.0, medium: 4.0, heavy: 12.0 }    
 artifact_cooldown_sec: 20  # 法宝主动技能
