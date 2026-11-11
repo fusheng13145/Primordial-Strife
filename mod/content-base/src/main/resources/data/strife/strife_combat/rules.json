@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:ebfe6d0511579caef3e595d0af325f8ad078b11fc1dd6ca8551e9e9503c3f8f2",
+  "@generated": "from content/NUMBERS.md @ sha256:82e8ed879f3ede607b3e5fa53458b3654d30ecec1c98f1916587904651b6226e",
   "id": "combat_rules",
   "combat": {
     "realm_coeff": {
@@ -30,6 +30,8 @@
     "technique_proficiency_per_tier": 100,
     "technique_proficiency_bonus_per_tier": 0.05,
     "technique_proficiency_cap": 0.2,
+    "beast_taming_max_health_ratio": 0.35,
+    "beast_taming_chance": 0.6,
     "spell_cost_qi": {
     "light": 6,
     "medium": 18,
