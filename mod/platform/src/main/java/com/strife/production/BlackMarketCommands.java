@@ -34,6 +34,11 @@ public final class BlackMarketCommands {
 
     private static final int REPUTATION_COST_PER_BUY = -1;
 
+    // 走商轮换（[拟]）：暗柜每天只摆 STOCK_COUNT 件（价目里的滑动窗口），按游戏日确定性推导
+    // （荷兰拍同款零持久化承诺）——"今天暗柜有什么"成为走商体验；全量价目口径留给测试与清单。
+    static final int STOCK_COUNT = 8;
+    static final long GAME_DAY_TICKS = 24000L;
+
     private BlackMarketCommands() {}
 
     /** 黑市价目（item_id → 下品灵石单价）。 */
@@ -43,6 +48,35 @@ public final class BlackMarketCommands {
 
     public static Map<String, Integer> snapshot() {
         return load();
+    }
+
+    /**
+     * 当日暗柜库存（纯函数，[拟]）：按游戏日确定性推导——价目 ID 排序后取滑动窗口 （起点 = 日序 × STOCK_COUNT 对全量取模，环绕取件），窗口每日滑动 → 全量价目在
+     * ⌈size/count⌉ 天内全部露面（公平轮换，无永久压箱底）。同一游戏日两次取数完全一致。
+     */
+    static java.util.Map<String, Integer> stockFor(long gameDay) {
+        var all = new java.util.TreeMap<>(load());
+        int size = all.size();
+        if (size <= STOCK_COUNT) {
+            return java.util.Collections.unmodifiableMap(all);
+        }
+        int start = (int) (Math.floorMod(gameDay * STOCK_COUNT, size));
+        var picked = new java.util.LinkedHashMap<String, Integer>();
+        for (int i = 0; i < STOCK_COUNT; i++) {
+            String id = all.keySet().stream().skip((start + i) % size).findFirst().orElseThrow();
+            picked.put(id, all.get(id));
+        }
+        return java.util.Collections.unmodifiableMap(picked);
+    }
+
+    /** 当日游戏日序（纯时间推导：gameTime / 24000）。 */
+    static long gameDayOf(long gameTime) {
+        return Math.floorDiv(gameTime, GAME_DAY_TICKS);
+    }
+
+    /** 当日是否在售（纯函数）：走商轮换的成员判定——buyFor 与看板行过滤共用同一谓词。 */
+    static boolean inStock(long gameTime, String itemId) {
+        return stockFor(gameDayOf(gameTime)).containsKey(itemId);
     }
 
     public static LiteralArgumentBuilder<CommandSourceStack> subtree() {
@@ -110,6 +144,11 @@ public final class BlackMarketCommands {
         Integer price = price(itemId).orElse(null);
         if (price == null) {
             player.displayClientMessage(Component.literal("（黑市没有这件货：" + itemId + "）"), true);
+            return false;
+        }
+        // 走商轮换（[拟]）：今日暗柜没摆的货不卖——命令与看板意图同门槛（fail-closed）
+        if (!inStock(player.level().getGameTime(), itemId)) {
+            player.displayClientMessage(Component.literal("（今天暗柜没摆这件——天亮再来，或问问别的渠道）"), true);
             return false;
         }
         int cost = price * count;

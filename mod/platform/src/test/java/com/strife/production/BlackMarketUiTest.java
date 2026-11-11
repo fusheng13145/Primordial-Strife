@@ -22,7 +22,7 @@ class BlackMarketUiTest {
     void boardRowsAreSortedByPriceDescWithCautionBanner() {
         var containers =
                 new InventoryOps.PlayerContainers(new SimpleContainer(41), new SimpleContainer(27));
-        CompoundTag root = BlackMarketUi.build(containers);
+        CompoundTag root = BlackMarketUi.build(containers, 0L);
 
         // 警示横幅：因果/声望代价一句话进包（看板顶部紫色警示行的数据源）
         String caution = root.getString(StrifeUiBridge.Keys.CAUTION);
@@ -31,7 +31,7 @@ class BlackMarketUiTest {
 
         // 行：价目全量、价格降序、同价 ID 升序
         var rows = root.getList(StrifeUiBridge.Keys.PRICES, Tag.TAG_COMPOUND);
-        assertEquals(BlackMarketCommands.snapshot().size(), rows.size(), "行数 = 暗柜条目数");
+        assertEquals(BlackMarketCommands.STOCK_COUNT, rows.size(), "行数 = 当日暗柜库存件数（走商轮换口径）");
         List<Integer> prices = new ArrayList<>();
         String prevId = null;
         int prevPrice = Integer.MAX_VALUE;
@@ -57,13 +57,13 @@ class BlackMarketUiTest {
 
     @Test
     void ownedCountComesFromTheContainers() {
-        // 抽一件价目表里的货进背包 → owned 计数反映（看板行与命令买卖共用同一计数口径）
-        var itemId = BlackMarketCommands.snapshot().keySet().stream().findFirst().orElseThrow();
+        // 抽一件"当日窗口内"的货进背包 → owned 计数反映（窗口外的货不进行，走商轮换口径）
+        var itemId = BlackMarketCommands.stockFor(0L).keySet().stream().findFirst().orElseThrow();
         Item item = InventoryOps.resolve(itemId).orElseThrow();
         var containers =
                 new InventoryOps.PlayerContainers(new SimpleContainer(41), new SimpleContainer(27));
         containers.main().setItem(0, new ItemStack(item, 2));
-        CompoundTag root = BlackMarketUi.build(containers);
+        CompoundTag root = BlackMarketUi.build(containers, 0L);
         boolean found = false;
         for (var element : root.getList(StrifeUiBridge.Keys.PRICES, Tag.TAG_COMPOUND)) {
             CompoundTag row = (CompoundTag) element;
@@ -95,5 +95,43 @@ class BlackMarketUiTest {
         assertFalse(BlackMarketCommands.snapshot().isEmpty(), "空暗柜 = 空屏（价目批门禁假设）");
         // 折扣语义在行内保留：全部条目价 < 明市买价或为黑市专属（既有 BlackMarketTest 锚定，这里只防回归）
         BlackMarketCommands.snapshot().forEach((id, price) -> assertTrue(price > 0, id + " 价格为正"));
+    }
+
+    /** 走商轮换（[拟]）：同日确定性、窗口公平滑移（全量价目周期内全部露面）、行数 = STOCK_COUNT。 */
+    @Test
+    void stockRotationIsDeterministicAndFair() {
+        long day0 = BlackMarketCommands.gameDayOf(0L);
+        var stock0 = BlackMarketCommands.stockFor(day0);
+        var stock0Again = BlackMarketCommands.stockFor(day0);
+        assertEquals(stock0, stock0Again, "同一游戏日两次取数完全一致（零持久化确定性）");
+        assertEquals(BlackMarketCommands.STOCK_COUNT, stock0.size(), "窗口件数 [拟] 8");
+
+        // 公平轮换：滑过 ⌈size/count⌉ 天后全量价目全部露面（无永久压箱底）
+        int size = BlackMarketCommands.snapshot().size();
+        int windowDays =
+                (size + BlackMarketCommands.STOCK_COUNT - 1) / BlackMarketCommands.STOCK_COUNT;
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (long day = 0; day < windowDays; day++) {
+            seen.addAll(BlackMarketCommands.stockFor(day).keySet());
+        }
+        assertEquals(size, seen.size(), "全量价目在轮换周期内全部露面");
+    }
+
+    @Test
+    void inStockMatchesTheDailyWindow() {
+        long gameTime = 50_000L;
+        long day = BlackMarketCommands.gameDayOf(gameTime);
+        var stock = BlackMarketCommands.stockFor(day);
+        String inStockItem = stock.keySet().iterator().next();
+        assertTrue(BlackMarketCommands.inStock(gameTime, inStockItem), "当日库存内 → 在售");
+        // 找一个不在当日窗口的价目
+        String outItem =
+                BlackMarketCommands.snapshot().keySet().stream()
+                        .filter(id -> !stock.containsKey(id))
+                        .findFirst()
+                        .orElse(null);
+        if (outItem != null) {
+            assertFalse(BlackMarketCommands.inStock(gameTime, outItem), "窗口外 → 不在售");
+        }
     }
 }

@@ -26,7 +26,7 @@ public final class BlackMarketUi {
 
     private BlackMarketUi() {}
 
-    /** 右键暗柜：组数据并下发。 */
+    /** 右键暗柜：组数据并下发（行过滤为当日库存，走商轮换）。 */
     public static void openFor(ServerPlayer player) {
         var containers =
                 new InventoryOps.PlayerContainers(
@@ -34,16 +34,17 @@ public final class BlackMarketUi {
         StrifeNetwork.sendTo(
                 player,
                 new com.strife.core.net.StrifeUiPayload(
-                        com.strife.core.StrifeUiBridge.Keys.BLACKMARKET_SCREEN, build(containers)));
+                        com.strife.core.StrifeUiBridge.Keys.BLACKMARKET_SCREEN,
+                        build(containers, player.level().getGameTime())));
     }
 
     /** 组数据（纯函数，包内可见供用例直测）。 */
-    static CompoundTag build(InventoryOps.PlayerContainers containers) {
+    static CompoundTag build(InventoryOps.PlayerContainers containers, long gameTime) {
         CompoundTag root = new CompoundTag();
         root.putString(com.strife.core.StrifeUiBridge.Keys.CAUTION, "赃货折扣——每笔落因果标记，正道声望受损。洗尘丹可勾销。");
         record Row(String itemId, int price) {}
         List<Row> entries = new ArrayList<>();
-        BlackMarketCommands.snapshot()
+        BlackMarketCommands.stockFor(BlackMarketCommands.gameDayOf(gameTime))
                 .forEach((itemId, price) -> entries.add(new Row(itemId, price)));
         entries.sort(Comparator.comparingInt(Row::price).reversed().thenComparing(Row::itemId));
         ListTag rows = new ListTag();
