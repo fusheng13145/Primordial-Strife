@@ -124,7 +124,11 @@ public final class Techniques {
                                 technique.elementMask(),
                                 data.spiritrootElements(),
                                 technique.declaredAffinity());
-        return technique.qiRateRatio() * affinity;
+        // 功法熟练度批（[拟]）：施法累积 → 档位乘数（NUMBERS @@combat 三键，零字面量）
+        double proficiencyMultiplier =
+                CombatTables.techniqueProficiency()
+                        .multiplierFor(data.techniques().proficiency());
+        return technique.qiRateRatio() * affinity * proficiencyMultiplier;
     }
 
     /** 当前装备功法的判定明细（面板的四因子分解用；未装备时返回全 0）。 */

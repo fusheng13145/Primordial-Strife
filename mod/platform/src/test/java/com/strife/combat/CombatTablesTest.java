@@ -54,4 +54,17 @@ class CombatTablesTest {
         assertEquals(3.0, stats.attack(), 1e-9);
         assertEquals(16.0, stats.followRange(), 1e-9);
     }
+
+    /** 功法熟练度规则（[拟]）×【真实产物】锚定 + 档位乘数钳位（熟练度批）。 */
+    @Test
+    void techniqueProficiencyRulesFromShippedProduct() {
+        var rules = CombatTables.techniqueProficiency();
+        assertEquals(100, rules.perTier(), "@@combat.technique_proficiency_per_tier [拟]");
+        assertEquals(0.05, rules.bonusPerTier(), 1e-9, "每档 +5%");
+        assertEquals(0.20, rules.cap(), 1e-9, "封顶 +20%");
+        assertEquals(1.05, rules.multiplierFor(100), 1e-9, "100 次 = 1 档");
+        assertEquals(1.20, rules.multiplierFor(400), 1e-9, "400 次 = 封顶");
+        assertEquals(1.20, rules.multiplierFor(10000), 1e-9, "超上限不再增长");
+        assertEquals(1.00, rules.multiplierFor(0), "未练功 = 中性");
+    }
 }

@@ -111,6 +111,37 @@ public final class CombatTables {
         }
     }
 
+    /**
+     * 功法熟练度规则（NUMBERS @@combat 三键 [拟]）：每档施法次数/每档加成/加成封顶。
+     * {@code fallback()} 是零加成——熟练度规则缺失时施法照常，只是没有熟练度收益。
+     */
+    public record TechniqueProficiency(int perTier, double bonusPerTier, double cap) {
+        public static TechniqueProficiency fallback() {
+            return new TechniqueProficiency(Integer.MAX_VALUE, 0.0, 0.0);
+        }
+
+        /** 档位乘数（纯函数）：min(cap, 档数 × 每档加成)。 */
+        public double multiplierFor(int proficiencyCount) {
+            int tiers = proficiencyCount / Math.max(1, perTier);
+            return 1.0 + Math.min(cap, tiers * bonusPerTier);
+        }
+    }
+
+    /** 取熟练度规则；产物缺失/解析失败回零收益并记日志（施法不是崩点）。 */
+    public static TechniqueProficiency techniqueProficiency() {
+        try {
+            JsonObject combat = loadCombatBlock();
+            return new TechniqueProficiency(
+                    require(combat, "technique_proficiency_per_tier").getAsInt(),
+                    require(combat, "technique_proficiency_bonus_per_tier").getAsDouble(),
+                    require(combat, "technique_proficiency_cap").getAsDouble());
+        } catch (RuntimeException e) {
+            LOGGER.error(
+                    "technique proficiency unavailable, using zero bonus: {}", e.getMessage());
+            return TechniqueProficiency.fallback();
+        }
+    }
+
     /** 取品阶加成；产物缺失/解析失败/未知品阶一律回零加成并记日志（属性栏不是崩点）。 */
     public static ArtifactBonus artifactBonus(String quality) {
         try {

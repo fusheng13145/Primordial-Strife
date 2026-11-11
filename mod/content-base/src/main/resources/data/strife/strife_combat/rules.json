@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:63605f3cd203e1725d596a603133f48e94c6f33257bfe34d8853b221f7ba8028",
+  "@generated": "from content/NUMBERS.md @ sha256:ebfe6d0511579caef3e595d0af325f8ad078b11fc1dd6ca8551e9e9503c3f8f2",
   "id": "combat_rules",
   "combat": {
     "realm_coeff": {
@@ -27,6 +27,9 @@
     "scale": "realm_coeff",
     "self_cost_qi": 0.15
   },
+    "technique_proficiency_per_tier": 100,
+    "technique_proficiency_bonus_per_tier": 0.05,
+    "technique_proficiency_cap": 0.2,
     "spell_cost_qi": {
     "light": 6,
     "medium": 18,

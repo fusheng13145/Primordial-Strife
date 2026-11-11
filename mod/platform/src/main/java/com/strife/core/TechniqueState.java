@@ -18,10 +18,12 @@ import java.util.Set;
  *
  * @param learned 已学功法内容 ID 集合
  * @param equipped 当前装备的功法内容 ID；空串 = 未装备
+ * @param proficiency 当前装备功法的熟练度（施法次数累积；未装备时无意义但保留数值——
+ *                     切换功法不清零，回装延续熟练；append-only 字段，旧档缺省 0）
  */
-public record TechniqueState(Set<String> learned, String equipped) {
+public record TechniqueState(Set<String> learned, String equipped, int proficiency) {
 
-    public static final TechniqueState EMPTY = new TechniqueState(Set.of(), "");
+    public static final TechniqueState EMPTY = new TechniqueState(Set.of(), "", 0);
 
     public static final Codec<TechniqueState> CODEC =
             RecordCodecBuilder.create(
@@ -38,16 +40,23 @@ public record TechniqueState(Set<String> learned, String equipped) {
                                             Codec.STRING
                                                     .fieldOf("equipped")
                                                     .orElse("")
-                                                    .forGetter(TechniqueState::equipped))
+                                                    .forGetter(TechniqueState::equipped),
+                                            Codec.INT
+                                                    .fieldOf("proficiency")
+                                                    .orElse(0)
+                                                    .forGetter(TechniqueState::proficiency))
                                     .apply(
                                             instance,
-                                            (learned, equipped) ->
+                                            (learned, equipped, proficiency) ->
                                                     new TechniqueState(
-                                                            new HashSet<>(learned), equipped)));
+                                                            new HashSet<>(learned),
+                                                            equipped,
+                                                            Math.max(0, proficiency))));
 
     public TechniqueState {
         learned = learned == null ? Set.of() : Set.copyOf(learned);
         equipped = equipped == null ? "" : equipped;
+        proficiency = Math.max(0, proficiency);
     }
 
     public boolean knows(String techniqueId) {
@@ -61,7 +70,7 @@ public record TechniqueState(Set<String> learned, String equipped) {
         }
         Set<String> updated = new HashSet<>(learned);
         updated.add(techniqueId);
-        return new TechniqueState(updated, equipped);
+        return new TechniqueState(updated, equipped, proficiency);
     }
 
     /** 装备一部（必须先学会）；传空串 = 卸下。 */
@@ -70,7 +79,7 @@ public record TechniqueState(Set<String> learned, String equipped) {
         if (!target.isEmpty() && !learned.contains(target)) {
             throw new IllegalArgumentException("cannot equip unlearned technique '" + target + "'");
         }
-        return new TechniqueState(learned, target);
+        return new TechniqueState(learned, target, proficiency);
     }
 
     /** 洗髓/门禁变化后把不再满足条件的功法卸下（03 §8 禁止静默失效：调用方负责给出原因文案）。 */
@@ -78,6 +87,22 @@ public record TechniqueState(Set<String> learned, String equipped) {
         if (equipped.isEmpty() || !invalid.test(equipped)) {
             return this;
         }
-        return new TechniqueState(learned, "");
+        return new TechniqueState(learned, "", proficiency);
+    }
+
+    /**
+     * 熟练度累积（功法熟练度批）：施法成功一次 +1，只对当前装备功法累积——未装备 = 空操作
+     * （不给"没练功法也在涨熟练"的暗收益）。上限由消费方（倍率封顶）控制，状态本身不设顶。
+     */
+    public TechniqueState withProficiencyGain() {
+        if (equipped.isEmpty()) {
+            return this;
+        }
+        return new TechniqueState(learned, equipped, proficiency + 1);
+    }
+
+    /** 切换功法时熟练度随装备走：学习/装备不重置（回装延续熟练），此方法仅语义自文档。 */
+    public int proficiencyOf(String techniqueId) {
+        return equipped.equals(techniqueId) ? proficiency : 0;
     }
 }

@@ -155,6 +155,9 @@ realm_coeff: { fanren: 1.0, qili: 1.5, zhuji: 2.4, jindan: 4.0, yuanying: 7.0, h
 formula_basic: { base: 6,  scale: realm_coeff }  # 基础法术
 formula_pierce: { base: 4,  scale: realm_coeff, pen: 0.5 }  # 穿透系
 formula_burst: { base: 12, scale: realm_coeff, self_cost_qi: 0.15 }  # 爆发系，消耗当前修为比例
+technique_proficiency_per_tier: 100    # 功法熟练度：每施法 100 次 +1 档 [拟]
+technique_proficiency_bonus_per_tier: 0.05   # 每档速率加成 +5% [拟]
+technique_proficiency_cap: 0.20        # 加成封顶 +20%（4 档/400 次）[拟]
 spell_cost_qi: { light: 6,  medium: 18, heavy: 45 }  # 灵气/修为消耗三档
 spell_cooldown_sec: { light: 1.0, medium: 4.0, heavy: 12.0 }    
 artifact_cooldown_sec: 20  # 法宝主动技能

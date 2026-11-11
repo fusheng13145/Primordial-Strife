@@ -96,4 +96,43 @@ class TechniqueStateTest {
 
         assertEquals(state, decoded);
     }
+
+    @Test
+    void proficiencyGainsOnlyWhenEquippedAndSurvivesReequip() {
+        TechniqueState learned =
+                new TechniqueState(java.util.Set.of("tech_qingxin_jue"), "tech_qingxin_jue", 0);
+
+        // 施法累积（装备中才涨）
+        TechniqueState trained = learned.withProficiencyGain();
+        assertEquals(1, trained.proficiency(), "装备中施法 +1");
+
+        // 卸下 → 熟练度保留；回装 → 延续（切换不清零）
+        TechniqueState unequipped = trained.equipping("");
+        assertEquals(1, unequipped.proficiency(), "卸下不清零（回装延续）");
+        TechniqueState reequipped = unequipped.equipping("tech_qingxin_jue");
+        assertEquals(1, reequipped.proficiency(), "回装延续熟练");
+
+        // 未装备施法 = 空操作（不给暗收益）
+        assertEquals(unequipped, unequipped.withProficiencyGain());
+    }
+
+    @Test
+    void proficiencyCodecIsAppendOnlyBackwardCompatible() {
+        // 旧档（无 proficiency 字段）解码 = 0，不破档
+        TechniqueState legacy = new TechniqueState(java.util.Set.of("t1"), "t1", 0);
+        var legacyTag = com.mojang.serialization.DataResult.<net.minecraft.nbt.Tag>success(null);
+        // 手工构造无 proficiency 的 NBT：仅 learned+equipped
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        tag.putString("equipped", "t1");
+        var list = new net.minecraft.nbt.ListTag();
+        list.add(net.minecraft.nbt.StringTag.valueOf("t1"));
+        tag.put("learned", list);
+        var decoded =
+                TechniqueState.CODEC.decode(net.minecraft.nbt.NbtOps.INSTANCE, tag)
+                        .result()
+                        .map(com.mojang.datafixers.util.Pair::getFirst)
+                        .orElseThrow();
+        assertEquals(0, decoded.proficiency(), "旧档缺字段 → 0（append-only 兼容）");
+        assertEquals("t1", decoded.equipped());
+    }
 }

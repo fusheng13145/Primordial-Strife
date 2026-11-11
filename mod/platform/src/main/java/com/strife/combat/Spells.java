@@ -96,6 +96,10 @@ public final class Spells {
 
         // 结算：扣气 + 冷却
         data = data.withQi(data.qi() - spec.costQi());
+        // 功法熟练度批：施法成功一次 = 练功一次（装备功法熟练度 +1；未装备时空操作）
+        data =
+                data.withTechniques(
+                        data.techniques().withProficiencyGain());
         data =
                 data.withSpells(
                         data.spells()
