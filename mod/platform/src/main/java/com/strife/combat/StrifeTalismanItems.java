@@ -28,6 +28,10 @@ public final class StrifeTalismanItems {
     public static final DeferredHolder<Item, Item> SUBSTITUTE =
             ITEMS.register("item_tishen_caoren", () -> new Item(new Item.Properties()));
 
+    /** 捕兽符（P1-22 御兽 v1）：对重伤野生妖兽使用 → 概率驯服为灵宠（interactLivingEntity 行为）。 */
+    public static final DeferredHolder<Item, Item> BEAST_TALISMAN =
+            ITEMS.register("item_bushou_fu", BeastTalismanItem::new);
+
     private static class EscapeTalismanItem extends Item {
         EscapeTalismanItem() {
             super(new Item.Properties());

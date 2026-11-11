@@ -127,6 +127,30 @@ public final class CombatTables {
         }
     }
 
+    /**
+     * 捕兽符规则（P1-22 御兽 v1，NUMBERS @@combat 两键 [拟]）：
+     * 可捕生命比例阈值 + 驯服成功率。{@code fallback()} 是"永不成功"——规则缺失时捕兽符失效不崩。
+     */
+    public record BeastTaming(double maxHealthRatio, double chance) {
+        public static BeastTaming fallback() {
+            return new BeastTaming(0.0, 0.0);
+        }
+    }
+
+    /** 取捕兽规则；产物缺失/解析失败回永不成功并记日志（捕兽不是崩点）。 */
+    public static BeastTaming beastTaming() {
+        try {
+            JsonObject combat = loadCombatBlock();
+            return new BeastTaming(
+                    require(combat, "beast_taming_max_health_ratio").getAsDouble(),
+                    require(combat, "beast_taming_chance").getAsDouble());
+        } catch (RuntimeException e) {
+            LOGGER.error(
+                    "beast taming rules unavailable, taming disabled: {}", e.getMessage());
+            return BeastTaming.fallback();
+        }
+    }
+
     /** 取熟练度规则；产物缺失/解析失败回零收益并记日志（施法不是崩点）。 */
     public static TechniqueProficiency techniqueProficiency() {
         try {

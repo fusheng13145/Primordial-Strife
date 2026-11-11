@@ -13,6 +13,7 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 
@@ -30,6 +31,9 @@ import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
  */
 public class StrifeMonster extends Monster {
 
+    /** 御兽批（P1-22 v1）：灵宠主人（null = 野生）。NBT 持久化——宠物随存档存活。 */
+    private java.util.UUID ownerUuid;
+
     public StrifeMonster(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         applyDataDrivenStats();
@@ -46,6 +50,55 @@ public class StrifeMonster extends Monster {
         setHealth((float) stats.health());
     }
 
+    /** 御兽批：驯服/释放接口（combat 域内，BeastTaming 调用）。 */
+    public void tame(java.util.UUID ownerUuid) {
+        this.ownerUuid = ownerUuid;
+        this.setPersistenceRequired();
+        this.setTarget(null);
+        // 目标选择重置：野生索敌玩家目标（priority 2）对灵宠永不再触发（canUse 分流）
+        this.setCustomName(
+                net.minecraft.network.chat.Component.literal(
+                        "〔灵宠〕" + net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
+                                .getKey(this.getType()).getPath()));
+    }
+
+    public java.util.UUID ownerUuid() {
+        return ownerUuid;
+    }
+
+    /** 是否已驯服。 */
+    public boolean isTamed() {
+        return ownerUuid != null;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        // 灵宠 AI：每秒同步主人目标 + 远距传送跟随（vanilla 狼同款 12/24 阈值）
+        if (this.tickCount % 20 == 0 && ownerUuid != null) {
+            var server = this.level().getServer();
+            var owner = server != null ? server.getPlayerList().getPlayer(ownerUuid) : null;
+            if (owner == null) {
+                return;
+            }
+            this.ownerTarget = owner.getLastHurtMob();
+            if (this.ownerTarget != null
+                    && this.ownerTarget.isAlive()
+                    && this.getTarget() == null
+                    && !this.ownerTarget.getUUID().equals(ownerUuid)) {
+                this.setTarget(this.ownerTarget);
+            }
+            double distSq = this.distanceToSqr(owner);
+            if (distSq > 24.0 * 24.0) {
+                this.teleportTo(
+                        owner.getX(), owner.getY(), owner.getZ());
+            } else if (distSq > 12.0 * 12.0
+                    && getNavigation().isDone()) {
+                getNavigation().moveTo(owner.getX(), owner.getY(), owner.getZ(), 1.2);
+            }
+        }
+    }
+
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
@@ -56,7 +109,13 @@ public class StrifeMonster extends Monster {
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        // 灵宠（有主人）不索敌玩家——御兽批 P1-22：野性仅在野生形态存在
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true) {
+            @Override
+            public boolean canUse() {
+                return ((StrifeMonster) this.mob).ownerUuid == null && super.canUse();
+            }
+        });
     }
 
     @Override
@@ -91,5 +150,22 @@ public class StrifeMonster extends Monster {
     /** 诊断用：目标是否妖兽（任务链路集成测试的判别口径）。 */
     public static boolean isStrifeMonster(LivingEntity entity) {
         return entity.getType() == StrifeCombatEntities.MONSTER.get();
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        if (ownerUuid != null) {
+            tag.putUUID("TamingOwner", ownerUuid);
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        if (tag.hasUUID("TamingOwner")) {
+            ownerUuid = tag.getUUID("TamingOwner");
+            setPersistenceRequired();
+        }
     }
 }
