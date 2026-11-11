@@ -1,24 +1,18 @@
 package com.strife.realm;
 
 import com.strife.core.CultivationFactors;
-import com.strife.core.MeditationState;
 import com.strife.core.StrifeAttachmentTypes;
 import com.strife.core.StrifeData;
 import com.strife.core.StrifeTime;
-import com.strife.core.net.StrifeCoreRules;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.RandomSource;
 
 /**
- * 修炼主链的服务端结算：寿元流动 → 心魔结算（ADR-040：到期清空 + 活跃反馈）→ 打坐（时间片结算 + 打断惩罚 + 冷却）→ 大限结算；突破改为玩家主动押注（{@link
- * #attemptBreakthrough}）。
+ * 修炼主链的编排器（单一职责拆分，2026-11-11）：每刻按序调用寿元流动 → 心魔结算 → 打坐结算； 三个服务各管一域——{@link
+ * MeditationService}（打坐/顿悟）、{@link BreakthroughService}（押注突破/ 渡劫/心魔入体）、{@link
+ * LifespanService}（寿元/大限）。本类只保留编排与共享写档纪律（write/ withQiAndStage）与速率查询（面板与闭关命令消费）。
  *
  * <p>与旧版的三处实质差别（旧版自陈为"MVP 快速通道"）：
  *
@@ -34,20 +28,7 @@ import net.minecraft.util.RandomSource;
  */
 public final class CultivationHandler {
 
-    /** 每玩家的位移基准（判断"打坐中是否移动"）；纯瞬态，不入档。 */
-    private static final Map<UUID, Position> POSITIONS = new ConcurrentHashMap<>();
-
-    private record Position(double x, double y, double z) {}
-
-    // 修仙世界感·顿悟参数（[拟]，随实机校准）
-    private static final int ENLIGHTEN_ONE_IN = 100;
-    private static final long ENLIGHTEN_MIN_MEDITATION_TICKS = 30L * StrifeTime.TICKS_PER_SECOND;
-    private static final int ENLIGHTEN_SECONDS = 60;
-    // 修仙世界感·渡劫雷雨参数（[拟]）：渡入天劫境成功也挨雷——六道天雷落在身周 4 格内
-    private static final int TRIBULATION_STRIKES = 6;
-    private static final double TRIBULATION_STRIKE_RADIUS = 4.0;
-
-    private CultivationHandler() {}
+    CultivationHandler() {}
 
     /** 每刻结算（{@link StrifeRealm} 在 PlayerTickEvent.Post 上调用）。 */
     static void tick(ServerPlayer player) {
@@ -70,11 +51,15 @@ public final class CultivationHandler {
                     write(
                             player,
                             data,
-                            d -> withLifespan(d, yearsToTicks(player, realm.lifespanYears())));
+                            d ->
+                                    CultivationHandler.withLifespan(
+                                            d,
+                                            LifespanService.yearsToTicks(
+                                                    player, realm.lifespanYears())));
         } else if (now % StrifeTime.TICKS_PER_SECOND == 0L) {
             long remaining = data.lifespanTicks() - StrifeTime.TICKS_PER_SECOND;
             if (remaining <= 0L) {
-                data = greatLimit(player, data, realm, tables);
+                data = LifespanService.greatLimit(player, data, realm, tables);
                 // 大限可能让境界跌落：后面的打坐结算必须用新境界的上限与速率，否则会按旧境界继续涨修为。
                 active = tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
                 RealmTitles.apply(player);
@@ -114,17 +99,18 @@ public final class CultivationHandler {
         }
 
         // 3. 打坐：先判打断（每刻都要判），再按 tick_interval_ticks 降频结算（03 §6 单玩家附加逻辑预算）
-        boolean moved = movedBeyond(player, tables.rules().meditationInterruptMoveSqr());
+        boolean moved =
+                MeditationService.movedBeyond(player, tables.rules().meditationInterruptMoveSqr());
         if (data.meditation().active()) {
-            if (interrupted(player, moved)) {
-                data = interrupt(player, data, active, tables, now);
+            if (MeditationService.interrupted(player, moved)) {
+                data = MeditationService.interrupt(player, data, active, tables, now);
             } else if (data.qi() >= active.qiMax()) {
-                data = settle(player, data, active, tables, now);
+                data = MeditationService.settle(player, data, active, tables, now);
                 data = write(player, data, d -> d.withMeditation(d.meditation().stop()));
                 tell(player, Component.translatable("msg.strife.sit.qi_full"));
             } else if (now % tables.rules().meditationTickIntervalTicks() == 0L) {
                 RealmEvents.postSit(player, tables.rules().meditationTickIntervalTicks());
-                data = settle(player, data, active, tables, now);
+                data = MeditationService.settle(player, data, active, tables, now);
             }
         }
     }
@@ -139,7 +125,7 @@ public final class CultivationHandler {
         if (data.meditation().active()) {
             write(player, data, d -> d.withMeditation(d.meditation().stop()));
         }
-        POSITIONS.remove(player.getUUID());
+        MeditationService.clearSessionOnLogin(player);
     }
 
     /** 退出：在线时段照常结算，然后收尾（冷却保留在档里，重连后仍生效）。 */
@@ -150,164 +136,23 @@ public final class CultivationHandler {
             RealmTables.RealmEntry realm =
                     tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
             if (data.meditation().active()) {
-                data = settle(player, data, realm, tables, player.server.getTickCount());
+                data =
+                        MeditationService.settle(
+                                player, data, realm, tables, player.server.getTickCount());
                 write(player, data, d -> d.withMeditation(d.meditation().stop()));
             }
         }
-        POSITIONS.remove(player.getUUID());
+        MeditationService.clearSessionOnLogout(player);
     }
 
-    /** 打坐起止意图（03 §4）。处境不允许时给可读的原因，而不是静默失败。 */
+    /** 打坐起止意图（03 §4）——委托打坐服务。 */
     public static void toggleSit(ServerPlayer player) {
-        RealmTables tables = RealmTables.getOrNull(player.server);
-        if (tables == null) {
-            return;
-        }
-        long now = player.server.getTickCount();
-        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
-        RealmTables.RealmEntry realm =
-                tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
-        MeditationState meditation = data.meditation();
-
-        if (meditation.active()) {
-            data = settle(player, data, realm, tables, now);
-            write(player, data, d -> d.withMeditation(d.meditation().stop()));
-            tell(player, Component.translatable("msg.strife.sit.stop"));
-            RealmViewBuilder.pushTo(player);
-            return;
-        }
-        if (meditation.onCooldown(now)) {
-            tell(
-                    player,
-                    Component.translatable(
-                            "msg.strife.sit.cooldown",
-                            secondsOf(meditation.cooldownRemaining(now))));
-            return;
-        }
-        if (!player.onGround() || player.isInWater() || player.isDeadOrDying()) {
-            tell(player, Component.translatable("msg.strife.sit.blocked"));
-            return;
-        }
-        write(player, data, d -> d.withMeditation(meditation.start(now)));
-        tell(player, Component.translatable("msg.strife.sit.start"));
-        RealmViewBuilder.pushTo(player);
+        MeditationService.toggleSit(player);
     }
 
-    /** 主动押注突破（03 §4 / NUMBERS §10）。修为满只是前提，不再自动触发——"押注"是 05 §4 的核心体验，也是失败代价 （回退区间）能被玩家读懂的前提。 */
+    /** 主动押注突破——委托突破服务。 */
     public static void attemptBreakthrough(ServerPlayer player) {
-        RealmTables tables = RealmTables.getOrNull(player.server);
-        if (tables == null) {
-            return;
-        }
-        StrifeData data = player.getData(StrifeAttachmentTypes.PLAYER_DATA);
-        RealmTables.RealmEntry realm =
-                tables.realm(Math.min(data.realmOrdinal(), tables.realmCount() - 1));
-        if (realm.ordinal() >= tables.realmCount() - 1) {
-            tell(player, Component.translatable("msg.strife.breakthrough.no_next"));
-            return;
-        }
-        if (data.qi() < realm.qiMax()) {
-            tell(
-                    player,
-                    Component.translatable(
-                            "msg.strife.breakthrough.not_ready", data.qi(), realm.qiMax()));
-            return;
-        }
-        // 突破即出定：押注时不能还挂在打坐状态上（否则失败回退后立刻又被自动结算，惩罚变得不可读）。
-        data = write(player, data, d -> d.withMeditation(d.meditation().stop()));
-
-        RealmTables.BreakthroughRate rate = tables.rate(realm.breakthroughKey());
-        double probability =
-                BreakthroughMath.successProbability(
-                        rate.base(), rate.failStep(), data.breakthroughAttempts(), rate.floor());
-        // 丹药接线批：破境丹力——押注即催动（成败皆耗），成功率加成封顶 1.0
-        var aid = player.getData(StrifeAttachmentTypes.BREAKTHROUGH_AID);
-        if (aid.successBonus() > 0) {
-            probability = Math.min(1.0, probability + aid.successBonus());
-        }
-        RandomSource random = player.getRandom();
-        boolean success = random.nextDouble() < probability;
-
-        if (success) {
-            RealmTables.RealmEntry next = tables.realm(realm.ordinal() + 1);
-            // 境界、小境界、修为、寿元、失败计数一并替换（withRealm 就是为"这五项必须一起改"存在的）。
-            StrifeData advanced =
-                    data.withRealm(
-                            next.ordinal(), 1, 0, yearsToTicks(player, next.lifespanYears()), 0);
-            write(player, data, d -> advanced);
-            player.displayClientMessage(
-                    Component.translatable(
-                                    "msg.strife.breakthrough.success",
-                                    Component.translatable("realm.strife." + next.id()),
-                                    next.lifespanYears())
-                            .withStyle(ChatFormatting.GOLD),
-                    false);
-            RealmEvents.postBreakthrough(player, realm.breakthroughKey(), true, 0);
-            // 修仙世界感·渡劫雷雨（[拟]）：渡入天劫境成功也要挨雷——真雷（有伤害有火），天劫从不体面
-            if (next.tribulation()) {
-                ServerLevel level = player.serverLevel();
-                for (int i = 0; i < TRIBULATION_STRIKES; i++) {
-                    var bolt = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(level);
-                    if (bolt == null) {
-                        break;
-                    }
-                    double angle = random.nextDouble() * Math.PI * 2;
-                    double radius = random.nextDouble() * TRIBULATION_STRIKE_RADIUS;
-                    bolt.moveTo(
-                            player.getX() + Math.cos(angle) * radius,
-                            player.getY(),
-                            player.getZ() + Math.sin(angle) * radius);
-                    bolt.setVisualOnly(false);
-                    level.addFreshEntity(bolt);
-                }
-                player.displayClientMessage(
-                        Component.translatable(
-                                        "msg.strife.tribulation.success",
-                                        Component.translatable("realm.strife." + next.id()))
-                                .withStyle(ChatFormatting.LIGHT_PURPLE),
-                        false);
-                RealmTitles.apply(player);
-            }
-        } else {
-            double ratio =
-                    tables.rules().qiResetRatioMin()
-                            + random.nextDouble()
-                                    * (tables.rules().qiResetRatioMax()
-                                            - tables.rules().qiResetRatioMin());
-            // 丹药接线批：稳元丹力——失败回退的保留比例上抬（封顶 1.0 = 修为不回退）
-            if (aid.failKeepBonus() > 0) {
-                ratio = Math.min(1.0, ratio + aid.failKeepBonus());
-            }
-            int reset = BreakthroughMath.resetQi(realm.qiMax(), ratio);
-            StrifeData failed =
-                    withQiAndStage(data, reset, realm)
-                            .withMeditation(data.meditation())
-                            .withAttempts(data.breakthroughAttempts() + 1);
-            write(player, data, d -> failed);
-            player.displayClientMessage(
-                    Component.translatable("msg.strife.breakthrough.failure", reset, realm.qiMax())
-                            .withStyle(ChatFormatting.RED),
-                    false);
-            // 渡劫境（产物 tribulation=true，由 unlocks 含 tribulation 推导）失败额外吃重伤：05 §4 的
-            // "渡劫失败 = 突破失败代价 + 重伤虚弱"。数值与键名都来自 NUMBERS @@breakthrough_cost。
-            if (tables.realm(realm.ordinal() + 1).tribulation()) {
-                RealmEffects.apply(
-                        player, RealmEffects.HEAVY_WOUND, tables.rules().debuffDurationTicks());
-                tell(player, Component.translatable("msg.strife.tribulation.wounded"));
-            }
-            RealmEvents.postBreakthrough(
-                    player, realm.breakthroughKey(), false, data.breakthroughAttempts() + 1);
-            // ADR-040：心魔触发（突破失败 → 概率入体，叠层上限由 NUMBERS 控制）。
-            triggerHeartDemon(player, tables, random);
-        }
-        // 丹药接线批：押注即催动——无论成败，本次丹力已用（附件清空）
-        if (aid.present()) {
-            player.setData(
-                    StrifeAttachmentTypes.BREAKTHROUGH_AID,
-                    com.strife.core.BreakthroughAidState.EMPTY);
-            tell(player, Component.literal("✦ 丹力催动已毕").withStyle(ChatFormatting.LIGHT_PURPLE));
-        }
-        RealmViewBuilder.pushTo(player);
+        BreakthroughService.attemptBreakthrough(player);
     }
 
     /** 每秒修为速率：05 §2 四因子公式（基础速率 × 灵根 × 环境 × 功法 × 丹药），再乘 ADR-040 心魔惩罚。 */
@@ -336,234 +181,13 @@ public final class CultivationHandler {
         return StrifeTime.perSecondToPerTick(qiPerSecond(player, tables, realm, data));
     }
 
-    /** 把会话结算到当前刻：只补发"应得 − 已发"的差额（时间片结算的核心，见 {@link MeditationMath}）。 */
-    private static StrifeData settle(
-            ServerPlayer player,
-            StrifeData data,
-            RealmTables.RealmEntry realm,
-            RealmTables tables,
-            long now) {
-        MeditationState meditation = data.meditation();
-        double qiPerTick = qiPerTick(player, tables, realm, data);
-        int earned = MeditationMath.earnedSince(meditation.startTick(), now, qiPerTick);
-        int delta = MeditationMath.settlementDelta(earned, meditation.creditedQi());
-        if (delta == 0) {
-            return data;
-        }
-        MeditationMath.Applied applied = MeditationMath.apply(data.qi(), delta, realm.qiMax());
-        int credited = meditation.creditedQi() + Math.max(0, applied.applied());
-        // 修仙世界感·顿悟（[拟]）：入定满 30 秒后，每次结算 1/100 概率灵台清明——按当前速率瞬得 60 秒修为。
-        // 一次性瞬得，零新状态（不引入计时增益的第二套机制，与丹药增益共存不互斥）。
-        int bonusQi = 0;
-        long meditatedTicks = now - meditation.startTick();
-        if (meditatedTicks >= ENLIGHTEN_MIN_MEDITATION_TICKS
-                && player.getRandom().nextInt(ENLIGHTEN_ONE_IN) == 0) {
-            bonusQi =
-                    (int)
-                            Math.max(
-                                    0L,
-                                    Math.min(
-                                            (long)
-                                                    (qiPerTick
-                                                            * ENLIGHTEN_SECONDS
-                                                            * StrifeTime.TICKS_PER_SECOND),
-                                            realm.qiMax() - applied.qi()));
-        }
-        if (bonusQi > 0) {
-            tell(
-                    player,
-                    Component.translatable("msg.strife.enlightenment", bonusQi)
-                            .withStyle(ChatFormatting.LIGHT_PURPLE));
-        }
-        final int finalQi = applied.qi() + bonusQi;
-        return write(
-                player,
-                data,
-                d ->
-                        withQiAndStage(d, finalQi, realm)
-                                .withMeditation(meditation.withCreditedQi(credited)));
-    }
-
-    /** 打断：本次会话所得按 NUMBERS §5 比例保留（不足则收回已发部分），并写入再入定冷却。 */
-    private static StrifeData interrupt(
-            ServerPlayer player,
-            StrifeData data,
-            RealmTables.RealmEntry realm,
-            RealmTables tables,
-            long now) {
-        MeditationState meditation = data.meditation();
-        double qiPerTick = qiPerTick(player, tables, realm, data);
-        int keptEarned =
-                MeditationMath.earnedAfterInterrupt(
-                        meditation.startTick(),
-                        now,
-                        qiPerTick,
-                        tables.rules().interruptProgressKeep());
-        int delta = MeditationMath.settlementDelta(keptEarned, meditation.creditedQi());
-        MeditationMath.Applied applied = MeditationMath.apply(data.qi(), delta, realm.qiMax());
-        long cooldownTicks = tables.rules().interruptCooldownTicks();
-        StrifeData updated =
-                withQiAndStage(data, applied.qi(), realm)
-                        .withMeditation(meditation.interrupt(now, cooldownTicks));
-        write(player, data, d -> updated);
-        tell(
-                player,
-                Component.translatable("msg.strife.sit.interrupted", secondsOf(cooldownTicks))
-                        .withStyle(ChatFormatting.GRAY));
-        RealmViewBuilder.pushTo(player);
-        return updated;
-    }
-
-    /** 打断判定：离地/入水/垂死/受伤/位移超阈值，任一成立即打断。 */
-    private static boolean interrupted(ServerPlayer player, boolean moved) {
-        return moved
-                || !player.onGround()
-                || player.isInWater()
-                || player.isDeadOrDying()
-                || player.hurtTime > 0;
-    }
-
-    /** 与上一刻的位置比较（首刻没有基准，视为未移动）。 */
-    private static boolean movedBeyond(ServerPlayer player, double thresholdSqr) {
-        Position previous =
-                POSITIONS.put(
-                        player.getUUID(),
-                        new Position(player.getX(), player.getY(), player.getZ()));
-        if (previous == null) {
-            return false;
-        }
-        double dx = player.getX() - previous.x();
-        double dy = player.getY() - previous.y();
-        double dz = player.getZ() - previous.z();
-        return dx * dx + dy * dy + dz * dz > thresholdSqr;
-    }
-
-    /**
-     * 大限结算（05 §4 / ADR-008 非破坏性）：境界回退 {@code dasheng_realm_drop_stages} 档 → 修为归零重来 → 残余寿元按 新境界年限 ×
-     * {@code dasheng_reset_years_ratio} 重置 → 附加虚弱（{@code dasheng_debuff_key}）。
-     *
-     * <p><b>绝不删角色、绝不扣到凡人以下</b>（{@link DashengMath} 用用例钉住这条）；已在凡人时退无可退，寿元照旧重置——
-     * 这是"续命玩法"存在的意义，而不是把玩家逼进死循环。
-     *
-     * <p>返回整份新数据（境界变了，不能只改一个字段）。
-     */
-    private static StrifeData greatLimit(
-            ServerPlayer player,
-            StrifeData data,
-            RealmTables.RealmEntry realm,
-            RealmTables tables) {
-        int stages = tables.rules().dashengRealmDropStages();
-        int fallenOrdinal = Math.max(0, realm.ordinal() - Math.max(0, stages));
-        RealmTables.RealmEntry fallen = tables.realm(fallenOrdinal);
-        DashengMath.Outcome outcome =
-                DashengMath.settle(
-                        realm.ordinal(),
-                        stages,
-                        fallen.lifespanYears(),
-                        tables.rules().dashengResetYearsRatio(),
-                        StrifeCoreRules.get(player.server).ticksPerYear());
-
-        StrifeData updated =
-                data.withRealm(outcome.newOrdinal(), 1, outcome.qi(), outcome.lifespanTicks(), 0)
-                        // 大限即出定：不清打坐状态的话，玩家会在虚弱中继续按旧会话结算修为。
-                        .withMeditation(data.meditation().stop());
-        write(player, data, d -> updated);
-
-        RealmEffects.apply(player, RealmEffects.WEAK, tables.rules().debuffDurationTicks());
-        long years = outcome.lifespanTicks() / StrifeCoreRules.get(player.server).ticksPerYear();
-        if (outcome.demoted()) {
-            player.displayClientMessage(
-                    Component.translatable(
-                                    "msg.strife.lifespan.limit_demoted",
-                                    Component.translatable("realm.strife." + fallen.id()),
-                                    years)
-                            .withStyle(ChatFormatting.DARK_RED),
-                    false);
-        } else {
-            player.displayClientMessage(
-                    Component.translatable("msg.strife.lifespan.limit", years)
-                            .withStyle(ChatFormatting.DARK_RED),
-                    false);
-        }
-        RealmEvents.postDashengSettlement(
-                player,
-                realm.ordinal(),
-                outcome.newOrdinal(),
-                outcome.demoted(),
-                outcome.lifespanTicks(),
-                tables.rules().dashengDebuffKey());
-        RealmViewBuilder.pushTo(player);
-        return updated;
-    }
-
-    /**
-     * 修行年 → 游戏刻。换算率取自 NUMBERS §4（经 DataGen 产物 {@code strife_core/rules.json} 的 {@code
-     * derived.ticks_per_year}），代码零字面量——这也是 realm 向 core 取数的少数场景之一（realm → core 是允许方向，03 §2）。
-     */
-    private static long yearsToTicks(ServerPlayer player, long years) {
-        return years * StrifeCoreRules.get(player.server).ticksPerYear();
-    }
-
-    private static void tell(ServerPlayer player, Component message) {
-        player.displayClientMessage(message, true);
-    }
-
-    private static String secondsOf(long ticks) {
-        return Long.toString(Math.max(0L, ticks) / StrifeTime.TICKS_PER_SECOND);
-    }
-
-    /**
-     * ADR-040 心魔触发：突破失败后按概率入体。独立附件（StrifeAttachmentTypes.HEART_DEMON）， 规则走 {@link
-     * RealmTables.Rules} 类型化访问（与突破成功率同源同管——不再裸读 rules.json 制造第二条解析路径）。 触发后修为速率按层数递减（{@link
-     * #qiPerSecond}），洗尘丹可清。
-     */
-    private static void triggerHeartDemon(
-            ServerPlayer player, RealmTables tables, RandomSource random) {
-        RealmTables.Rules rules = tables.rules();
-        if (random.nextDouble() >= rules.heartDemonTriggerChance()) {
-            return;
-        }
-        var updated =
-                player.getData(StrifeAttachmentTypes.HEART_DEMON)
-                        .trigger(
-                                player.level().getGameTime(),
-                                rules.heartDemonDurationTicks(),
-                                rules.heartDemonMaxStacks());
-        player.setData(StrifeAttachmentTypes.HEART_DEMON, updated);
-        tell(
-                player,
-                Component.literal("✦ 心魔入体——修为速率下降（" + updated.stacks() + " 层）")
-                        .withStyle(ChatFormatting.DARK_PURPLE));
-        // 入体瞬间的强反馈：一簇涡旋 + 恶魂音效，让"这次失败不一样"可感知
-        player.serverLevel()
-                .sendParticles(
-                        net.minecraft.core.particles.ParticleTypes.PORTAL,
-                        player.getX(),
-                        player.getY() + 1.0,
-                        player.getZ(),
-                        30,
-                        0.6,
-                        0.8,
-                        0.6,
-                        0.8);
-        player.serverLevel()
-                .playSound(
-                        null,
-                        player.blockPosition(),
-                        net.minecraft.sounds.SoundEvents.GHAST_AMBIENT,
-                        net.minecraft.sounds.SoundSource.PLAYERS,
-                        0.6f,
-                        0.5f);
-    }
-
     /** 只改寿元（core 的 wither 替代手拼 13 个字段——漏一个字段是这类构造最常见的错法）。 */
-    private static StrifeData withLifespan(StrifeData data, long lifespan) {
+    static StrifeData withLifespan(StrifeData data, long lifespan) {
         return data.withLifespanTicks(lifespan);
     }
 
-    /** 改 qi 并同步推导小境界（NUMBERS §1：阈值不入表）。 */
-    private static StrifeData withQiAndStage(
-            StrifeData data, int qi, RealmTables.RealmEntry realm) {
+    /** 改 qi 并同步推导小境界（NUMBERS §1：阈值不入表）。共享写档纪律：三个服务与编排器共用。 */
+    static StrifeData withQiAndStage(StrifeData data, int qi, RealmTables.RealmEntry realm) {
         return data.withRealm(
                 data.realmOrdinal(),
                 BreakthroughMath.stageFor(qi, realm.qiMax(), realm.stageCount()),
@@ -573,12 +197,17 @@ public final class CultivationHandler {
     }
 
     /** 附件值对象不可变：改字段 = 构造新记录整体 setData 回写（core 契约）；未变则不写。 */
-    private static StrifeData write(
+    static StrifeData write(
             ServerPlayer player, StrifeData current, Function<StrifeData, StrifeData> mutator) {
         StrifeData updated = mutator.apply(current);
         if (updated != current) {
             player.setData(StrifeAttachmentTypes.PLAYER_DATA, updated);
         }
         return updated;
+    }
+
+    /** 动作栏短消息（结算反馈口径：不打断聊天流）。 */
+    static void tell(ServerPlayer player, Component message) {
+        player.displayClientMessage(message, true);
     }
 }
