@@ -48,6 +48,9 @@ public final class MarketUi {
                 com.strife.core.StrifeUiBridge.Keys.EXCHANGE_SHANG,
                 MarketPrices.ratios().tierShang());
         root.putInt(com.strife.core.StrifeUiBridge.Keys.APPRAISE_FEE, MarketPrices.appraiseCost());
+        root.putLong(
+                com.strife.core.StrifeUiBridge.Keys.LINGSHI,
+                InventoryOps.countOwned(containers, "item_lingshi"));
         // 行内记录：Quote 本体无 itemId，排序需要——局部 record（不进 MarketPrices 公共面）
         record PriceRow(String itemId, int buy, int sell) {}
         List<PriceRow> entries = new ArrayList<>();

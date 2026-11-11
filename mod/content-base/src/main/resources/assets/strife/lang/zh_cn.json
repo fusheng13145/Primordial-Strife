@@ -72,6 +72,7 @@
   "gui.strife.market.buy": "买 1",
   "gui.strife.market.colheader": "物品（绿=持有）· 买/卖价 · 手中数量",
   "gui.strife.market.header": "兑换：中品 %s 换 1 中 · 上品 %s 换 1 上 · 鉴定每件 %s 灵石",
+  "gui.strife.market.lingshi": "灵石 %s",
   "gui.strife.market.sell": "卖 1",
   "gui.strife.market.title": "文津坊市 · 价目看板",
   "gui.strife.panel.affiliation": "所属：%s",

@@ -72,6 +72,7 @@
   "gui.strife.market.buy": "Buy 1",
   "gui.strife.market.colheader": "Item (green = held) · buy/sell · owned",
   "gui.strife.market.header": "Exchange: %s mid -> 1 mid-tier · %s high -> 1 high-tier · appraise %s/item",
+  "gui.strife.market.lingshi": "Lingshi %s",
   "gui.strife.market.sell": "Sell 1",
   "gui.strife.market.title": "Wenjin Market · Price Board",
   "gui.strife.panel.affiliation": "Affiliation: %s",

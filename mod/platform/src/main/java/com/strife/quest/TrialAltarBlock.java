@@ -37,6 +37,11 @@ public final class TrialAltarBlock extends Block {
     }
 
     private static void tryStart(ServerPlayer player, ServerLevel level, BlockPos altar) {
+        // 完整性守卫：心性试炼只在秘境成立（试炼台方块若被搬运到其他维度，右键不生效）
+        if (!level.dimension().location().toString().equals("strife:miji_realm")) {
+            player.displayClientMessage(Component.literal("（试炼台离了秘境只是块石头）"), true);
+            return;
+        }
         if (TrialSessions.active(player.getUUID())) {
             player.displayClientMessage(Component.literal("（试炼已在进行——站稳，莫离台）"), true);
             return;

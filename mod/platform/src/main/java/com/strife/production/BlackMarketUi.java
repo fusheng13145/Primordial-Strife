@@ -42,6 +42,9 @@ public final class BlackMarketUi {
     static CompoundTag build(InventoryOps.PlayerContainers containers, long gameTime) {
         CompoundTag root = new CompoundTag();
         root.putString(com.strife.core.StrifeUiBridge.Keys.CAUTION, "赃货折扣——每笔落因果标记，正道声望受损。洗尘丹可勾销。");
+        root.putLong(
+                com.strife.core.StrifeUiBridge.Keys.LINGSHI,
+                InventoryOps.countOwned(containers, "item_lingshi"));
         record Row(String itemId, int price) {}
         List<Row> entries = new ArrayList<>();
         BlackMarketCommands.stockFor(BlackMarketCommands.gameDayOf(gameTime))

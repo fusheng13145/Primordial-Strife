@@ -33,6 +33,7 @@ public final class BlackMarketScreen extends Screen {
     private final CompoundTag data;
     private final List<PriceRow> rows = new ArrayList<>();
     private String caution;
+    private long lingshi;
     private int scroll;
     private int selected = -1;
     private Button buyButton;
@@ -52,6 +53,7 @@ public final class BlackMarketScreen extends Screen {
     @Override
     protected void init() {
         caution = data.getString(Keys.CAUTION);
+        lingshi = data.getLong(Keys.LINGSHI);
         rows.clear();
         for (var element : data.getList(Keys.PRICES, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
             if (element instanceof CompoundTag row) {
@@ -104,6 +106,13 @@ public final class BlackMarketScreen extends Screen {
                 this.font, caution == null ? "" : caution, left + 10, top + 24, WARN_COLOR, false);
         graphics.drawString(
                 this.font,
+                Component.translatable("gui.strife.market.lingshi", lingshi).getString(),
+                left + PANEL_WIDTH - 110,
+                top + 36,
+                TITLE_COLOR,
+                false);
+        graphics.drawString(
+                this.font,
                 Component.translatable("gui.strife.blackmarket.colheader").getString(),
                 left + 10,
                 top + 36,
@@ -141,7 +150,9 @@ public final class BlackMarketScreen extends Screen {
         }
         graphics.disableScissor();
 
-        buyButton.active = selected >= 0 && rows.get(selected).owned() >= 0;
+        // 余额提示（客户端 UX；服务端复判是安全边界）：灵石不足 → 买钮禁用
+        boolean affordable = selected >= 0 && lingshi >= rows.get(selected).price();
+        buyButton.active = selected >= 0 && affordable;
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 

@@ -35,6 +35,7 @@ public final class MarketBoardScreen extends Screen {
     private int exchangeZhong;
     private int exchangeShang;
     private int appraiseFee;
+    private long lingshi;
     private int scroll;
     private int selected = -1;
     private Button buyButton;
@@ -57,6 +58,7 @@ public final class MarketBoardScreen extends Screen {
         exchangeZhong = data.getInt(Keys.EXCHANGE_ZHONG);
         exchangeShang = data.getInt(Keys.EXCHANGE_SHANG);
         appraiseFee = data.getInt(Keys.APPRAISE_FEE);
+        lingshi = data.getLong(Keys.LINGSHI);
         rows.clear();
         for (var element : data.getList(Keys.PRICES, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
             if (element instanceof CompoundTag row) {
@@ -133,6 +135,13 @@ public final class MarketBoardScreen extends Screen {
                 top + 32,
                 MUTED_COLOR,
                 false);
+        graphics.drawString(
+                this.font,
+                Component.translatable("gui.strife.market.lingshi", lingshi).getString(),
+                left + PANEL_WIDTH - 110,
+                top + 32,
+                TITLE_COLOR,
+                false);
 
         int listTop = top + HEADER_HEIGHT;
         int listBottom = top + PANEL_HEIGHT - 30;
@@ -160,7 +169,9 @@ public final class MarketBoardScreen extends Screen {
         graphics.disableScissor();
 
         boolean hasSelection = selected >= 0 && selected < rows.size();
-        buyButton.active = hasSelection;
+        // 余额提示（客户端 UX；服务端复判是安全边界）：灵石不足 → 买钮禁用
+        boolean affordable = hasSelection && lingshi >= rows.get(selected).buy();
+        buyButton.active = hasSelection && affordable;
         sellButton.active = hasSelection && rows.get(selected).owned() > 0;
         super.render(graphics, mouseX, mouseY, partialTick);
     }
