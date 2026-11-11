@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:63605f3cd203e1725d596a603133f48e94c6f33257bfe34d8853b221f7ba8028",
+  "@generated": "from content/NUMBERS.md @ sha256:dc1e150ec8fbdec76239fad98a01c943bd684f387d7a9a87d03b252ad3670a1d",
   "id": "world_rules",
   "world": {
     "ambient_qi_min": 0.5,
@@ -28,7 +28,8 @@
     "secret_realm_herb_drop_prob": {
     "item_tianguo": 0.04,
     "item_xuelian": 0.06,
-    "item_yaodan": 0.02
+    "item_yaodan": 0.02,
+    "item_longxue": 0.05
   },
     "fires_crystal_cooldown_sec": 60,
     "fires_crystal_weights": {

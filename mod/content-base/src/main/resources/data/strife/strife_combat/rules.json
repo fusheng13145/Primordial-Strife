@@ -1,5 +1,5 @@
 {
-  "@generated": "from content/NUMBERS.md @ sha256:82e8ed879f3ede607b3e5fa53458b3654d30ecec1c98f1916587904651b6226e",
+  "@generated": "from content/NUMBERS.md @ sha256:dc1e150ec8fbdec76239fad98a01c943bd684f387d7a9a87d03b252ad3670a1d",
   "id": "combat_rules",
   "combat": {
     "realm_coeff": {
