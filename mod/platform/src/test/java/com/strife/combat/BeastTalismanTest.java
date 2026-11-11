@@ -1,22 +1,22 @@
 package com.strife.combat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.strife.core.CombatTables;
+
 import org.junit.jupiter.api.Test;
 
 /**
- * 捕兽符判定核 ×【真实产物】（P1-22 御兽 v1）：可捕生命阈值、驯服成功率、档位乘数——
- * 概率与阈值全部 NUMBERS @@combat 表驱动（零字面量），本用例锚定产物值与纯函数钳位。
+ * 捕兽符判定核 ×【真实产物】（P1-22 御兽 v1）：可捕生命阈值、驯服成功率、档位乘数—— 概率与阈值全部 NUMBERS @@combat
+ * 表驱动（零字面量），本用例锚定产物值与纯函数钳位。
  */
 class BeastTalismanTest {
 
     @Test
     void tamingRulesFromShippedProduct() {
         var rules = CombatTables.beastTaming();
-        assertEquals(0.35, rules.maxHealthRatio(), 1e-9, "@@combat.beast_taming_max_health_ratio [拟]");
+        assertEquals(
+                0.35, rules.maxHealthRatio(), 1e-9, "@@combat.beast_taming_max_health_ratio [拟]");
         assertEquals(0.60, rules.chance(), 1e-9, "@@combat.beast_taming_chance [拟]");
     }
 

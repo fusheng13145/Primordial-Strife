@@ -1,5 +1,6 @@
 package com.strife.combat;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -13,7 +14,6 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 
@@ -33,6 +33,9 @@ public class StrifeMonster extends Monster {
 
     /** 御兽批（P1-22 v1）：灵宠主人（null = 野生）。NBT 持久化——宠物随存档存活。 */
     private java.util.UUID ownerUuid;
+
+    /** 主人最后攻击的目标（灵宠索敌同步源，每秒刷）。 */
+    private net.minecraft.world.entity.LivingEntity ownerTarget;
 
     public StrifeMonster(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -58,8 +61,10 @@ public class StrifeMonster extends Monster {
         // 目标选择重置：野生索敌玩家目标（priority 2）对灵宠永不再触发（canUse 分流）
         this.setCustomName(
                 net.minecraft.network.chat.Component.literal(
-                        "〔灵宠〕" + net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
-                                .getKey(this.getType()).getPath()));
+                        "〔灵宠〕"
+                                + net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
+                                        .getKey(this.getType())
+                                        .getPath()));
     }
 
     public java.util.UUID ownerUuid() {
@@ -90,10 +95,8 @@ public class StrifeMonster extends Monster {
             }
             double distSq = this.distanceToSqr(owner);
             if (distSq > 24.0 * 24.0) {
-                this.teleportTo(
-                        owner.getX(), owner.getY(), owner.getZ());
-            } else if (distSq > 12.0 * 12.0
-                    && getNavigation().isDone()) {
+                this.teleportTo(owner.getX(), owner.getY(), owner.getZ());
+            } else if (distSq > 12.0 * 12.0 && getNavigation().isDone()) {
                 getNavigation().moveTo(owner.getX(), owner.getY(), owner.getZ(), 1.2);
             }
         }
@@ -110,12 +113,14 @@ public class StrifeMonster extends Monster {
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         // 灵宠（有主人）不索敌玩家——御兽批 P1-22：野性仅在野生形态存在
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true) {
-            @Override
-            public boolean canUse() {
-                return ((StrifeMonster) this.mob).ownerUuid == null && super.canUse();
-            }
-        });
+        this.targetSelector.addGoal(
+                2,
+                new NearestAttackableTargetGoal<>(this, Player.class, true) {
+                    @Override
+                    public boolean canUse() {
+                        return ((StrifeMonster) this.mob).ownerUuid == null && super.canUse();
+                    }
+                });
     }
 
     @Override

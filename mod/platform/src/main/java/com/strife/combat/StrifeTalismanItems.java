@@ -30,7 +30,7 @@ public final class StrifeTalismanItems {
 
     /** 捕兽符（P1-22 御兽 v1）：对重伤野生妖兽使用 → 概率驯服为灵宠（interactLivingEntity 行为）。 */
     public static final DeferredHolder<Item, Item> BEAST_TALISMAN =
-            ITEMS.register("item_bushou_fu", BeastTalismanItem::new);
+            ITEMS.register("item_bushou_fu", () -> new BeastTalismanItem(new Item.Properties()));
 
     private static class EscapeTalismanItem extends Item {
         EscapeTalismanItem() {

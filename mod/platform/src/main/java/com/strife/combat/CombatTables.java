@@ -112,8 +112,8 @@ public final class CombatTables {
     }
 
     /**
-     * 功法熟练度规则（NUMBERS @@combat 三键 [拟]）：每档施法次数/每档加成/加成封顶。
-     * {@code fallback()} 是零加成——熟练度规则缺失时施法照常，只是没有熟练度收益。
+     * 功法熟练度规则（NUMBERS @@combat 三键 [拟]）：每档施法次数/每档加成/加成封顶。 {@code fallback()}
+     * 是零加成——熟练度规则缺失时施法照常，只是没有熟练度收益。
      */
     public record TechniqueProficiency(int perTier, double bonusPerTier, double cap) {
         public static TechniqueProficiency fallback() {
@@ -128,8 +128,8 @@ public final class CombatTables {
     }
 
     /**
-     * 捕兽符规则（P1-22 御兽 v1，NUMBERS @@combat 两键 [拟]）：
-     * 可捕生命比例阈值 + 驯服成功率。{@code fallback()} 是"永不成功"——规则缺失时捕兽符失效不崩。
+     * 捕兽符规则（P1-22 御兽 v1，NUMBERS @@combat 两键 [拟]）： 可捕生命比例阈值 + 驯服成功率。{@code fallback()}
+     * 是"永不成功"——规则缺失时捕兽符失效不崩。
      */
     public record BeastTaming(double maxHealthRatio, double chance) {
         public static BeastTaming fallback() {
@@ -145,8 +145,7 @@ public final class CombatTables {
                     require(combat, "beast_taming_max_health_ratio").getAsDouble(),
                     require(combat, "beast_taming_chance").getAsDouble());
         } catch (RuntimeException e) {
-            LOGGER.error(
-                    "beast taming rules unavailable, taming disabled: {}", e.getMessage());
+            LOGGER.error("beast taming rules unavailable, taming disabled: {}", e.getMessage());
             return BeastTaming.fallback();
         }
     }
@@ -160,8 +159,7 @@ public final class CombatTables {
                     require(combat, "technique_proficiency_bonus_per_tier").getAsDouble(),
                     require(combat, "technique_proficiency_cap").getAsDouble());
         } catch (RuntimeException e) {
-            LOGGER.error(
-                    "technique proficiency unavailable, using zero bonus: {}", e.getMessage());
+            LOGGER.error("technique proficiency unavailable, using zero bonus: {}", e.getMessage());
             return TechniqueProficiency.fallback();
         }
     }
